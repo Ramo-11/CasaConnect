@@ -68,7 +68,7 @@
       
       <div class="search-box">
         <input type="text" id="requestSearch" placeholder="Search requests..." onkeyup="applyFilters()">
-        <i class="icon-search"></i>
+        <i class="fas fa-search"></i>
       </div>
     </div>
   </div>
@@ -99,20 +99,20 @@
             
             <div class="request-info">
               <div class="info-group">
-                <i class="icon-user"></i>
+                <i class="fas fa-user"></i>
                 <span><%= request.tenant ? request.tenant.firstName + ' ' + request.tenant.lastName : 'Unknown' %></span>
               </div>
               <div class="info-group">
-                <i class="icon-home"></i>
+                <i class="fas fa-home"></i>
                 <span>Unit <%= request.unit ? request.unit.unitNumber : 'N/A' %></span>
               </div>
               <div class="info-group">
-                <i class="icon-calendar"></i>
+                <i class="fas fa-calendar"></i>
                 <span><%= new Date(request.createdAt).toLocaleDateString() %></span>
               </div>
               <% if (request.assignedTo) { %>
                 <div class="info-group">
-                  <i class="icon-wrench"></i>
+                  <i class="fas fa-wrench"></i>
                   <span>Assigned to: <%= request.assignedTo.firstName %> <%= request.assignedTo.lastName %></span>
                 </div>
               <% } %>
@@ -125,7 +125,7 @@
             <% if (request.notes && request.notes.length > 0) { %>
               <div class="request-notes-section">
                 <button class="notes-toggle" onclick="toggleRequestNotes('<%= request._id %>')">
-                  <i class="icon-message"></i> Notes (<%= request.notes.length %>)
+                  <i class="fas fa-comment"></i> Notes (<%= request.notes.length %>)
                 </button>
                 <div id="notes-<%= request._id %>" class="notes-container" style="display: none;">
                   <% request.notes.forEach(note => { %>
@@ -146,30 +146,30 @@
           <div class="request-actions">
             <% if (request.status === 'pending') { %>
               <button class="btn btn-primary btn-small" onclick="openAssignModal('<%= request._id %>')">
-                <i class="icon-user-plus"></i> Assign
+                <i class="fas fa-user-plus"></i> Assign
               </button>
             <% } %>
             
             <% if (request.status === 'assigned' || request.status === 'in_progress') { %>
               <button class="btn btn-secondary btn-small" onclick="updateStatus('<%= request._id %>', 'in_progress')">
-                <i class="icon-play"></i> Start Work
+                <i class="fas fa-play"></i> Start Work
               </button>
               <button class="btn btn-success btn-small" onclick="updateStatus('<%= request._id %>', 'completed')">
-                <i class="icon-check"></i> Complete
+                <i class="fas fa-check"></i> Complete
               </button>
             <% } %>
             
             <button class="btn-icon" onclick="addNote('<%= request._id %>')" title="Add Note">
-              <i class="icon-message-plus"></i>
+              <i class="fas fa-comment-plus"></i>
             </button>
             
             <button class="btn-icon" onclick="viewDetails('<%= request._id %>')" title="View Details">
-              <i class="icon-eye"></i>
+              <i class="fas fa-eye"></i>
             </button>
             
             <% if (request.status === 'pending' || request.status === 'assigned') { %>
               <button class="btn-icon danger" onclick="cancelRequest('<%= request._id %>')" title="Cancel">
-                <i class="icon-x"></i>
+                <i class="fas fa-times"></i>
               </button>
             <% } %>
           </div>
@@ -177,7 +177,7 @@
       <% }) %>
     <% } else { %>
       <div class="empty-state">
-        <i class="icon-tool"></i>
+        <i class="fas fa-tool"></i>
         <h3>No Service Requests</h3>
         <p>There are no service requests at this time</p>
       </div>

@@ -1,0 +1,321 @@
+<!-- Tenant Details Page -->
+<div class="tenant-details-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <h1>Tenant Details</h1>
+      <p><%= tenant.firstName %> <%= tenant.lastName %></p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-secondary" onclick="window.history.back()">
+        <i class="fas fa-arrow-left"></i> Back
+      </button>
+      <button class="btn btn-primary" onclick="editTenant('<%= tenant._id %>')">
+        <i class="fas fa-edit"></i> Edit Tenant
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Content Grid -->
+  <div class="details-grid">
+    <!-- Personal Information Card -->
+    <div class="card">
+      <div class="card-header">
+        <h3>Personal Information</h3>
+        <span class="badge <%= tenant.isActive ? 'badge-success' : 'badge-danger' %>">
+          <%= tenant.isActive ? 'Active' : 'Inactive' %>
+        </span>
+      </div>
+      <div class="card-body">
+        <div class="info-grid">
+          <div class="info-item">
+            <label>Full Name</label>
+            <span><%= tenant.firstName %> <%= tenant.lastName %></span>
+          </div>
+          <div class="info-item">
+            <label>Email</label>
+            <span><a href="mailto:<%= tenant.email %>"><%= tenant.email %></a></span>
+          </div>
+          <div class="info-item">
+            <label>Phone</label>
+            <span><a href="tel:<%= tenant.phone %>"><%= tenant.phone %></a></span>
+          </div>
+          <div class="info-item">
+            <label>Member Since</label>
+            <span><%= new Date(tenant.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) %></span>
+          </div>
+          <div class="info-item">
+            <label>Last Login</label>
+            <span><%= tenant.lastLogin ? new Date(tenant.lastLogin).toLocaleString() : 'Never' %></span>
+          </div>
+        </div>
+        
+        <div class="action-row">
+          <button class="btn btn-secondary" onclick="sendCredentials('<%= tenant._id %>')">
+            <i class="fas fa-envelope"></i> Send Login Credentials
+          </button>
+          <button class="btn btn-secondary" onclick="resetPassword('<%= tenant._id %>')">
+            <i class="fas fa-key"></i> Reset Password
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Unit Information Card -->
+    <div class="card">
+      <div class="card-header">
+        <h3>Unit Information</h3>
+        <% if (tenant.unitId) { %>
+          <a href="/manager/units/<%= tenant.unitId._id %>" class="btn-link">View Unit</a>
+        <% } %>
+      </div>
+      <div class="card-body">
+        <% if (tenant.unitId) { %>
+          <div class="unit-details-box">
+            <div class="unit-header">
+              <h4>Unit <%= tenant.unitId.unitNumber %></h4>
+              <span class="badge badge-primary">Building <%= tenant.unitId.building %></span>
+            </div>
+            <div class="info-grid">
+              <div class="info-item">
+                <label>Floor</label>
+                <span><%= tenant.unitId.floor %></span>
+              </div>
+              <div class="info-item">
+                <label>Bedrooms</label>
+                <span><%= tenant.unitId.bedrooms %></span>
+              </div>
+              <div class="info-item">
+                <label>Bathrooms</label>
+                <span><%= tenant.unitId.bathrooms %></span>
+              </div>
+              <div class="info-item">
+                <label>Square Feet</label>
+                <span><%= tenant.unitId.squareFeet %> sq ft</span>
+              </div>
+              <div class="info-item">
+                <label>Monthly Rent</label>
+                <span class="rent-amount">$<%= tenant.unitId.monthlyRent %></span>
+              </div>
+              <div class="info-item">
+                <label>Lease Start</label>
+                <span><%= new Date(tenant.createdAt).toLocaleDateString() %></span>
+              </div>
+              <div class="info-item">
+                <label>Lease End</label>
+                <span><%= new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toLocaleDateString() %></span>
+              </div>
+            </div>
+            <% if (tenant.unitId.amenities && tenant.unitId.amenities.length > 0) { %>
+              <div class="amenities-section">
+                <label>Amenities</label>
+                <div class="amenities-list">
+                  <% tenant.unitId.amenities.forEach(amenity => { %>
+                    <span class="amenity-tag"><%= amenity %></span>
+                  <% }) %>
+                </div>
+              </div>
+            <% } %>
+          </div>
+        <% } else { %>
+          <div class="empty-state-small">
+            <i class="fas fa-home"></i>
+            <p>No unit assigned to this tenant</p>
+            <button class="btn btn-primary" onclick="assignUnitToTenant('<%= tenant._id %>')">
+              Assign Unit
+            </button>
+          </div>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Payment History Card -->
+    <div class="card full-width">
+      <div class="card-header">
+        <h3>Payment History</h3>
+        <div class="header-stats">
+          <div class="mini-stat">
+            <span class="label">Total Paid</span>
+            <span class="value">$<%= payments.reduce((sum, p) => p.status === 'completed' ? sum + p.amount : sum, 0).toFixed(2) %></span>
+          </div>
+          <div class="mini-stat">
+            <span class="label">Last Payment</span>
+            <span class="value"><%= payments.length > 0 ? new Date(payments[0].createdAt).toLocaleDateString() : 'N/A' %></span>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <% if (payments && payments.length > 0) { %>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Type</th>
+                  <th>Amount</th>
+                  <th>Method</th>
+                  <th>Status</th>
+                  <th>Transaction ID</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% payments.forEach(payment => { %>
+                  <tr>
+                    <td><%= new Date(payment.createdAt).toLocaleDateString() %></td>
+                    <td>
+                      <span class="type-badge type-<%= payment.type %>">
+                        <%= payment.type.replace('_', ' ') %>
+                      </span>
+                    </td>
+                    <td class="amount">$<%= payment.amount.toFixed(2) %></td>
+                    <td><%= payment.paymentMethod.replace('_', ' ') %></td>
+                    <td>
+                      <span class="badge status-<%= payment.status %>">
+                        <%= payment.status %>
+                      </span>
+                    </td>
+                    <td class="transaction-id"><%= payment.transactionId || '-' %></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } else { %>
+          <div class="empty-state-small">
+            <i class="fas fa-dollar-sign"></i>
+            <p>No payment history available</p>
+          </div>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Service Requests Card -->
+    <div class="card full-width">
+      <div class="card-header">
+        <h3>Service Requests</h3>
+        <div class="header-stats">
+          <div class="mini-stat">
+            <span class="label">Total Requests</span>
+            <span class="value"><%= serviceRequests.length %></span>
+          </div>
+          <div class="mini-stat">
+            <span class="label">Pending</span>
+            <span class="value"><%= serviceRequests.filter(r => r.status === 'pending').length %></span>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <% if (serviceRequests && serviceRequests.length > 0) { %>
+          <div class="requests-list">
+            <% serviceRequests.forEach(request => { %>
+              <div class="request-item-detailed">
+                <div class="request-priority priority-<%= request.priority %>"></div>
+                <div class="request-content">
+                  <div class="request-header">
+                    <h4><%= request.title %></h4>
+                    <span class="badge status-<%= request.status %>"><%= request.status.replace('_', ' ') %></span>
+                  </div>
+                  <div class="request-meta">
+                    <span><i class="fas fa-calendar"></i> <%= new Date(request.createdAt).toLocaleDateString() %></span>
+                    <span><i class="fas fa-tag"></i> <%= request.category.replace('_', ' ') %></span>
+                    <span class="priority-<%= request.priority %>">
+                      <i class="fas fa-flag"></i> <%= request.priority %>
+                    </span>
+                  </div>
+                  <p class="request-description"><%= request.description %></p>
+                </div>
+                <div class="request-actions">
+                  <button class="btn-icon" onclick="viewRequest('<%= request._id %>')" title="View">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        <% } else { %>
+          <div class="empty-state-small">
+            <i class="fas fa-tools"></i>
+            <p>No service requests submitted</p>
+          </div>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Account Actions Card -->
+    <div class="card full-width">
+      <div class="card-header">
+        <h3>Account Actions</h3>
+      </div>
+      <div class="card-body">
+        <div class="action-grid">
+          <button class="action-button" onclick="sendNotification('<%= tenant._id %>')">
+            <i class="fas fa-bell"></i>
+            <span>Send Notification</span>
+          </button>
+          <button class="action-button" onclick="generateLeaseDocument('<%= tenant._id %>')">
+            <i class="fas fa-file-contract"></i>
+            <span>Generate Lease</span>
+          </button>
+          <button class="action-button" onclick="viewDocuments('<%= tenant._id %>')">
+            <i class="fas fa-folder-open"></i>
+            <span>View Documents</span>
+          </button>
+          <button class="action-button" onclick="exportTenantData('<%= tenant._id %>')">
+            <i class="fas fa-download"></i>
+            <span>Export Data</span>
+          </button>
+          <button class="action-button warning" onclick="suspendAccount('<%= tenant._id %>')">
+            <i class="fas fa-pause-circle"></i>
+            <span>Suspend Account</span>
+          </button>
+          <button class="action-button danger" onclick="deleteTenant('<%= tenant._id %>')">
+            <i class="fas fa-trash"></i>
+            <span>Delete Tenant</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Send Credentials Modal (reuse from dashboard) -->
+<div id="sendCredentialsModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Send Login Credentials</h2>
+      <button class="modal-close" onclick="closeSendCredentialsModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="credential-preview">
+        <p>Send login credentials to:</p>
+        <div class="tenant-info-card">
+          <h4><%= tenant.firstName %> <%= tenant.lastName %></h4>
+          <p><%= tenant.email %></p>
+          <% if (tenant.unitId) { %>
+            <p>Unit: <%= tenant.unitId.unitNumber %></p>
+          <% } %>
+        </div>
+        
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle"></i>
+          The tenant will receive an email with login credentials and instructions.
+        </div>
+        
+        <div class="form-group">
+          <label for="newPassword">New Temporary Password (optional)</label>
+          <input type="text" id="newPassword" placeholder="Leave blank to auto-generate">
+          <button type="button" class="btn btn-secondary mt-2" onclick="generateNewPassword()">
+            Generate New Password
+          </button>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeSendCredentialsModal()">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="confirmSendCredentials('<%= tenant._id %>')">
+          Send Credentials
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

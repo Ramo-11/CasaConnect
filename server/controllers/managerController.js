@@ -38,7 +38,7 @@ exports.getDashboard = async (req, res) => {
 
         // Get available units list
         const availableUnitsList = units
-            // .filter((u) => u.status === "available")
+            .filter((u) => u.status === "available")
             .map((u) => ({
                 id: u._id,
                 unitNumber: u.unitNumber,
@@ -281,8 +281,10 @@ exports.viewTenant = async (req, res) => {
             .limit(10);
 
         res.render("manager/tenant-details", {
-            title: `Tenant: ${tenant.fullName}`,
+            title: `Tenant: ${tenant.firstName} ${tenant.lastName}`,
             layout: "layout",
+            additionalCSS: ['common.css', 'tenant-details.css'],
+            additionalJS: ['common.js', 'tenant-details.js'],
             tenant,
             payments,
             serviceRequests,
@@ -405,6 +407,8 @@ exports.getServiceRequests = async (req, res) => {
 
         res.render("manager/service-requests", {
             title: "Service Requests",
+            additionalCSS: ['common.css', 'service-requests.css', 'manager.css'],
+            additionalJS: ['common.js', 'service-requests.js', 'manager.js'],
             layout: "layout",
             requests,
         });
