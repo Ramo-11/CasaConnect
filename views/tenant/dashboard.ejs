@@ -1,0 +1,577 @@
+<!-- Tenant Dashboard -->
+<div class="tenant-container">
+  <!-- Header with Unit Info -->
+  <div class="dashboard-header">
+    <h1>Welcome, <%= user.firstName %></h1>
+    <div class="unit-info">
+      <span class="unit-number">Unit <%= unit.unitNumber %></span>
+      <span class="unit-building"><%= unit.building %></span>
+    </div>
+  </div>
+
+  <!-- Tab Navigation -->
+  <div class="tab-navigation">
+    <button class="tab-button active" data-tab="overview">
+      <i class="icon-dashboard"></i>
+      Overview
+    </button>
+    <button class="tab-button" data-tab="payments">
+      <i class="icon-payment"></i>
+      Payments
+      <% if (paymentDue) { %>
+        <span class="badge badge-warning">!</span>
+      <% } %>
+    </button>
+    <button class="tab-button" data-tab="service">
+      <i class="icon-service"></i>
+      Service Requests
+      <% if (activeRequests > 0) { %>
+        <span class="badge"><%= activeRequests %></span>
+      <% } %>
+    </button>
+    <button class="tab-button" data-tab="documents">
+      <i class="icon-document"></i>
+      Documents
+    </button>
+  </div>
+
+  <!-- Tab Content -->
+  <div class="tab-content">
+    <!-- Overview Tab -->
+    <div id="overview" class="tab-pane active">
+      <!-- Payment Status Card -->
+      <div class="dashboard-grid">
+        <div class="card payment-status-card <%= paymentStatus.class %>">
+          <div class="card-header">
+            <h3>Rent Payment</h3>
+            <span class="status-badge <%= paymentStatus.class %>"><%= paymentStatus.text %></span>
+          </div>
+          <div class="card-body">
+            <% if (paymentDue) { %>
+              <% if (daysUntilDue > 0) { %>
+                <p class="payment-due-in"><%= daysUntilDue %> days until due</p>
+              <% } else if (daysOverdue <= 5) { %>
+                <p class="payment-warning">Payment due - Pay by the 5th to avoid late fees</p>
+              <% } else { %>
+                <p class="payment-alert">OVERDUE - Late fee: $<%= lateFee %>/day</p>
+                <p class="eviction-warning">Risk of eviction proceedings</p>
+              <% } %>
+              <div class="amount-due">
+                <span class="label">Amount Due:</span>
+                <span class="amount">$<%= amountDue.toFixed(2) %></span>
+              </div>
+              <% if (daysOverdue <= 5) { %>
+                <button class="btn btn-primary btn-pay-now" onclick="openPaymentModal()">
+                  Pay Now
+                </button>
+              <% } %>
+            <% } else { %>
+              <p class="next-payment">Next payment: <%= nextPaymentDate %></p>
+              <p class="amount">$<%= monthlyRent.toFixed(2) %></p>
+            <% } %>
+          </div>
+        </div>
+
+        <!-- Service Requests Summary -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Service Requests</h3>
+            <a href="#" class="link-view-all" data-tab-target="service">View All</a>
+          </div>
+          <div class="card-body">
+            <div class="stats-grid">
+              <div class="stat">
+                <span class="stat-value"><%= activeRequests %></span>
+                <span class="stat-label">Active</span>
+              </div>
+              <div class="stat">
+                <span class="stat-value"><%= completedRequests %></span>
+                <span class="stat-label">Completed</span>
+              </div>
+            </div>
+            <% if (recentRequests.length > 0) { %>
+              <div class="recent-requests">
+                <% recentRequests.slice(0, 3).forEach(request => { %>
+                  <div class="request-item">
+                    <span class="request-title"><%= request.title %></span>
+                    <span class="request-status status-<%= request.status %>"><%= request.status %></span>
+                  </div>
+                <% }) %>
+              </div>
+            <% } else { %>
+              <p class="no-data">No recent service requests</p>
+            <% } %>
+            <button class="btn btn-secondary btn-block" onclick="openServiceRequestModal()">
+              New Request ($10 fee)
+            </button>
+          </div>
+        </div>
+
+        <!-- Lease Information -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Lease Information</h3>
+            <a href="#" class="link-view-all" data-tab-target="documents">View Documents</a>
+          </div>
+          <div class="card-body">
+            <div class="lease-info">
+              <div class="info-row">
+                <span class="label">Start Date:</span>
+                <span class="value"><%= leaseStart %></span>
+              </div>
+              <div class="info-row">
+                <span class="label">End Date:</span>
+                <span class="value"><%= leaseEnd %></span>
+              </div>
+              <div class="info-row">
+                <span class="label">Time Remaining:</span>
+                <span class="value"><%= leaseRemaining %></span>
+              </div>
+              <div class="lease-progress">
+                <div class="progress-bar">
+                  <div class="progress-fill"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payments Tab -->
+    <div id="payments" class="tab-pane">
+      <div class="payments-container">
+        <!-- Current Payment Due (if applicable) -->
+        <% if (paymentDue) { %>
+          <div class="card payment-due-card <%= paymentStatus.class %>">
+            <div class="card-header">
+              <h3>Payment Due</h3>
+              <% if (daysOverdue > 5) { %>
+                <span class="badge badge-danger">OVERDUE</span>
+              <% } else if (daysOverdue > 0) { %>
+                <span class="badge badge-warning">DUE NOW</span>
+              <% } %>
+            </div>
+            <div class="card-body">
+              <div class="payment-details">
+                <div class="detail-row">
+                  <span>Monthly Rent:</span>
+                  <span>$<%= monthlyRent.toFixed(2) %></span>
+                </div>
+                <% if (lateFee > 0) { %>
+                  <div class="detail-row late-fee">
+                    <span>Late Fee (<%= daysOverdue - 5 %> days):</span>
+                    <span>$<%= lateFee.toFixed(2) %></span>
+                  </div>
+                <% } %>
+                <div class="detail-row total">
+                  <span>Total Due:</span>
+                  <span>$<%= amountDue.toFixed(2) %></span>
+                </div>
+              </div>
+              <% if (daysOverdue <= 5) { %>
+                <button class="btn btn-primary btn-large" onclick="openPaymentModal()">
+                  Make Payment
+                </button>
+              <% } else { %>
+                <div class="alert alert-danger">
+                  <strong>Account on Hold</strong>
+                  <p>Please contact management immediately at (555) 123-4567</p>
+                </div>
+              <% } %>
+            </div>
+          </div>
+        <% } %>
+
+        <!-- Payment History -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Payment History</h3>
+            <div class="filter-controls">
+              <select id="payment-filter" class="filter-select">
+                <option value="all">All Payments</option>
+                <option value="rent">Rent</option>
+                <option value="service_fee">Service Fees</option>
+              </select>
+            </div>
+          </div>
+          <div class="card-body">
+            <% if (paymentHistory.length > 0) { %>
+              <div class="table-responsive">
+                <table class="payment-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Type</th>
+                      <th>Amount</th>
+                      <th>Method</th>
+                      <th>Status</th>
+                      <th>Receipt</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% paymentHistory.forEach(payment => { %>
+                      <tr data-type="<%= payment.type %>">
+                        <td><%= payment.date %></td>
+                        <td><span class="type-badge type-<%= payment.type %>"><%= payment.typeLabel %></span></td>
+                        <td>$<%= payment.amount.toFixed(2) %></td>
+                        <td><%= payment.method %></td>
+                        <td><span class="status-badge status-<%= payment.status %>"><%= payment.status %></span></td>
+                        <td>
+                          <% if (payment.status === 'completed') { %>
+                            <a href="/receipt/<%= payment.id %>" class="btn-link">View</a>
+                          <% } else { %>
+                            -
+                          <% } %>
+                        </td>
+                      </tr>
+                    <% }) %>
+                  </tbody>
+                </table>
+              </div>
+            <% } else { %>
+              <p class="no-data">No payment history available</p>
+            <% } %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Service Requests Tab -->
+    <div id="service" class="tab-pane">
+      <div class="service-container">
+        <!-- New Request Button -->
+        <div class="action-bar">
+          <button class="btn btn-primary" onclick="openServiceRequestModal()">
+            <i class="icon-plus"></i> New Service Request ($10 fee)
+          </button>
+        </div>
+
+        <!-- Active Requests -->
+        <% if (activeServiceRequests.length > 0) { %>
+          <div class="card">
+            <div class="card-header">
+              <h3>Active Requests</h3>
+            </div>
+            <div class="card-body">
+              <div class="request-list">
+                <% activeServiceRequests.forEach(request => { %>
+                  <div class="request-card status-<%= request.status %>">
+                    <div class="request-header">
+                      <h4><%= request.title %></h4>
+                      <span class="status-badge status-<%= request.status %>"><%= request.status %></span>
+                    </div>
+                    <div class="request-meta">
+                      <span class="meta-item"><i class="icon-category"></i> <%= request.category %></span>
+                      <span class="meta-item"><i class="icon-calendar"></i> <%= request.date %></span>
+                      <span class="meta-item priority-<%= request.priority %>"><i class="icon-flag"></i> <%= request.priority %></span>
+                    </div>
+                    <p class="request-description"><%= request.description %></p>
+                    <% if (request.assignedTo) { %>
+                      <div class="assigned-info">
+                        <i class="icon-user"></i> Assigned to: <%= request.assignedTo %>
+                      </div>
+                    <% } %>
+                    <% if (request.notes && request.notes.length > 0) { %>
+                      <div class="request-notes">
+                        <button class="btn-link" onclick="toggleNotes('<%= request.id %>')">
+                          View Updates (<%= request.notes.length %>)
+                        </button>
+                        <div id="notes-<%= request.id %>" class="notes-list" style="display: none;">
+                          <% request.notes.forEach(note => { %>
+                            <div class="note-item">
+                              <span class="note-author"><%= note.author %></span>
+                              <span class="note-date"><%= note.date %></span>
+                              <p><%= note.content %></p>
+                            </div>
+                          <% }) %>
+                        </div>
+                      </div>
+                    <% } %>
+                  </div>
+                <% }) %>
+              </div>
+            </div>
+          </div>
+        <% } %>
+
+        <!-- Completed Requests -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Request History</h3>
+          </div>
+          <div class="card-body">
+            <% if (serviceRequestHistory.length > 0) { %>
+              <div class="request-list">
+                <% serviceRequestHistory.forEach(request => { %>
+                  <div class="request-card completed">
+                    <div class="request-header">
+                      <h4><%= request.title %></h4>
+                      <span class="completion-date"><%= request.completedDate %></span>
+                    </div>
+                    <div class="request-meta">
+                      <span class="meta-item"><%= request.category %></span>
+                      <span class="meta-item">Resolved in <%= request.resolutionTime %></span>
+                    </div>
+                  </div>
+                <% }) %>
+              </div>
+            <% } else { %>
+              <p class="no-data">No previous service requests</p>
+            <% } %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Documents Tab -->
+    <div id="documents" class="tab-pane">
+      <div class="documents-container">
+        <!-- Lease Document -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Lease Agreement</h3>
+          </div>
+          <div class="card-body">
+            <div class="document-item lease-document">
+              <div class="document-icon">
+                <i class="icon-file-contract"></i>
+              </div>
+              <div class="document-info">
+                <h4>Residential Lease Agreement</h4>
+                <div class="document-meta">
+                  <span><i class="icon-calendar"></i> <%= leaseStart %> - <%= leaseEnd %></span>
+                  <span><i class="icon-home"></i> Unit <%= unit.unitNumber %></span>
+                </div>
+                <div class="lease-status">
+                  <div class="status-row">
+                    <span>Status:</span>
+                    <span class="badge badge-success">Active</span>
+                  </div>
+                  <div class="status-row">
+                    <span>Time Remaining:</span>
+                    <span><%= leaseRemaining %></span>
+                  </div>
+                </div>
+              </div>
+              <div class="document-actions">
+                <a href="/documents/lease/<%= leaseId %>" class="btn btn-secondary" target="_blank">
+                  <i class="icon-download"></i> View PDF
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Other Documents -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Other Documents</h3>
+          </div>
+          <div class="card-body">
+            <% if (documents.length > 0) { %>
+              <div class="document-grid">
+                <% documents.forEach(doc => { %>
+                  <div class="document-item">
+                    <div class="document-icon">
+                      <i class="icon-file"></i>
+                    </div>
+                    <div class="document-info">
+                      <h4><%= doc.title %></h4>
+                      <span class="document-date"><%= doc.uploadDate %></span>
+                    </div>
+                    <div class="document-actions">
+                      <a href="/documents/<%= doc.id %>" class="btn-link" target="_blank">View</a>
+                    </div>
+                  </div>
+                <% }) %>
+              </div>
+            <% } else { %>
+              <p class="no-data">No additional documents available</p>
+            <% } %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Payment Modal -->
+<div id="paymentModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Make Payment</h2>
+      <button class="modal-close" onclick="closePaymentModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="paymentForm" method="POST" action="/tenant/payment">
+        <div class="payment-summary">
+          <div class="summary-row">
+            <span>Amount Due:</span>
+            <span>$<%= amountDue ? amountDue.toFixed(2) : '0.00' %></span>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Payment Method</label>
+          <div class="payment-methods">
+            <label class="payment-method">
+              <input type="radio" name="paymentMethod" value="ach" checked>
+              <div class="method-card">
+                <i class="icon-bank"></i>
+                <span>Bank Account (ACH)</span>
+              </div>
+            </label>
+            <label class="payment-method">
+              <input type="radio" name="paymentMethod" value="credit_card">
+              <div class="method-card">
+                <i class="icon-credit-card"></i>
+                <span>Credit Card</span>
+              </div>
+            </label>
+            <label class="payment-method">
+              <input type="radio" name="paymentMethod" value="debit_card">
+              <div class="method-card">
+                <i class="icon-debit-card"></i>
+                <span>Debit Card</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div id="achFields" class="payment-fields">
+          <div class="form-group">
+            <label for="routingNumber">Routing Number</label>
+            <input type="text" id="routingNumber" name="routingNumber" pattern="[0-9]{9}" maxlength="9">
+          </div>
+          <div class="form-group">
+            <label for="accountNumber">Account Number</label>
+            <input type="text" id="accountNumber" name="accountNumber">
+          </div>
+        </div>
+
+        <div id="cardFields" class="payment-fields" style="display: none;">
+          <div class="form-group">
+            <label for="cardNumber">Card Number</label>
+            <input type="text" id="cardNumber" name="cardNumber" pattern="[0-9]{16}" maxlength="16">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="expiry">Expiry Date</label>
+              <input type="text" id="expiry" name="expiry" placeholder="MM/YY" pattern="[0-9]{2}/[0-9]{2}" maxlength="5">
+            </div>
+            <div class="form-group">
+              <label for="cvv">CVV</label>
+              <input type="text" id="cvv" name="cvv" pattern="[0-9]{3,4}" maxlength="4">
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closePaymentModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Process Payment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Service Request Modal -->
+<div id="serviceRequestModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Submit Service Request</h2>
+      <button class="modal-close" onclick="closeServiceRequestModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="serviceRequestForm" method="POST" action="/tenant/service-request">
+        <div class="alert alert-info">
+          <i class="icon-info"></i> A $10 service fee will be charged for this request
+        </div>
+        
+        <div class="form-group">
+          <label for="requestCategory">Category *</label>
+          <select id="requestCategory" name="category" required>
+            <option value="">Select a category</option>
+            <option value="electrical">Electrical</option>
+            <option value="plumbing">Plumbing</option>
+            <option value="hvac">HVAC / Heating / Cooling</option>
+            <option value="appliance">Appliance Repair</option>
+            <option value="general_repair">General Repair</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="requestPriority">Priority *</label>
+          <select id="requestPriority" name="priority" required>
+            <option value="low">Low - Can wait a few days</option>
+            <option value="medium" selected>Medium - Should be addressed soon</option>
+            <option value="high">High - Needs attention within 24 hours</option>
+            <option value="emergency">Emergency - Immediate attention required</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="requestTitle">Issue Title *</label>
+          <input type="text" id="requestTitle" name="title" required placeholder="Brief description of the issue">
+        </div>
+
+        <div class="form-group">
+          <label for="requestDescription">Detailed Description *</label>
+          <textarea id="requestDescription" name="description" required rows="4" 
+            placeholder="Please provide details about the issue, including location in unit, when it started, and any relevant information"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="requestAccess">Access Instructions</label>
+          <textarea id="requestAccess" name="accessInstructions" rows="2" 
+            placeholder="Any special instructions for accessing the unit or the problem area (optional)"></textarea>
+        </div>
+
+        <div class="payment-section">
+          <h3>Payment Information</h3>
+          <div class="form-group">
+            <label>Service Fee: $10.00</label>
+            <div class="payment-methods">
+              <label class="payment-method">
+                <input type="radio" name="servicePaymentMethod" value="credit_card" checked>
+                <div class="method-card">
+                  <i class="icon-credit-card"></i>
+                  <span>Credit Card</span>
+                </div>
+              </label>
+              <label class="payment-method">
+                <input type="radio" name="servicePaymentMethod" value="debit_card">
+                <div class="method-card">
+                  <i class="icon-debit-card"></i>
+                  <span>Debit Card</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="serviceCardNumber">Card Number</label>
+            <input type="text" id="serviceCardNumber" name="cardNumber" pattern="[0-9]{16}" maxlength="16" required>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="serviceExpiry">Expiry Date</label>
+              <input type="text" id="serviceExpiry" name="cardExpiry" placeholder="MM/YY" pattern="[0-9]{2}/[0-9]{2}" maxlength="5" required>
+            </div>
+            <div class="form-group">
+              <label for="serviceCvv">CVV</label>
+              <input type="text" id="serviceCvv" name="cardCvv" pattern="[0-9]{3,4}" maxlength="4" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeServiceRequestModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Submit Request & Pay $10</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

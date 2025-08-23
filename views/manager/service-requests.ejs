@@ -1,0 +1,262 @@
+<!-- Service Requests Management -->
+<div class="service-requests-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <h1>Service Requests</h1>
+      <p>Manage and assign maintenance requests</p>
+    </div>
+    <div class="header-stats">
+      <div class="stat-badge">
+        <span class="stat-number"><%= requests.filter(r => r.status === 'pending').length %></span>
+        <span class="stat-label">Pending</span>
+      </div>
+      <div class="stat-badge">
+        <span class="stat-number"><%= requests.filter(r => r.status === 'in_progress').length %></span>
+        <span class="stat-label">In Progress</span>
+      </div>
+      <div class="stat-badge">
+        <span class="stat-number"><%= requests.filter(r => r.status === 'completed' && new Date(r.completedAt) > new Date(Date.now() - 7*24*60*60*1000)).length %></span>
+        <span class="stat-label">Completed (7d)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters and Search -->
+  <div class="requests-filters">
+    <div class="filter-tabs">
+      <button class="filter-tab active" onclick="filterByStatus('all')">
+        All Requests
+        <span class="count"><%= requests.length %></span>
+      </button>
+      <button class="filter-tab" onclick="filterByStatus('pending')">
+        Pending
+        <span class="count"><%= requests.filter(r => r.status === 'pending').length %></span>
+      </button>
+      <button class="filter-tab" onclick="filterByStatus('assigned')">
+        Assigned
+        <span class="count"><%= requests.filter(r => r.status === 'assigned').length %></span>
+      </button>
+      <button class="filter-tab" onclick="filterByStatus('in_progress')">
+        In Progress
+        <span class="count"><%= requests.filter(r => r.status === 'in_progress').length %></span>
+      </button>
+      <button class="filter-tab" onclick="filterByStatus('completed')">
+        Completed
+        <span class="count"><%= requests.filter(r => r.status === 'completed').length %></span>
+      </button>
+    </div>
+    
+    <div class="filter-controls">
+      <select id="priorityFilter" onchange="applyFilters()">
+        <option value="all">All Priorities</option>
+        <option value="emergency">Emergency</option>
+        <option value="high">High</option>
+        <option value="medium">Medium</option>
+        <option value="low">Low</option>
+      </select>
+      
+      <select id="categoryFilter" onchange="applyFilters()">
+        <option value="all">All Categories</option>
+        <option value="electrical">Electrical</option>
+        <option value="plumbing">Plumbing</option>
+        <option value="hvac">HVAC</option>
+        <option value="appliance">Appliance</option>
+        <option value="general_repair">General Repair</option>
+        <option value="other">Other</option>
+      </select>
+      
+      <div class="search-box">
+        <input type="text" id="requestSearch" placeholder="Search requests..." onkeyup="applyFilters()">
+        <i class="icon-search"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- Requests List -->
+  <div class="requests-list">
+    <% if (requests && requests.length > 0) { %>
+      <% requests.forEach(request => { %>
+        <div class="request-card-full" 
+             data-request-id="<%= request._id %>"
+             data-status="<%= request.status %>"
+             data-priority="<%= request.priority %>"
+             data-category="<%= request.category %>">
+          
+          <!-- Priority Indicator -->
+          <div class="priority-indicator priority-<%= request.priority %>"></div>
+          
+          <!-- Request Main Content -->
+          <div class="request-main">
+            <div class="request-header">
+              <h3><%= request.title %></h3>
+              <div class="request-badges">
+                <span class="badge status-<%= request.status %>"><%= request.status.replace('_', ' ') %></span>
+                <span class="badge priority-<%= request.priority %>"><%= request.priority %></span>
+                <span class="category-badge"><%= request.category.replace('_', ' ') %></span>
+              </div>
+            </div>
+            
+            <div class="request-info">
+              <div class="info-group">
+                <i class="icon-user"></i>
+                <span><%= request.tenant ? request.tenant.firstName + ' ' + request.tenant.lastName : 'Unknown' %></span>
+              </div>
+              <div class="info-group">
+                <i class="icon-home"></i>
+                <span>Unit <%= request.unit ? request.unit.unitNumber : 'N/A' %></span>
+              </div>
+              <div class="info-group">
+                <i class="icon-calendar"></i>
+                <span><%= new Date(request.createdAt).toLocaleDateString() %></span>
+              </div>
+              <% if (request.assignedTo) { %>
+                <div class="info-group">
+                  <i class="icon-wrench"></i>
+                  <span>Assigned to: <%= request.assignedTo.firstName %> <%= request.assignedTo.lastName %></span>
+                </div>
+              <% } %>
+            </div>
+            
+            <div class="request-description">
+              <p><%= request.description %></p>
+            </div>
+            
+            <% if (request.notes && request.notes.length > 0) { %>
+              <div class="request-notes-section">
+                <button class="notes-toggle" onclick="toggleRequestNotes('<%= request._id %>')">
+                  <i class="icon-message"></i> Notes (<%= request.notes.length %>)
+                </button>
+                <div id="notes-<%= request._id %>" class="notes-container" style="display: none;">
+                  <% request.notes.forEach(note => { %>
+                    <div class="note">
+                      <div class="note-header">
+                        <span class="note-author"><%= note.author ? note.author.firstName : 'System' %></span>
+                        <span class="note-date"><%= new Date(note.createdAt).toLocaleString() %></span>
+                      </div>
+                      <p><%= note.content %></p>
+                    </div>
+                  <% }) %>
+                </div>
+              </div>
+            <% } %>
+          </div>
+          
+          <!-- Request Actions -->
+          <div class="request-actions">
+            <% if (request.status === 'pending') { %>
+              <button class="btn btn-primary btn-small" onclick="openAssignModal('<%= request._id %>')">
+                <i class="icon-user-plus"></i> Assign
+              </button>
+            <% } %>
+            
+            <% if (request.status === 'assigned' || request.status === 'in_progress') { %>
+              <button class="btn btn-secondary btn-small" onclick="updateStatus('<%= request._id %>', 'in_progress')">
+                <i class="icon-play"></i> Start Work
+              </button>
+              <button class="btn btn-success btn-small" onclick="updateStatus('<%= request._id %>', 'completed')">
+                <i class="icon-check"></i> Complete
+              </button>
+            <% } %>
+            
+            <button class="btn-icon" onclick="addNote('<%= request._id %>')" title="Add Note">
+              <i class="icon-message-plus"></i>
+            </button>
+            
+            <button class="btn-icon" onclick="viewDetails('<%= request._id %>')" title="View Details">
+              <i class="icon-eye"></i>
+            </button>
+            
+            <% if (request.status === 'pending' || request.status === 'assigned') { %>
+              <button class="btn-icon danger" onclick="cancelRequest('<%= request._id %>')" title="Cancel">
+                <i class="icon-x"></i>
+              </button>
+            <% } %>
+          </div>
+        </div>
+      <% }) %>
+    <% } else { %>
+      <div class="empty-state">
+        <i class="icon-tool"></i>
+        <h3>No Service Requests</h3>
+        <p>There are no service requests at this time</p>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<!-- Assign Technician Modal -->
+<div id="assignModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Assign Technician</h2>
+      <button class="modal-close" onclick="closeAssignModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="assignForm">
+        <input type="hidden" id="assignRequestId" name="requestId">
+        
+        <div class="form-group">
+          <label for="technicianId">Select Technician *</label>
+          <select id="technicianId" name="technicianId" required>
+            <option value="">Choose a technician...</option>
+            <optgroup label="Electricians">
+              <option value="tech1">John Smith - Electrician</option>
+              <option value="tech2">Mike Johnson - Electrician</option>
+            </optgroup>
+            <optgroup label="Plumbers">
+              <option value="tech3">David Brown - Plumber</option>
+              <option value="tech4">James Wilson - Plumber</option>
+            </optgroup>
+            <optgroup label="General Repair">
+              <option value="tech5">Robert Davis - General</option>
+              <option value="tech6">William Garcia - General</option>
+            </optgroup>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="assignmentNote">Assignment Note (optional)</label>
+          <textarea id="assignmentNote" name="note" rows="3" 
+                    placeholder="Add any special instructions for the technician..."></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label for="scheduledDate">Scheduled Date (optional)</label>
+          <input type="datetime-local" id="scheduledDate" name="scheduledDate">
+        </div>
+        
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeAssignModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Assign Technician</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Add Note Modal -->
+<div id="noteModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Add Note</h2>
+      <button class="modal-close" onclick="closeNoteModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="noteForm">
+        <input type="hidden" id="noteRequestId" name="requestId">
+        
+        <div class="form-group">
+          <label for="noteContent">Note *</label>
+          <textarea id="noteContent" name="content" rows="4" required 
+                    placeholder="Enter your note..."></textarea>
+        </div>
+        
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeNoteModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Add Note</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
