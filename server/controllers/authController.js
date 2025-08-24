@@ -2,6 +2,21 @@ const User = require("../../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
+// controllers/authController.js (add at bottom or where appropriate)
+exports.attachUserToLocals = (req, res, next) => {
+  // Handy for templates: currentUser will be undefined if logged out
+  if (req.session && req.session.userId) {
+    res.locals.currentUser = {
+      id: req.session.userId,
+      role: req.session.userRole,
+      name: req.session.userName,
+    };
+  } else {
+    res.locals.currentUser = null;
+  }
+  next();
+};
+
 // Get Login Page
 exports.getLogin = (req, res) => {
     // If already logged in, redirect to appropriate dashboard

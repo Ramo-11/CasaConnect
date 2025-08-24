@@ -1,0 +1,194 @@
+<!-- Edit Tenant Page -->
+<div class="tenant-edit-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <h1>Edit Tenant</h1>
+      <p><%= tenant.firstName %> <%= tenant.lastName %></p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-secondary" onclick="window.location.href='/manager/tenant/<%= tenant._id %>'">
+        <i class="fas fa-arrow-left"></i> Back to Details
+      </button>
+    </div>
+  </div>
+
+  <!-- Edit Form -->
+  <div class="edit-form-container">
+    <form id="editTenantForm" data-tenant-id="<%= tenant._id %>">
+      <!-- Personal Information Section -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Personal Information</h3>
+        </div>
+        <div class="card-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="firstName">First Name *</label>
+              <input type="text" id="firstName" name="firstName" value="<%= tenant.firstName %>" required>
+            </div>
+            <div class="form-group">
+              <label for="lastName">Last Name *</label>
+              <input type="text" id="lastName" name="lastName" value="<%= tenant.lastName %>" required>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="email">Email Address *</label>
+              <input type="email" id="email" name="email" value="<%= tenant.email %>" required>
+            </div>
+            <div class="form-group">
+              <label for="phone">Phone Number *</label>
+              <input type="tel" id="phone" name="phone" value="<%= tenant.phone %>" required data-format="phone">
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="isActive">Account Status</label>
+              <select id="isActive" name="isActive">
+                <option value="true" <%= tenant.isActive ? 'selected' : '' %>>Active</option>
+                <option value="false" <%= !tenant.isActive ? 'selected' : '' %>>Inactive</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Unit Assignment Section -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Unit Assignment</h3>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label for="unitId">Assigned Unit</label>
+            <select id="unitId" name="unitId">
+              <option value="">No Unit Assigned</option>
+              <% if (availableUnits && availableUnits.length > 0) { %>
+                <% availableUnits.forEach(unit => { %>
+                  <option value="<%= unit._id %>" <%= tenant.unitId && tenant.unitId._id.toString() === unit._id.toString() ? 'selected' : '' %>>
+                    Unit <%= unit.unitNumber %> - 
+                    <%= unit.propertyType %> - 
+                    <%= unit.bedrooms %> bed, <%= unit.bathrooms %> bath - 
+                    $<%= unit.monthlyRent %>/mo
+                    <%= unit.status === 'occupied' && unit.currentTenant && unit.currentTenant.toString() !== tenant._id.toString() ? '(Currently Occupied)' : '' %>
+                  </option>
+                <% }) %>
+              <% } %>
+            </select>
+            <small class="form-help">Changing the unit will update both the tenant and unit records</small>
+          </div>
+          
+          <% if (tenant.unitId) { %>
+            <div class="current-unit-info">
+              <h4>Current Unit Details</h4>
+              <div class="info-grid">
+                <div class="info-item">
+                  <label>Unit Number</label>
+                  <span><%= tenant.unitId.unitNumber %></span>
+                </div>
+                <div class="info-item">
+                  <label>Property Type</label>
+                  <span><%= tenant.unitId.propertyType %></span>
+                </div>
+                <div class="info-item">
+                  <label>Address</label>
+                  <span><%= tenant.unitId.streetAddress %>, <%= tenant.unitId.city %>, <%= tenant.unitId.state %> <%= tenant.unitId.zipCode %></span>
+                </div>
+                <div class="info-item">
+                  <label>Monthly Rent</label>
+                  <span>$<%= tenant.unitId.monthlyRent %></span>
+                </div>
+              </div>
+            </div>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Account Security Section -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Account Security</h3>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" name="resetPassword" id="resetPassword" onchange="togglePasswordField()">
+              <span>Reset password on next login</span>
+            </label>
+          </div>
+          
+          <div id="newPasswordGroup" class="form-group" style="display: none;">
+            <label for="newPassword">New Password (Optional)</label>
+            <div class="password-input-group">
+              <input type="text" id="newPassword" name="newPassword" placeholder="Leave blank to auto-generate">
+              <button type="button" class="btn btn-secondary" onclick="generatePassword()">
+                Generate Password
+              </button>
+            </div>
+            <small class="form-help">If left blank, a random password will be generated and sent to the tenant</small>
+          </div>
+          
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" name="sendNotification" id="sendNotification" checked>
+              <span>Send email notification to tenant about changes</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notes Section -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Internal Notes</h3>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label for="notes">Notes (Optional)</label>
+            <textarea id="notes" name="notes" rows="4" placeholder="Add any internal notes about this tenant..."><%= tenant.notes || '' %></textarea>
+            <small class="form-help">These notes are for internal use only and will not be visible to the tenant</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" onclick="window.location.href='/manager/tenant/<%= tenant._id %>'">
+          Cancel
+        </button>
+        <button type="submit" class="btn btn-primary">
+          <span class="btn-text">
+            <i class="fas fa-save"></i> Save Changes
+          </span>
+          <span class="btn-loading" style="display: none;">
+            <span class="spinner"></span> Saving...
+          </span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Success Modal -->
+<div id="successModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Changes Saved</h2>
+      <button class="modal-close" onclick="closeSuccessModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="success-message">
+        <i class="fas fa-check-circle"></i>
+        <p>Tenant information has been successfully updated.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="redirectToDetails()">
+          View Tenant Details
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -7,8 +7,8 @@
       <p><%= tenant.firstName %> <%= tenant.lastName %></p>
     </div>
     <div class="header-actions">
-      <button class="btn btn-secondary" onclick="window.history.back()">
-        <i class="fas fa-arrow-left"></i> Back
+      <button class="btn btn-secondary" onclick="window.location.href='/manager/tenants'">
+        <i class="fas fa-arrow-left"></i> Back to Tenants
       </button>
       <button class="btn btn-primary" onclick="editTenant('<%= tenant._id %>')">
         <i class="fas fa-edit"></i> Edit Tenant

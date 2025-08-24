@@ -7,14 +7,44 @@ const unitSchema = new mongoose.Schema({
     unique: true,
     trim: true
   },
-  building: {
+  // Address fields
+  streetAddress: {
     type: String,
     required: true,
     trim: true
   },
+  city: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  state: {
+    type: String,
+    required: true,
+    trim: true,
+    uppercase: true,
+    maxLength: 2
+  },
+  zipCode: {
+    type: String,
+    required: true,
+    trim: true,
+    match: /^\d{5}(-\d{4})?$/
+  },
+  // Optional fields
+  building: {
+    type: String,
+    trim: true,
+    default: null // Optional - for apartments/complexes
+  },
+  propertyType: {
+    type: String,
+    enum: ['apartment', 'house', 'townhouse', 'condo', 'duplex', 'studio', 'other'],
+    required: true
+  },
   floor: {
     type: Number,
-    required: true
+    default: null // Optional - not applicable for houses
   },
   bedrooms: {
     type: Number,
@@ -64,6 +94,11 @@ const unitSchema = new mongoose.Schema({
 unitSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
   next();
+});
+
+// Virtual for full address
+unitSchema.virtual('fullAddress').get(function() {
+  return `${this.streetAddress}, ${this.city}, ${this.state} ${this.zipCode}`;
 });
 
 module.exports = mongoose.model('Unit', unitSchema);

@@ -1,0 +1,340 @@
+<!-- Tenants Management -->
+<div class="tenants-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <h1>Tenants Management</h1>
+      <p>Manage all tenant accounts</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-secondary" onclick="window.location.href='/manager/dashboard'">
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
+      </button>
+      <button class="btn btn-primary" onclick="openAddTenantModal()">
+        <i class="fas fa-plus"></i> Add New Tenant
+      </button>
+    </div>
+  </div>
+
+  <!-- Tenants Filter Bar -->
+  <div class="filter-bar">
+    <div class="filter-group">
+      <label>Status:</label>
+      <select id="statusFilter" onchange="filterTenants()">
+        <option value="all">All Tenants</option>
+        <option value="active">Active</option>
+        <option value="inactive">Inactive</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Unit Status:</label>
+      <select id="unitStatusFilter" onchange="filterTenants()">
+        <option value="all">All</option>
+        <option value="assigned">Has Unit</option>
+        <option value="unassigned">No Unit</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Payment Status:</label>
+      <select id="paymentFilter" onchange="filterTenants()">
+        <option value="all">All</option>
+        <option value="current">Current</option>
+        <option value="due">Payment Due</option>
+      </select>
+    </div>
+    <div class="search-group">
+      <input type="text" id="tenantSearch" placeholder="Search by name or email..." onkeyup="filterTenants()">
+      <i class="fas fa-search"></i>
+    </div>
+  </div>
+
+  <!-- View Toggle -->
+  <div class="view-toggle">
+    <button class="toggle-btn active" onclick="setView('grid')">
+      <i class="fas fa-th"></i> Grid View
+    </button>
+    <button class="toggle-btn" onclick="setView('list')">
+      <i class="fas fa-list"></i> List View
+    </button>
+  </div>
+
+  <!-- Tenants Display -->
+  <div id="tenantsDisplay" class="tenants-grid-view">
+    <% if (tenants && tenants.length > 0) { %>
+      <% tenants.forEach(tenant => { %>
+        <div class="tenant-card-full" 
+             data-tenant-id="<%= tenant._id %>"
+             data-status="<%= tenant.isActive ? 'active' : 'inactive' %>"
+             data-unit-status="<%= tenant.unitId ? 'assigned' : 'unassigned' %>"
+             data-payment-status="<%= tenant.paymentStatus %>"
+             data-name="<%= tenant.firstName %> <%= tenant.lastName %>"
+             data-email="<%= tenant.email %>">
+          
+          <div class="tenant-card-header">
+            <div class="tenant-avatar">
+              <i class="fas fa-user"></i>
+            </div>
+            <div class="tenant-header-info">
+              <h3><%= tenant.firstName %> <%= tenant.lastName %></h3>
+              <span class="email-text"><%= tenant.email %></span>
+            </div>
+            <span class="status-indicator <%= tenant.isActive ? 'active' : 'inactive' %>">
+              <%= tenant.isActive ? 'Active' : 'Inactive' %>
+            </span>
+          </div>
+
+          <div class="tenant-card-body">
+            <div class="tenant-info-grid">
+              <div class="info-item">
+                <i class="fas fa-phone"></i>
+                <span><%= tenant.phone %></span>
+              </div>
+              <div class="info-item">
+                <i class="fas fa-calendar"></i>
+                <span>Since <%= new Date(tenant.createdAt).toLocaleDateString() %></span>
+              </div>
+              <% if (tenant.unitId) { %>
+                <div class="info-item">
+                  <i class="fas fa-home"></i>
+                  <span>Unit <%= tenant.unitId.unitNumber %></span>
+                </div>
+                <div class="info-item">
+                  <i class="fas fa-dollar-sign"></i>
+                  <span>$<%= tenant.unitId.monthlyRent %>/mo</span>
+                </div>
+              <% } else { %>
+                <div class="info-item no-unit">
+                  <i class="fas fa-exclamation-triangle"></i>
+                  <span>No Unit Assigned</span>
+                </div>
+              <% } %>
+            </div>
+
+            <% if (tenant.unitId) { %>
+              <div class="unit-info-box">
+                <div class="unit-details">
+                  <strong>Unit <%= tenant.unitId.unitNumber %></strong>
+                  <span><%= tenant.unitId.propertyType %> - <%= tenant.unitId.bedrooms %> bed, <%= tenant.unitId.bathrooms %> bath</span>
+                  <span><%= tenant.unitId.streetAddress %>, <%= tenant.unitId.city %>, <%= tenant.unitId.state %></span>
+                </div>
+                <div class="payment-status">
+                  <span class="badge <%= tenant.paymentStatus === 'current' ? 'badge-success' : 'badge-warning' %>">
+                    Payment <%= tenant.paymentStatus %>
+                  </span>
+                </div>
+              </div>
+            <% } %>
+
+            <% if (tenant.lastLogin) { %>
+              <div class="last-login">
+                <i class="fas fa-clock"></i>
+                Last login: <%= new Date(tenant.lastLogin).toLocaleString() %>
+              </div>
+            <% } %>
+          </div>
+
+          <div class="tenant-card-footer">
+            <button class="btn-icon" onclick="viewTenant('<%= tenant._id %>')" title="View Details">
+              <i class="fas fa-eye"></i>
+            </button>
+            <button class="btn-icon" onclick="editTenant('<%= tenant._id %>')" title="Edit">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn-icon" onclick="sendCredentials('<%= tenant._id %>')" title="Send Credentials">
+              <i class="fas fa-envelope"></i>
+            </button>
+            <% if (!tenant.unitId) { %>
+              <button class="btn btn-secondary btn-small" onclick="assignUnitToTenant('<%= tenant._id %>')">
+                Assign Unit
+              </button>
+            <% } else { %>
+              <button class="btn btn-secondary btn-small" onclick="viewUnit('<%= tenant.unitId._id %>')">
+                View Unit
+              </button>
+            <% } %>
+            <button class="btn-icon danger" onclick="deleteTenant('<%= tenant._id %>')" title="Delete">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+      <% }) %>
+    <% } else { %>
+      <div class="empty-state">
+        <i class="fas fa-users"></i>
+        <h3>No Tenants Found</h3>
+        <p>Start by adding your first tenant</p>
+        <button class="btn btn-primary" onclick="openAddTenantModal()">
+          <i class="fas fa-plus"></i> Add First Tenant
+        </button>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<!-- Add Tenant Modal -->
+<div id="addTenantModal" class="modal">
+  <div class="modal-content modal-large">
+    <div class="modal-header">
+      <h2>Add New Tenant</h2>
+      <button class="modal-close" onclick="closeAddTenantModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="addTenantForm">
+        <div class="form-section">
+          <h3>Personal Information</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="firstName">First Name *</label>
+              <input type="text" id="firstName" name="firstName" required>
+            </div>
+            <div class="form-group">
+              <label for="lastName">Last Name *</label>
+              <input type="text" id="lastName" name="lastName" required>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="email">Email Address *</label>
+              <input type="email" id="email" name="email" required>
+            </div>
+            <div class="form-group">
+              <label for="phone">Phone Number *</label>
+              <input type="tel" id="phone" name="phone" required data-format="phone">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Unit Assignment (Optional)</h3>
+          <div class="form-group">
+            <label for="unitId">Select Unit</label>
+            <select id="unitId" name="unitId">
+              <option value="">No unit assigned</option>
+              <% if (availableUnits && availableUnits.length > 0) { %>
+                <% availableUnits.forEach(unit => { %>
+                  <option value="<%= unit._id %>">
+                    Unit <%= unit.unitNumber %> - <%= unit.propertyType %> - <%= unit.bedrooms %> bed, <%= unit.bathrooms %> bath - $<%= unit.monthlyRent %>/mo
+                  </option>
+                <% }) %>
+              <% } %>
+            </select>
+            <small class="form-help">You can assign a unit later if needed</small>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Account Settings</h3>
+          <div class="form-group">
+            <label for="password">Temporary Password *</label>
+            <div class="password-input-group">
+              <input type="text" id="password" name="password" required>
+              <button type="button" class="btn btn-secondary" onclick="generatePassword()">
+                Generate Password
+              </button>
+            </div>
+            <small class="form-help">The tenant will be required to change this on first login</small>
+          </div>
+          
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" name="sendCredentials" id="sendCredentials" checked>
+              <span>Send login credentials to tenant via email</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeAddTenantModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">
+            <span class="btn-text">Create Tenant Account</span>
+            <span class="btn-loading" style="display: none;">
+              <span class="spinner"></span> Creating...
+            </span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Send Credentials Modal -->
+<div id="sendCredentialsModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Send Login Credentials</h2>
+      <button class="modal-close" onclick="closeSendCredentialsModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="credential-preview">
+        <p>Send login credentials to:</p>
+        <div class="tenant-info-card">
+          <h4 id="credentialTenantName"></h4>
+          <p id="credentialTenantEmail"></p>
+          <p id="credentialUnitNumber"></p>
+        </div>
+        
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle"></i>
+          The tenant will receive an email with login credentials
+        </div>
+        
+        <div class="form-group">
+          <label for="newPassword">New Temporary Password (optional)</label>
+          <input type="text" id="newPassword" placeholder="Leave blank to auto-generate">
+          <button type="button" class="btn btn-secondary mt-2" onclick="generateNewPassword()">
+            Generate New Password
+          </button>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeSendCredentialsModal()">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="confirmSendCredentials()">
+          Send Credentials
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Assign Unit Modal -->
+<div id="assignUnitModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Assign Unit to Tenant</h2>
+      <button class="modal-close" onclick="closeAssignUnitModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="assignUnitForm">
+        <input type="hidden" id="assignTenantId" name="tenantId">
+        
+        <div class="tenant-preview">
+          <h4 id="assignTenantName"></h4>
+          <p id="assignTenantEmail"></p>
+        </div>
+        
+        <div class="form-group">
+          <label for="assignUnitSelect">Select Available Unit *</label>
+          <select id="assignUnitSelect" name="unitId" required>
+            <option value="">Choose a unit...</option>
+            <% if (availableUnits && availableUnits.length > 0) { %>
+              <% availableUnits.forEach(unit => { %>
+                <option value="<%= unit._id %>">
+                  Unit <%= unit.unitNumber %> - <%= unit.propertyType %> - 
+                  <%= unit.bedrooms %> bed, <%= unit.bathrooms %> bath - 
+                  $<%= unit.monthlyRent %>/mo
+                </option>
+              <% }) %>
+            <% } %>
+          </select>
+        </div>
+        
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeAssignUnitModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Assign Unit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

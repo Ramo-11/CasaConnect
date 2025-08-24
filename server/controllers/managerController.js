@@ -118,8 +118,8 @@ exports.getDashboard = async (req, res) => {
         res.render("manager/dashboard", {
             title: "Manager Dashboard",
             layout: "layout",
-            additionalCSS: ['common.css', 'manager.css'],
-            additionalJS: ['common.js', 'manager.js'],
+            additionalCSS: ["common.css", "manager.css"],
+            additionalJS: ["common.js", "manager.js"],
             user: manager,
             totalUnits,
             occupiedUnits,
@@ -283,8 +283,8 @@ exports.viewTenant = async (req, res) => {
         res.render("manager/tenant-details", {
             title: `Tenant: ${tenant.firstName} ${tenant.lastName}`,
             layout: "layout",
-            additionalCSS: ['common.css', 'tenant-details.css'],
-            additionalJS: ['common.js', 'tenant-details.js'],
+            additionalCSS: ["common.css", "tenant-details.css"],
+            additionalJS: ["common.js", "tenant-details.js"],
             tenant,
             payments,
             serviceRequests,
@@ -311,13 +311,19 @@ exports.editTenant = async (req, res) => {
             });
         }
 
+        // Get all units (available ones and the current tenant's unit)
         const availableUnits = await Unit.find({
-            $or: [{ status: "available" }, { _id: tenant.unitId }],
+            $or: [
+                { status: "available" },
+                { _id: tenant.unitId?._id }
+            ]
         });
 
         res.render("manager/tenant-edit", {
-            title: `Edit Tenant: ${tenant.fullName}`,
+            title: `Edit Tenant: ${tenant.firstName} ${tenant.lastName}`,
             layout: "layout",
+            additionalCSS: ['common.css', 'tenant-edit.css'],
+            additionalJS: ['common.js', 'tenant-edit.js'],
             tenant,
             availableUnits,
         });
@@ -370,10 +376,10 @@ exports.updateTenant = async (req, res) => {
 exports.getUnits = async (req, res) => {
     try {
         // Get tenants without units for assignment
-        const availableTenants = await User.find({ 
-            role: 'tenant',
-            unitId: null 
-        }).select('firstName lastName email');
+        const availableTenants = await User.find({
+            role: "tenant",
+            unitId: null,
+        }).select("firstName lastName email");
 
         const units = await Unit.find()
             .populate("currentTenant", "firstName lastName email phone")
@@ -382,10 +388,11 @@ exports.getUnits = async (req, res) => {
         res.render("manager/units", {
             title: "Units Management",
             layout: "layout",
-            additionalCSS: ['common.css', 'units.css', 'manager.css'],
-            additionalJS: ['common.js', 'units.js', 'manager.js'],
+            additionalCSS: ["common.css", "units.css", "manager.css"],
+            additionalJS: ["units.js", "manager.js"],
+            googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
             units,
-            availableTenants
+            availableTenants,
         });
     } catch (error) {
         logger.error(`Get units error: ${error}`);
@@ -407,8 +414,12 @@ exports.getServiceRequests = async (req, res) => {
 
         res.render("manager/service-requests", {
             title: "Service Requests",
-            additionalCSS: ['common.css', 'service-requests.css', 'manager.css'],
-            additionalJS: ['common.js', 'service-requests.js', 'manager.js'],
+            additionalCSS: [
+                "common.css",
+                "service-requests.css",
+                "manager.css",
+            ],
+            additionalJS: ["common.js", "service-requests.js", "manager.js"],
             layout: "layout",
             requests,
         });
@@ -530,19 +541,27 @@ exports.createUnit = async (req, res) => {
             });
         }
 
+        // Clean up optional fields
+        if (!unitData.building || unitData.building === "") {
+            delete unitData.building;
+        }
+        if (!unitData.floor || unitData.floor === "") {
+            delete unitData.floor;
+        }
+
         const unit = new Unit(unitData);
-        if (unitData.status === 'occupied' && unitData.currentTenant) {
+        if (unitData.status === "occupied" && unitData.currentTenant) {
             unit.currentTenant = unitData.currentTenant;
             await unit.save();
-            
+
             // Update tenant with unit assignment
             await User.findByIdAndUpdate(unitData.currentTenant, {
-                unitId: unit._id
+                unitId: unit._id,
             });
         } else {
             await unit.save();
         }
-        
+
         res.json({
             success: true,
             message: "Unit created successfully",
@@ -624,6 +643,7 @@ exports.deleteUnit = async (req, res) => {
         // Check if unit is occupied
         const unit = await Unit.findById(unitId);
         if (!unit) {
+            logger.error("Error deleting unit: Unit not found");
             return res.status(404).json({
                 success: false,
                 message: "Unit not found",
@@ -631,6 +651,7 @@ exports.deleteUnit = async (req, res) => {
         }
 
         if (unit.status === "occupied" && unit.currentTenant) {
+            logger.error("Error deleting unit: Attempt to delete occupied unit");
             return res.status(400).json({
                 success: false,
                 message:
@@ -639,13 +660,14 @@ exports.deleteUnit = async (req, res) => {
         }
 
         await Unit.findByIdAndDelete(unitId);
+        logger.info(`Unit deleted successfully: ${unitId}`);
 
         res.json({
             success: true,
             message: "Unit deleted successfully",
         });
     } catch (error) {
-        console.error("Delete unit error:", error);
+        logger.error(`Error deleting unit: ${error}`);
         res.status(500).json({
             success: false,
             message: "Failed to delete unit",
@@ -861,6 +883,149 @@ exports.checkRequestUpdates = async (req, res) => {
         res.status(500).json({
             success: false,
             message: "Failed to check updates",
+        });
+    }
+};
+
+// Get Tenants List
+exports.getTenants = async (req, res) => {
+    try {
+        // Get all tenants with their units
+        const tenants = await User.find({ role: "tenant" })
+            .populate("unitId")
+            .sort("-createdAt");
+
+        // Get available units for assignment
+        const availableUnits = await Unit.find({ status: "available" });
+
+        // Check payment status for each tenant
+        const tenantsWithPaymentStatus = await Promise.all(
+            tenants.map(async (tenant) => {
+                const currentMonth = new Date().getMonth() + 1;
+                const currentYear = new Date().getFullYear();
+
+                const rentPaid = await Payment.findOne({
+                    tenant: tenant._id,
+                    type: "rent",
+                    month: currentMonth,
+                    year: currentYear,
+                    status: "completed",
+                });
+
+                return {
+                    ...tenant.toObject(),
+                    paymentStatus: rentPaid ? "current" : "due",
+                };
+            })
+        );
+
+        res.render("manager/tenants", {
+            title: "Tenants Management",
+            layout: "layout",
+            additionalCSS: ["common.css", "tenants.css"],
+            additionalJS: ["common.js", "tenants.js"],
+            tenants: tenantsWithPaymentStatus,
+            availableUnits,
+        });
+    } catch (error) {
+        logger.error(`Get tenants error: ${error}`);
+        res.status(500).render("error", {
+            title: "Error",
+            message: "Failed to load tenants",
+        });
+    }
+};
+
+// Assign Unit to Tenant (API)
+exports.assignUnitToTenant = async (req, res) => {
+    try {
+        const { tenantId, unitId } = req.body;
+
+        // Update tenant
+        await User.findByIdAndUpdate(tenantId, { unitId });
+
+        // Update unit
+        await Unit.findByIdAndUpdate(unitId, {
+            status: "occupied",
+            currentTenant: tenantId,
+            updatedAt: new Date(),
+        });
+
+        res.json({
+            success: true,
+            message: "Unit assigned successfully",
+        });
+    } catch (error) {
+        logger.error(`Assign unit to tenant error: ${error}`);
+        res.status(500).json({
+            success: false,
+            message: "Failed to assign unit",
+        });
+    }
+};
+
+// Assign Tenant to Unit (API) - reverse direction
+exports.assignTenantToUnit = async (req, res) => {
+    try {
+        const { unitId, tenantId } = req.body;
+
+        // Update tenant
+        await User.findByIdAndUpdate(tenantId, { unitId });
+
+        // Update unit
+        await Unit.findByIdAndUpdate(unitId, {
+            status: "occupied",
+            currentTenant: tenantId,
+            updatedAt: new Date(),
+        });
+
+        res.json({
+            success: true,
+            message: "Tenant assigned successfully",
+        });
+    } catch (error) {
+        logger.error(`Assign tenant to unit error: ${error}`);
+        res.status(500).json({
+            success: false,
+            message: "Failed to assign tenant",
+        });
+    }
+};
+
+// Delete Tenant (API)
+exports.deleteTenant = async (req, res) => {
+    try {
+        const { tenantId } = req.params;
+
+        const tenant = await User.findById(tenantId);
+        if (!tenant || tenant.role !== "tenant") {
+            return res.status(404).json({
+                success: false,
+                message: "Tenant not found",
+            });
+        }
+
+        // If tenant has a unit, update unit status
+        if (tenant.unitId) {
+            await Unit.findByIdAndUpdate(tenant.unitId, {
+                status: "available",
+                currentTenant: null,
+                updatedAt: new Date(),
+            });
+        }
+
+        // Delete tenant
+        await User.findByIdAndDelete(tenantId);
+
+        res.json({
+            success: true,
+            message: "Tenant deleted successfully",
+        });
+    } catch (error) {
+        logger.error(`Delete tenant error: ${error}`);
+        res.status(500).json({
+            success: false,
+            message: "Failed to delete tenant",
         });
     }
 };

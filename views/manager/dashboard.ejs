@@ -6,11 +6,6 @@
       <h1>Manager Dashboard</h1>
       <p>Welcome back, <%= user.firstName %></p>
     </div>
-    <div class="header-actions">
-      <button class="btn btn-primary" onclick="openAddTenantModal()">
-        <i class="icon-plus"></i> Add Tenant
-      </button>
-    </div>
   </div>
 
   <!-- Quick Stats -->
@@ -59,10 +54,7 @@
     <div class="card">
       <div class="card-header">
         <h3>Current Tenants</h3>
-        <div class="search-box">
-          <input type="text" id="tenantSearch" placeholder="Search tenants...">
-          <i class="icon-search"></i>
-        </div>
+        <a href="/manager/tenants" class="link-view-all">View All Tenants</a>
       </div>
       <div class="card-body">
         <div class="table-responsive">
@@ -179,149 +171,6 @@
             <p class="no-data">No recent service requests</p>
           <% } %>
         </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Add Tenant Modal -->
-<div id="addTenantModal" class="modal">
-  <div class="modal-content modal-large">
-    <div class="modal-header">
-      <h2>Add New Tenant</h2>
-      <button class="modal-close" onclick="closeAddTenantModal()">&times;</button>
-    </div>
-    <div class="modal-body">
-      <form id="addTenantForm">
-        <div class="form-section">
-          <h3>Personal Information</h3>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="firstName">First Name *</label>
-              <input type="text" id="firstName" name="firstName" required>
-            </div>
-            <div class="form-group">
-              <label for="lastName">Last Name *</label>
-              <input type="text" id="lastName" name="lastName" required>
-            </div>
-          </div>
-          
-          <div class="form-row">
-            <div class="form-group">
-              <label for="email">Email Address *</label>
-              <input type="email" id="email" name="email" required>
-            </div>
-            <div class="form-group">
-              <label for="phone">Phone Number *</label>
-              <input type="tel" id="phone" name="phone" required data-format="phone">
-            </div>
-          </div>
-        </div>
-
-        <div class="form-section">
-          <h3>Unit Assignment</h3>
-          <div class="form-group">
-            <label for="unitId">Select Unit *</label>
-            <select id="unitId" name="unitId" required>
-              <option value="">Choose a unit...</option>
-              <% if (availableUnitsList && availableUnitsList.length > 0) { %>
-                <% availableUnitsList.forEach(unit => { %>
-                  <option value="<%= unit.id %>">
-                    Unit <%= unit.unitNumber %> - <%= unit.bedrooms %> bed, <%= unit.bathrooms %> bath - $<%= unit.monthlyRent %>/mo
-                  </option>
-                <% }) %>
-              <% } %>
-            </select>
-          </div>
-          
-          <div class="form-row">
-            <div class="form-group">
-              <label for="leaseStart">Lease Start Date *</label>
-              <input type="date" id="leaseStart" name="leaseStart" required>
-            </div>
-            <div class="form-group">
-              <label for="leaseEnd">Lease End Date *</label>
-              <input type="date" id="leaseEnd" name="leaseEnd" required>
-            </div>
-          </div>
-        </div>
-
-        <div class="form-section">
-          <h3>Account Credentials</h3>
-          <div class="form-group">
-            <label for="password">Temporary Password *</label>
-            <div class="password-input-group">
-              <input type="text" id="password" name="password" required>
-              <button type="button" class="btn btn-secondary" onclick="generatePassword()">
-                Generate Password
-              </button>
-            </div>
-            <small class="form-help">The tenant will be required to change this on first login</small>
-          </div>
-          
-          <div class="form-group">
-            <label class="checkbox-label">
-              <input type="checkbox" name="sendCredentials" id="sendCredentials" checked>
-              <span>Send login credentials to tenant via email</span>
-            </label>
-          </div>
-        </div>
-
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" onclick="closeAddTenantModal()">Cancel</button>
-          <button type="submit" class="btn btn-primary">
-            <span class="btn-text">Create Tenant Account</span>
-            <span class="btn-loading" style="display: none;">
-              <span class="spinner"></span> Creating...
-            </span>
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-<!-- Send Credentials Modal -->
-<div id="sendCredentialsModal" class="modal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h2>Send Login Credentials</h2>
-      <button class="modal-close" onclick="closeSendCredentialsModal()">&times;</button>
-    </div>
-    <div class="modal-body">
-      <div class="credential-preview">
-        <p>Send login credentials to:</p>
-        <div class="tenant-info-card">
-          <h4 id="credentialTenantName"></h4>
-          <p id="credentialTenantEmail"></p>
-          <p id="credentialUnitNumber"></p>
-        </div>
-        
-        <div class="alert alert-info">
-          <i class="icon-info"></i>
-          The tenant will receive an email with:
-          <ul>
-            <li>Portal URL: <%= portalUrl %></li>
-            <li>Their email as username</li>
-            <li>A temporary password</li>
-            <li>Instructions to change password on first login</li>
-          </ul>
-        </div>
-        
-        <div class="form-group">
-          <label for="newPassword">New Temporary Password (optional)</label>
-          <input type="text" id="newPassword" placeholder="Leave blank to keep current">
-          <button type="button" class="btn btn-secondary mt-2" onclick="generateNewPassword()">
-            Generate New Password
-          </button>
-        </div>
-      </div>
-      
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" onclick="closeSendCredentialsModal()">Cancel</button>
-        <button type="button" class="btn btn-primary" onclick="confirmSendCredentials()">
-          Send Credentials
-        </button>
       </div>
     </div>
   </div>
