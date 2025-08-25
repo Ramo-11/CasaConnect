@@ -4,7 +4,7 @@
   <div class="manager-header">
     <div class="header-content">
       <h1>Manager Dashboard</h1>
-      <p>Welcome back, <%= user.firstName %></p>
+      <p>Welcome</p>
     </div>
   </div>
 
@@ -53,7 +53,7 @@
     <!-- Tenants List -->
     <div class="card">
       <div class="card-header">
-        <h3>Current Tenants</h3>
+        <h3>All Tenants</h3>
         <a href="/manager/tenants" class="link-view-all">View All Tenants</a>
       </div>
       <div class="card-body">
@@ -66,7 +66,7 @@
                 <th>Email</th>
                 <th>Phone</th>
                 <th>Status</th>
-                <th>Actions</th>
+                <th>Quick Actions</th>
               </tr>
             </thead>
             <tbody id="tenantsTableBody">
@@ -130,9 +130,6 @@
                   <span><%= unit.squareFeet %> sq ft</span>
                   <span class="unit-rent">$<%= unit.monthlyRent %>/mo</span>
                 </div>
-                <button class="btn btn-secondary btn-small" onclick="assignUnit('<%= unit.id %>')">
-                  Assign Tenant
-                </button>
               </div>
             <% }) %>
           <% } else { %>

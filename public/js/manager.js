@@ -35,20 +35,6 @@ function editTenant(tenantId) {
   window.location.href = `/manager/tenant/${tenantId}/edit`;
 }
 
-// Assign Unit
-function assignUnit(unitId) {
-  // Open add tenant modal with unit pre-selected
-  openAddTenantModal();
-  
-  // Wait for modal to open then select unit
-  setTimeout(() => {
-    const unitSelect = document.getElementById('unitId');
-    if (unitSelect) {
-      unitSelect.value = unitId;
-    }
-  }, 100);
-}
-
 // Auto-refresh dashboard data
 function autoRefreshDashboard() {
   setInterval(async () => {

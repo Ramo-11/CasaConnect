@@ -17,7 +17,9 @@ const formatDate = (date) => {
 // Get Tenant Dashboard
 exports.getDashboard = async (req, res) => {
   try {
-    // Get tenant info - in production, get from session
+    const Lease = require('../../models/Lease'); // Add this import at top of file
+    
+    // Get tenant info
     const tenantId = req.session?.userId || req.params.tenantId;
     const tenant = await User.findById(tenantId);
     
@@ -28,14 +30,24 @@ exports.getDashboard = async (req, res) => {
       });
     }
     
-    // Get unit info
-    const unit = await Unit.findById(tenant.unitId);
-    if (!unit) {
-      return res.status(404).render('error', { 
-        message: 'Unit not found',
-        title: 'Error' 
+    // Get active lease
+    const lease = await Lease.findOne({
+      $or: [
+        { tenant: tenantId },
+        { additionalTenants: tenantId }
+      ],
+      status: 'active'
+    }).populate('unit');
+    
+    if (!lease) {
+      return res.render('tenant/no-lease', {
+        title: 'No Active Lease',
+        user: tenant,
+        layout: 'layout'
       });
     }
+    
+    const unit = lease.unit;
     
     // Get payment status
     const paymentInfo = await calculatePaymentStatus(tenant);
@@ -128,7 +140,7 @@ exports.getDashboard = async (req, res) => {
       })),
       
       // Lease Info
-      leaseId: unit._id,
+      leaseId: lease._id,
       leaseStart: formatDate(unit.createdAt), // In production, use actual lease start
       leaseEnd: formatDate(new Date(new Date().setFullYear(new Date().getFullYear() + 1))), // Mock 1 year lease
       leaseRemaining: '6 months', // Calculate actual remaining time
@@ -376,6 +388,7 @@ const calculatePaymentStatus = async (tenant) => {
 
   const rentPaid = await Payment.findOne({
     tenant: tenant._id,
+    lease: lease._id,
     type: 'rent',
     month: currentMonth,
     year: currentYear,

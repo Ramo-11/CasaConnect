@@ -71,11 +71,6 @@ const unitSchema = new mongoose.Schema({
     enum: ['available', 'occupied', 'maintenance', 'reserved'],
     default: 'available'
   },
-  currentTenant: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    default: null
-  },
   amenities: [{
     type: String,
     trim: true

@@ -56,52 +56,71 @@
         </div>
       </div>
 
-      <!-- Unit Assignment Section -->
+      <!-- Lease Management Section -->
       <div class="card">
         <div class="card-header">
-          <h3>Unit Assignment</h3>
+          <h3>Lease Information</h3>
         </div>
         <div class="card-body">
-          <div class="form-group">
-            <label for="unitId">Assigned Unit</label>
-            <select id="unitId" name="unitId">
-              <option value="">No Unit Assigned</option>
-              <% if (availableUnits && availableUnits.length > 0) { %>
-                <% availableUnits.forEach(unit => { %>
-                  <option value="<%= unit._id %>" <%= tenant.unitId && tenant.unitId._id.toString() === unit._id.toString() ? 'selected' : '' %>>
-                    Unit <%= unit.unitNumber %> - 
-                    <%= unit.propertyType %> - 
-                    <%= unit.bedrooms %> bed, <%= unit.bathrooms %> bath - 
-                    $<%= unit.monthlyRent %>/mo
-                    <%= unit.status === 'occupied' && unit.currentTenant && unit.currentTenant.toString() !== tenant._id.toString() ? '(Currently Occupied)' : '' %>
-                  </option>
-                <% }) %>
-              <% } %>
-            </select>
-            <small class="form-help">Changing the unit will update both the tenant and unit records</small>
-          </div>
-          
-          <% if (tenant.unitId) { %>
-            <div class="current-unit-info">
-              <h4>Current Unit Details</h4>
+          <% if (activeLease) { %>
+            <!-- Existing Lease Info -->
+            <div class="current-lease-info">
+              <h4>Current Lease Details</h4>
               <div class="info-grid">
                 <div class="info-item">
-                  <label>Unit Number</label>
-                  <span><%= tenant.unitId.unitNumber %></span>
+                  <label>Unit</label>
+                  <span>Unit <%= activeLease.unit.unitNumber %></span>
                 </div>
                 <div class="info-item">
-                  <label>Property Type</label>
-                  <span><%= tenant.unitId.propertyType %></span>
+                  <label>Start Date</label>
+                  <span><%= new Date(activeLease.startDate).toLocaleDateString() %></span>
                 </div>
                 <div class="info-item">
-                  <label>Address</label>
-                  <span><%= tenant.unitId.streetAddress %>, <%= tenant.unitId.city %>, <%= tenant.unitId.state %> <%= tenant.unitId.zipCode %></span>
+                  <label>End Date</label>
+                  <span><%= new Date(activeLease.endDate).toLocaleDateString() %></span>
                 </div>
                 <div class="info-item">
                   <label>Monthly Rent</label>
-                  <span>$<%= tenant.unitId.monthlyRent %></span>
+                  <span>$<%= activeLease.monthlyRent %></span>
+                </div>
+                <div class="info-item">
+                  <label>Status</label>
+                  <span class="badge badge-<%= activeLease.status %>"><%= activeLease.status %></span>
+                </div>
+                <div class="info-item">
+                  <label>Days Remaining</label>
+                  <span><%= activeLease.daysRemaining %> days</span>
                 </div>
               </div>
+            </div>
+            
+            <!-- Lease Edit Fields -->
+            <div class="form-row">
+              <div class="form-group">
+                <label for="leaseEndDate">Lease End Date</label>
+                <input type="date" id="leaseEndDate" name="leaseEndDate" value="<%= activeLease.endDate.toISOString().split('T')[0] %>">
+              </div>
+              <div class="form-group">
+                <label for="leaseMonthlyRent">Monthly Rent</label>
+                <input type="number" id="leaseMonthlyRent" name="leaseMonthlyRent" value="<%= activeLease.monthlyRent %>" min="0" step="0.01">
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="leaseStatus">Lease Status</label>
+              <select id="leaseStatus" name="leaseStatus">
+                <option value="active" <%= activeLease.status === 'active' ? 'selected' : '' %>>Active</option>
+                <option value="terminated" <%= activeLease.status === 'terminated' ? 'selected' : '' %>>Terminated</option>
+              </select>
+            </div>
+            
+          <% } else { %>
+            <!-- No Active Lease -->
+            <div class="no-lease-message">
+              <p>This tenant has no active lease.</p>
+              <button type="button" class="btn btn-primary" onclick="window.location.href='/manager/lease/new?tenant=<%= tenant._id %>'">
+                Create New Lease
+              </button>
             </div>
           <% } %>
         </div>

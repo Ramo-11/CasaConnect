@@ -37,17 +37,17 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
-  unitId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Unit',
-    default: null // Only for tenants
-  },
   createdAt: {
     type: Date,
     default: Date.now
   },
   lastLogin: {
     type: Date,
+    default: null
+  },
+  notes: {
+    type: String,
+    trim: true,
     default: null
   }
 });

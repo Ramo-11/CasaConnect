@@ -1,4 +1,5 @@
 const User = require("../../models/User");
+const Lease = require('../../models/Lease');
 const Unit = require("../../models/Unit");
 const ServiceRequest = require("../../models/ServiceRequest");
 const Payment = require("../../models/Payment");
@@ -29,17 +30,18 @@ exports.getDashboard = async (req, res) => {
         // Get all units
         const units = await Unit.find();
         const totalUnits = units.length;
-        const occupiedUnits = units.filter(
-            (u) => u.status === "occupied"
-        ).length;
-        const availableUnits = units.filter(
-            (u) => u.status === "available"
-        ).length;
+        
+        // Get active leases to determine occupied units
+        const activeLeases = await Lease.find({ status: 'active' }).populate('unit');
+        const occupiedUnitIds = activeLeases.map(lease => lease.unit._id.toString());
+        
+        const occupiedUnits = occupiedUnitIds.length;
+        const availableUnits = totalUnits - occupiedUnits;
 
-        // Get available units list
+        // Get available units list (units without active leases)
         const availableUnitsList = units
-            .filter((u) => u.status === "available")
-            .map((u) => ({
+            .filter(u => !occupiedUnitIds.includes(u._id.toString()))
+            .map(u => ({
                 id: u._id,
                 unitNumber: u.unitNumber,
                 building: u.building,
@@ -54,45 +56,54 @@ exports.getDashboard = async (req, res) => {
             status: { $in: ["pending", "assigned", "in_progress"] },
         });
 
-        // Get tenants with their units
+        // Get tenants with their active leases
         const tenants = await User.find({ role: "tenant" })
-            .populate("unitId")
             .sort("-createdAt")
             .lean();
+
+        // Get all active leases in one query for efficiency
+        const tenantIds = tenants.map(t => t._id);
+        const tenantLeases = await Lease.find({
+            tenant: { $in: tenantIds },
+            status: 'active'
+        }).populate('unit');
+
+        // Create a map for quick lease lookup
+        const leaseMap = {};
+        tenantLeases.forEach(lease => {
+            leaseMap[lease.tenant.toString()] = lease;
+        });
 
         // Format tenant data
         const formattedTenants = await Promise.all(
             tenants.map(async (tenant) => {
+                const activeLease = leaseMap[tenant._id.toString()];
+                
                 // Check payment status
                 const currentMonth = new Date().getMonth() + 1;
                 const currentYear = new Date().getFullYear();
 
-                const rentPaid = await Payment.findOne({
-                    tenant: tenant._id,
-                    type: "rent",
-                    month: currentMonth,
-                    year: currentYear,
-                    status: "completed",
-                });
+                let rentPaid = false;
+                if (activeLease) {
+                    rentPaid = await Payment.findOne({
+                        tenant: tenant._id,
+                        lease: activeLease._id,
+                        type: "rent",
+                        month: currentMonth,
+                        year: currentYear,
+                        status: "completed",
+                    });
+                }
 
                 return {
                     id: tenant._id,
                     fullName: `${tenant.firstName} ${tenant.lastName}`,
                     email: tenant.email,
                     phone: tenant.phone,
-                    unitNumber: tenant.unitId
-                        ? tenant.unitId.unitNumber
-                        : "Unassigned",
-                    leaseEnd: tenant.unitId
-                        ? formatDate(
-                              new Date(
-                                  new Date().setFullYear(
-                                      new Date().getFullYear() + 1
-                                  )
-                              )
-                          )
-                        : "N/A",
-                    paymentStatus: rentPaid ? "current" : "due",
+                    unitNumber: activeLease?.unit?.unitNumber || "Unassigned",
+                    leaseEnd: activeLease ? formatDate(activeLease.endDate) : "N/A",
+                    paymentStatus: rentPaid ? "current" : (activeLease ? "due" : "no-lease"),
+                    hasActiveLease: !!activeLease
                 };
             })
         );
@@ -115,6 +126,30 @@ exports.getDashboard = async (req, res) => {
             date: formatDate(req.createdAt),
         }));
 
+        // Get upcoming lease expirations (next 60 days)
+        const sixtyDaysFromNow = new Date();
+        sixtyDaysFromNow.setDate(sixtyDaysFromNow.getDate() + 60);
+        
+        const expiringLeases = await Lease.find({
+            status: 'active',
+            endDate: { 
+                $gte: new Date(),
+                $lte: sixtyDaysFromNow 
+            }
+        })
+        .populate('tenant', 'firstName lastName')
+        .populate('unit', 'unitNumber')
+        .sort('endDate')
+        .limit(5);
+
+        const formattedExpiringLeases = expiringLeases.map(lease => ({
+            id: lease._id,
+            tenantName: `${lease.tenant.firstName} ${lease.tenant.lastName}`,
+            unitNumber: lease.unit.unitNumber,
+            endDate: formatDate(lease.endDate),
+            daysRemaining: lease.daysRemaining
+        }));
+
         res.render("manager/dashboard", {
             title: "Manager Dashboard",
             layout: "layout",
@@ -128,6 +163,7 @@ exports.getDashboard = async (req, res) => {
             tenants: formattedTenants,
             availableUnitsList,
             recentRequests: formattedRequests,
+            expiringLeases: formattedExpiringLeases, // New data
             portalUrl: process.env.PORTAL_URL || "http://localhost:3000",
         });
     } catch (error) {
@@ -171,19 +207,25 @@ exports.createTenant = async (req, res) => {
             phone,
             password, // Will be hashed by pre-save hook
             role: "tenant",
-            unitId,
+            unitId: unitId || null,
             isActive: true,
         });
 
         await tenant.save();
 
         // Update unit status
-        if (unitId) {
-            await Unit.findByIdAndUpdate(unitId, {
-                status: "occupied",
-                currentTenant: tenant._id,
-                updatedAt: new Date(),
+        if (unitId && leaseStart && leaseEnd) {
+            const unit = await Unit.findById(unitId);
+            const lease = new Lease({
+                tenant: tenant._id,
+                unit: unitId,
+                startDate: new Date(leaseStart),
+                endDate: new Date(leaseEnd),
+                monthlyRent: unit.monthlyRent,
+                securityDeposit: unit.monthlyRent, // or from req.body
+                status: 'active'
             });
+            await lease.save();
         }
 
         // Send credentials email if requested
@@ -265,10 +307,15 @@ exports.viewTenant = async (req, res) => {
         const tenant = await User.findById(tenantId).populate("unitId");
         if (!tenant || tenant.role !== "tenant") {
             return res.status(404).render("error", {
-                title: "Not Found",
+                title: "Tenant Not Found",
                 message: "Tenant not found",
             });
         }
+
+        const activeLease = await Lease.findOne({
+            tenant: tenantId,
+            status: 'active'
+        }).populate('unit');
 
         // Get payment history
         const payments = await Payment.find({ tenant: tenantId })
@@ -286,6 +333,7 @@ exports.viewTenant = async (req, res) => {
             additionalCSS: ["common.css", "tenant-details.css"],
             additionalJS: ["common.js", "tenant-details.js"],
             tenant,
+            activeLease,
             payments,
             serviceRequests,
         });
@@ -306,18 +354,21 @@ exports.editTenant = async (req, res) => {
         const tenant = await User.findById(tenantId).populate("unitId");
         if (!tenant || tenant.role !== "tenant") {
             return res.status(404).render("error", {
-                title: "Not Found",
+                title: "Tenant Not Found",
                 message: "Tenant not found",
             });
         }
 
         // Get all units (available ones and the current tenant's unit)
-        const availableUnits = await Unit.find({
-            $or: [
-                { status: "available" },
-                { _id: tenant.unitId?._id }
-            ]
-        });
+        const activeLease = await Lease.findOne({
+            tenant: tenantId,
+            status: 'active'
+        }).populate('unit');
+
+        const availableUnits = await Unit.find({ status: "available" });
+        if (activeLease && activeLease.unit) {
+            availableUnits.push(activeLease.unit);
+        }
 
         res.render("manager/tenant-edit", {
             title: `Edit Tenant: ${tenant.firstName} ${tenant.lastName}`,
