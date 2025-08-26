@@ -66,11 +66,6 @@ const unitSchema = new mongoose.Schema({
     required: true,
     min: 0
   },
-  status: {
-    type: String,
-    enum: ['available', 'occupied', 'maintenance', 'reserved'],
-    default: 'available'
-  },
   amenities: [{
     type: String,
     trim: true
@@ -90,6 +85,33 @@ unitSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
   next();
 });
+
+// Virtual for checking if unit is occupied
+unitSchema.virtual('isOccupied', {
+  get: async function() {
+    const Lease = require('./Lease');
+    const activeLease = await Lease.findOne({
+      unit: this._id,
+      status: 'active',
+      startDate: { $lte: new Date() },
+      endDate: { $gte: new Date() }
+    });
+    return !!activeLease;
+  }
+});
+
+// Method to get current tenant
+unitSchema.methods.getCurrentTenant = async function() {
+  const Lease = require('./Lease');
+  const activeLease = await Lease.findOne({
+    unit: this._id,
+    status: 'active',
+    startDate: { $lte: new Date() },
+    endDate: { $gte: new Date() }
+  }).populate('tenant');
+  
+  return activeLease ? activeLease.tenant : null;
+};
 
 // Virtual for full address
 unitSchema.virtual('fullAddress').get(function() {

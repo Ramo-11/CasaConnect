@@ -29,6 +29,11 @@ const leaseSchema = new mongoose.Schema({
     required: true,
     min: 0
   },
+  document: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Document',
+    default: null
+  },
   status: {
     type: String,
     enum: ['active', 'expired', 'terminated', 'pending'],

@@ -42,7 +42,8 @@
     "he": "^1.2.0",
     "disposable-email-domains": "^1.0.62",
     "jsonwebtoken": "^9.0.2",
-    "connect-flash": "^0.1.1" 
+    "connect-flash": "^0.1.1",
+    "@supabase/supabase-js": "^2.56.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"

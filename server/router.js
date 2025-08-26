@@ -13,6 +13,13 @@ const tenantManagement = require("./controllers/management/tenantManagement");
 const leaseManagement = require("./controllers/management/leaseManagement");
 const unitManagement = require("./controllers/management/unitManagement");
 const serviceRequestManagement = require("./controllers/management/serviceRequestManagement");
+const documentManagement = require("./controllers/management/documentManagement");
+
+const multer = require('multer');
+const upload = multer({ 
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 } // 10MB
+});
 
 // Pull the middlewares
 const { isAuthenticated, isManager, isTenant, attachUserToLocals } = authController;
@@ -60,9 +67,17 @@ route.post("/manager/tenant/:tenantId/update", tenantManagement.updateTenant);
 route.get("/manager/tenant/:tenantId", tenantManagement.viewTenant);
 route.get("/manager/tenant/:tenantId/edit", tenantManagement.editTenant);
 route.delete("/api/manager/tenant/:tenantId", tenantManagement.deleteTenant);
+route.post("/api/manager/tenant/reset-password", tenantManagement.resetPassword);
+route.put("/api/manager/tenant/:tenantId/suspend", tenantManagement.suspendAccount);
+route.get("/api/manager/tenant/:tenantId/export", tenantManagement.exportTenantData);
+
+// Document Management Routes
+route.post("/api/manager/documents", upload.single('file'), documentManagement.uploadDocument);
+route.get("/api/manager/documents", documentManagement.getDocuments);
+route.delete("/api/manager/documents/:documentId", documentManagement.deleteDocument);
 
 // Lease Management Routes
-route.post("/api/manager/lease", leaseManagement.createLease);
+route.post("/api/manager/lease/create", upload.single('document'), leaseManagement.createLease);
 route.put("/api/manager/lease/:leaseId", leaseManagement.updateLease);
 route.post("/api/manager/lease/:leaseId/terminate", leaseManagement.terminateLease);
 route.post("/api/manager/lease/:leaseId/renew", leaseManagement.renewLease);
@@ -73,6 +88,7 @@ route.post("/api/manager/unit/assign-tenant", leaseManagement.assignTenantToUnit
 
 // Units Management Routes
 route.get("/manager/units", unitManagement.getUnits);
+route.get("/api/manager/units/available", unitManagement.getAvailableUnits);
 route.post("/api/manager/units", unitManagement.createUnit);
 route.get("/api/manager/units/:unitId", unitManagement.getUnit);
 route.put("/api/manager/units/:unitId", unitManagement.updateUnit);

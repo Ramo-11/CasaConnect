@@ -1,103 +1,140 @@
-const Lease = require('../../../models/Lease');
-const Unit = require('../../../models/Unit');
-const User = require('../../../models/User');
-const Notification = require('../../../models/Notification');
-const { logger } = require('../../logger');
+const Lease = require("../../../models/Lease");
+const Unit = require("../../../models/Unit");
+const User = require("../../../models/User");
+const storageService = require("../../services/storageService");
+const Document = require("../../../models/Document");
+const Notification = require("../../../models/Notification");
+const { logger } = require("../../logger");
 
-// Create Lease (for assigning unit to tenant)
+// Create Lease with Document
 exports.createLease = async (req, res) => {
     try {
-        const { 
-            tenantId, 
-            unitId, 
-            startDate, 
-            endDate, 
-            monthlyRent, 
+        const {
+            tenantId,
+            unitId,
+            startDate,
+            endDate,
+            monthlyRent,
             securityDeposit,
             rentDueDay,
             lateFeeAmount,
             gracePeriodDays,
-            notes
         } = req.body;
-        
-        // Check for existing active lease for tenant
-        const existingTenantLease = await Lease.findOne({
-            tenant: tenantId,
-            status: 'active'
-        });
-        
-        if (existingTenantLease) {
+
+        const file = req.file;
+
+        if (!file) {
             return res.status(400).json({
                 success: false,
-                message: "Tenant already has an active lease"
+                message: "Lease document is required",
             });
         }
 
-        // Check for existing active lease for unit
-        const existingUnitLease = await Lease.findOne({
-            unit: unitId,
-            status: 'active'
+        // Check for existing active lease
+        const existingLease = await Lease.findOne({
+            $or: [
+                { tenant: tenantId, status: "active" },
+                { unit: unitId, status: "active" },
+            ],
         });
-        
-        if (existingUnitLease) {
+
+        if (existingLease) {
             return res.status(400).json({
                 success: false,
-                message: "Unit already has an active lease"
+                message: "Active lease already exists for this tenant or unit",
             });
         }
-        
+
         const unit = await Unit.findById(unitId);
         if (!unit) {
             return res.status(404).json({
                 success: false,
-                message: "Unit not found"
+                message: "Unit not found",
             });
         }
 
-        const tenant = await User.findById(tenantId);
-        if (!tenant || tenant.role !== 'tenant') {
-            return res.status(404).json({
-                success: false,
-                message: "Tenant not found"
-            });
-        }
-        
+        // Upload document first
+        const uploadResult = await storageService.uploadFile(file, "leases");
+
+        // Create document record
+        const document = new Document({
+            title: `Lease Agreement - Unit ${unit.unitNumber} - ${new Date(
+                startDate
+            ).toLocaleDateString()}`,
+            type: "lease",
+            fileName: uploadResult.fileName,
+            url: uploadResult.url,
+            size: uploadResult.size,
+            mimeType: uploadResult.mimeType,
+            uploadedBy: req.session.userId,
+            relatedTo: {
+                model: "Lease",
+                id: null, // Will update after lease creation
+            },
+        });
+
+        await document.save();
+
+        // Create lease
         const lease = new Lease({
             tenant: tenantId,
             unit: unitId,
-            startDate: new Date(startDate || Date.now()),
-            endDate: new Date(endDate || new Date().setFullYear(new Date().getFullYear() + 1)),
-            monthlyRent: monthlyRent || unit.monthlyRent,
-            securityDeposit: securityDeposit || unit.monthlyRent,
-            rentDueDay: rentDueDay || 1,
-            lateFeeAmount: lateFeeAmount || 50,
-            gracePeriodDays: gracePeriodDays || 5,
-            notes: notes || null,
-            status: 'active'
+            startDate: new Date(startDate),
+            endDate: new Date(endDate),
+            monthlyRent: parseFloat(monthlyRent),
+            securityDeposit: parseFloat(securityDeposit),
+            rentDueDay: parseInt(rentDueDay) || 1,
+            lateFeeAmount: parseFloat(lateFeeAmount) || 50,
+            gracePeriodDays: parseInt(gracePeriodDays) || 5,
+            document: document._id,
+            status: "active",
+            notes: req.body.notes || null,
         });
-        
+
         await lease.save();
+
+        // Update document with lease ID
+        document.relatedTo.id = lease._id;
+        await document.save();
+
+        // Also link document to tenant for easy access
+        const tenantDoc = new Document({
+            title: document.title,
+            type: "lease",
+            fileName: document.fileName,
+            url: document.url,
+            size: document.size,
+            mimeType: document.mimeType,
+            uploadedBy: req.session.userId,
+            relatedTo: {
+                model: "User",
+                id: tenantId,
+            },
+            sharedWith: [tenantId],
+        });
+        await tenantDoc.save();
 
         // Notify tenant
         await Notification.create({
             recipient: tenantId,
-            type: 'system',
-            title: 'Lease Created',
-            message: `Your lease for Unit ${unit.unitNumber} has been created`,
-            relatedModel: 'Lease',
-            relatedId: lease._id
+            type: "system",
+            title: "Lease Created",
+            message: `Your lease agreement for Unit ${unit.unitNumber} has been created and is now active`,
+            relatedModel: "Lease",
+            relatedId: lease._id,
+            priority: "high",
         });
-        
+
         res.json({
             success: true,
             message: "Lease created successfully",
-            leaseId: lease._id
+            data: lease,
         });
     } catch (error) {
-        logger.error(`Create lease error: ${error}`);
+        logger.error(`Create lease with document error: ${error}`);
         res.status(500).json({
             success: false,
-            message: "Failed to create lease"
+            message: `Failed to create lease: ${error.message}`,
         });
     }
 };
@@ -112,7 +149,7 @@ exports.updateLease = async (req, res) => {
         if (!lease) {
             return res.status(404).json({
                 success: false,
-                message: "Lease not found"
+                message: "Lease not found",
             });
         }
 
@@ -120,7 +157,7 @@ exports.updateLease = async (req, res) => {
         delete updates.tenant;
         delete updates.unit;
 
-        Object.keys(updates).forEach(key => {
+        Object.keys(updates).forEach((key) => {
             lease[key] = updates[key];
         });
 
@@ -128,13 +165,13 @@ exports.updateLease = async (req, res) => {
 
         res.json({
             success: true,
-            message: "Lease updated successfully"
+            message: "Lease updated successfully",
         });
     } catch (error) {
         logger.error(`Update lease error: ${error}`);
         res.status(500).json({
             success: false,
-            message: "Failed to update lease"
+            message: "Failed to update lease",
         });
     }
 };
@@ -145,38 +182,40 @@ exports.terminateLease = async (req, res) => {
         const { leaseId } = req.params;
         const { reason } = req.body;
 
-        const lease = await Lease.findById(leaseId).populate('tenant unit');
+        const lease = await Lease.findById(leaseId).populate("tenant unit");
         if (!lease) {
             return res.status(404).json({
                 success: false,
-                message: "Lease not found"
+                message: "Lease not found",
             });
         }
 
-        lease.status = 'terminated';
-        lease.notes = lease.notes ? `${lease.notes}\n\nTermination reason: ${reason}` : `Termination reason: ${reason}`;
+        lease.status = "terminated";
+        lease.notes = lease.notes
+            ? `${lease.notes}\n\nTermination reason: ${reason}`
+            : `Termination reason: ${reason}`;
         await lease.save();
 
         // Notify tenant
         await Notification.create({
             recipient: lease.tenant._id,
-            type: 'system',
-            title: 'Lease Terminated',
+            type: "system",
+            title: "Lease Terminated",
             message: `Your lease for Unit ${lease.unit.unitNumber} has been terminated`,
-            relatedModel: 'Lease',
+            relatedModel: "Lease",
             relatedId: lease._id,
-            priority: 'high'
+            priority: "high",
         });
 
         res.json({
             success: true,
-            message: "Lease terminated successfully"
+            message: "Lease terminated successfully",
         });
     } catch (error) {
         logger.error(`Terminate lease error: ${error}`);
         res.status(500).json({
             success: false,
-            message: "Failed to terminate lease"
+            message: "Failed to terminate lease",
         });
     }
 };
@@ -185,27 +224,27 @@ exports.terminateLease = async (req, res) => {
 exports.getLease = async (req, res) => {
     try {
         const { leaseId } = req.params;
-        
+
         const lease = await Lease.findById(leaseId)
-            .populate('tenant', 'firstName lastName email phone')
-            .populate('unit');
+            .populate("tenant", "firstName lastName email phone")
+            .populate("unit");
 
         if (!lease) {
             return res.status(404).json({
                 success: false,
-                message: "Lease not found"
+                message: "Lease not found",
             });
         }
 
         res.json({
             success: true,
-            data: lease
+            data: lease,
         });
     } catch (error) {
         logger.error(`Get lease error: ${error}`);
         res.status(500).json({
             success: false,
-            message: "Failed to get lease"
+            message: "Failed to get lease",
         });
     }
 };
@@ -214,26 +253,26 @@ exports.getLease = async (req, res) => {
 exports.getLeases = async (req, res) => {
     try {
         const { status, tenantId, unitId } = req.query;
-        
+
         const filter = {};
         if (status) filter.status = status;
         if (tenantId) filter.tenant = tenantId;
         if (unitId) filter.unit = unitId;
 
         const leases = await Lease.find(filter)
-            .populate('tenant', 'firstName lastName email')
-            .populate('unit', 'unitNumber')
-            .sort('-createdAt');
+            .populate("tenant", "firstName lastName email")
+            .populate("unit", "unitNumber")
+            .sort("-createdAt");
 
         res.json({
             success: true,
-            data: leases
+            data: leases,
         });
     } catch (error) {
         logger.error(`Get leases error: ${error}`);
         res.status(500).json({
             success: false,
-            message: "Failed to get leases"
+            message: "Failed to get leases",
         });
     }
 };
@@ -248,14 +287,14 @@ exports.renewLease = async (req, res) => {
         if (!currentLease) {
             return res.status(404).json({
                 success: false,
-                message: "Lease not found"
+                message: "Lease not found",
             });
         }
 
-        if (currentLease.status !== 'active') {
+        if (currentLease.status !== "active") {
             return res.status(400).json({
                 success: false,
-                message: "Can only renew active leases"
+                message: "Can only renew active leases",
             });
         }
 
@@ -271,7 +310,7 @@ exports.renewLease = async (req, res) => {
             lateFeeAmount: currentLease.lateFeeAmount,
             gracePeriodDays: currentLease.gracePeriodDays,
             notes: notes || `Renewal of lease ${currentLease._id}`,
-            status: 'pending'
+            status: "pending",
         });
 
         await renewalLease.save();
@@ -279,13 +318,13 @@ exports.renewLease = async (req, res) => {
         res.json({
             success: true,
             message: "Lease renewal created",
-            leaseId: renewalLease._id
+            leaseId: renewalLease._id,
         });
     } catch (error) {
         logger.error(`Renew lease error: ${error}`);
         res.status(500).json({
             success: false,
-            message: "Failed to renew lease"
+            message: "Failed to renew lease",
         });
     }
 };

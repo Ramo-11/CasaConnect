@@ -45,6 +45,19 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
+  requirePasswordChange: {
+    type: Boolean,
+    default: false
+},
+  suspendedAt: {
+      type: Date,
+      default: null
+  },
+  suspendedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null
+  },  
   notes: {
     type: String,
     trim: true,

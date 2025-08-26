@@ -60,6 +60,22 @@ exports.getUnits = async (req, res) => {
     }
 };
 
+exports.getAvailableUnits = async (req, res) => {
+    try {
+        const availableUnits = await Unit.find({ status: 'available' });
+        res.json({
+            success: true,
+            data: availableUnits,
+        });
+    } catch (error) {
+        logger.error(`Get available units error: ${error}`);
+        res.status(500).json({
+            success: false,
+            message: "Failed to get available units",
+        });
+    }
+};
+
 // Create Unit (API)
 exports.createUnit = async (req, res) => {
     try {

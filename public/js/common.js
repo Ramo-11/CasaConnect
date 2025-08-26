@@ -244,9 +244,12 @@ class APIClient {
     }
 
     static post(url, data) {
+        const isFormData = data instanceof FormData;
+
         return this.request(url, {
             method: "POST",
-            body: JSON.stringify(data),
+            body: isFormData ? data : JSON.stringify(data),
+            headers: isFormData ? {} : { "Content-Type": "application/json" },
         });
     }
 

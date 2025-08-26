@@ -200,7 +200,7 @@
                     <p>No active lease</p>
                     <button
                         class="btn btn-primary"
-                        onclick="createLease('<%= tenant._id %>')"
+                        onclick="openCreateLeaseModal('<%= tenant._id %>')"
                     >
                         Create Lease
                     </button>
@@ -366,6 +366,24 @@
             </div>
         </div>
 
+        <!-- Documents Card -->
+        <div class="card full-width">
+            <div class="card-header">
+                <h3>Documents</h3>
+                <button
+                    class="btn btn-primary btn-small"
+                    onclick="attachDocument('<%= tenant._id %>')"
+                >
+                    <i class="fas fa-upload"></i> Upload Document
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="documentsContainer" class="documents-list">
+                    <div class="loading-spinner">Loading documents...</div>
+                </div>
+            </div>
+        </div>
+
         <!-- Account Actions Card -->
         <div class="card full-width">
             <div class="card-header">
@@ -482,6 +500,159 @@
                     Send Credentials
                 </button>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Lease Modal -->
+<div id="createLeaseModal" class="modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h2>Create Lease Agreement</h2>
+            <button class="modal-close" onclick="closeCreateLeaseModal()">
+                &times;
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="createLeaseForm">
+                <input
+                    type="hidden"
+                    id="leaseTenantId"
+                    value="<%= tenant._id %>"
+                />
+
+                <div class="form-section">
+                    <h3>Lease Details</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="leaseUnit">Select Unit *</label>
+                            <select id="leaseUnit" name="unitId" required>
+                                <option value="">
+                                    Choose available unit...
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="leaseStartDate">Start Date *</label>
+                            <input
+                                type="date"
+                                id="leaseStartDate"
+                                name="startDate"
+                                required
+                                value="<%= new Date().toISOString().split('T')[0] %>"
+                            />
+                        </div>
+                        <div class="form-group">
+                            <label for="leaseEndDate">End Date *</label>
+                            <input
+                                type="date"
+                                id="leaseEndDate"
+                                name="endDate"
+                                required
+                                value="<%= new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0] %>"
+                            />
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="monthlyRent">Monthly Rent ($) *</label>
+                            <input
+                                type="number"
+                                id="monthlyRent"
+                                name="monthlyRent"
+                                required
+                                min="0"
+                                step="0.01"
+                            />
+                        </div>
+                        <div class="form-group">
+                            <label for="securityDeposit"
+                                >Security Deposit ($) *</label
+                            >
+                            <input
+                                type="number"
+                                id="securityDeposit"
+                                name="securityDeposit"
+                                required
+                                min="0"
+                                step="0.01"
+                            />
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="rentDueDay"
+                                >Rent Due Day (1-28) *</label
+                            >
+                            <input
+                                type="number"
+                                id="rentDueDay"
+                                name="rentDueDay"
+                                required
+                                min="1"
+                                max="28"
+                                value="1"
+                            />
+                        </div>
+                        <div class="form-group">
+                            <label for="lateFeeAmount"
+                                >Late Fee Amount ($)</label
+                            >
+                            <input
+                                type="number"
+                                id="lateFeeAmount"
+                                name="lateFeeAmount"
+                                min="0"
+                                step="0.01"
+                                value="50"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Lease Document</h3>
+                    <div class="form-group">
+                        <label for="leaseDocument">Upload Lease PDF *</label>
+                        <input
+                            type="file"
+                            id="leaseDocument"
+                            name="document"
+                            accept="application/pdf"
+                            required
+                        />
+                        <small class="form-help"
+                            >Please upload the signed lease agreement as a PDF
+                            file</small
+                        >
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        onclick="closeCreateLeaseModal()"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="button"
+                        class="btn btn-primary"
+                        onclick="createLease('<%= tenant._id %>')"
+                    >
+                        <span class="btn-text">Create Lease</span>
+                        <span class="btn-loading" style="display: none">
+                            <span class="spinner"></span> Creating...
+                        </span>
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

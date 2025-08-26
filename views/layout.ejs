@@ -71,8 +71,8 @@
         <!-- JavaScript Files -->
         <script src="/js/common.js"></script>
         <% if (typeof additionalJS !== 'undefined') { %> <%
-        additionalJS.forEach(function(js) { %>
-        <script src="/js/<%= js %>"></script>
+            additionalJS.forEach(function(js) { %>
+            <script src="/js/<%= js %>"></script>
         <% }); %> <% } %>
     </body>
 </html>

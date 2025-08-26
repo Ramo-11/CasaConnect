@@ -1,12 +1,15 @@
 const User = require("../../../models/User");
 const Lease = require('../../../models/Lease');
 const Unit = require("../../../models/Unit");
+const Document = require('../../../models/Document');
 const Payment = require("../../../models/Payment");
 const ServiceRequest = require("../../../models/ServiceRequest");
 const Notification = require("../../../models/Notification");
 const bcrypt = require("bcryptjs");
 const nodemailer = require("nodemailer");
 const { logger } = require("../../logger");
+const storageService = require('../../services/storageService');
+const crypto = require('crypto');
 
 // Helper Functions
 function formatDate(date) {
@@ -189,7 +192,7 @@ exports.viewTenant = async (req, res) => {
         const activeLease = await Lease.findOne({
             tenant: tenantId,
             status: 'active'
-        }).populate('unit');
+        }).populate('unit');;
 
         // Get payment history
         const payments = await Payment.find({ tenant: tenantId })
@@ -204,8 +207,8 @@ exports.viewTenant = async (req, res) => {
         res.render("manager/tenant-details", {
             title: `Tenant: ${tenant.firstName} ${tenant.lastName}`,
             layout: "layout",
-            additionalCSS: ["common.css", "tenant-details.css"],
-            additionalJS: ["common.js", "tenant-details.js"],
+            additionalCSS: ["tenant-details.css"],
+            additionalJS: ["tenant-details.js"],
             tenant,
             activeLease,
             payments,
@@ -399,6 +402,109 @@ exports.deleteTenant = async (req, res) => {
         res.status(500).json({
             success: false,
             message: "Failed to delete tenant",
+        });
+    }
+};
+
+// Reset Password
+exports.resetPassword = async (req, res) => {
+    try {
+        const { tenantId } = req.body;
+        const tenant = await User.findById(tenantId);
+        
+        if (!tenant || tenant.role !== 'tenant') {
+            return res.status(404).json({
+                success: false,
+                message: 'Tenant not found'
+            });
+        }
+
+        const tempPassword = generateTempPassword();
+        const salt = await bcrypt.genSalt(10);
+        tenant.password = await bcrypt.hash(tempPassword, salt);
+        tenant.requirePasswordChange = true; // Add this field to User model
+        await tenant.save();
+
+        await sendCredentialsEmail(tenant, tempPassword);
+
+        res.json({
+            success: true,
+            message: 'Password reset successfully'
+        });
+    } catch (error) {
+        logger.error(`Reset password error: ${error}`);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to reset password'
+        });
+    }
+};
+
+// Suspend Account
+exports.suspendAccount = async (req, res) => {
+    try {
+        const { tenantId } = req.params;
+        const tenant = await User.findById(tenantId);
+        
+        if (!tenant || tenant.role !== 'tenant') {
+            return res.status(404).json({
+                success: false,
+                message: 'Tenant not found'
+            });
+        }
+
+        tenant.isActive = false;
+        tenant.suspendedAt = new Date();
+        tenant.suspendedBy = req.session.userId;
+        await tenant.save();
+
+        res.json({
+            success: true,
+            message: 'Account suspended successfully'
+        });
+    } catch (error) {
+        logger.error(`Suspend account error: ${error}`);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to suspend account'
+        });
+    }
+};
+
+// Export Tenant Data
+exports.exportTenantData = async (req, res) => {
+    try {
+        const { tenantId } = req.params;
+        
+        const tenant = await User.findById(tenantId).select('-password');
+        const lease = await Lease.findOne({ tenant: tenantId, status: 'active' }).populate('unit');
+        const payments = await Payment.find({ tenant: tenantId }).sort('-createdAt');
+        const serviceRequests = await ServiceRequest.find({ tenant: tenantId }).sort('-createdAt');
+        const documents = await Document.find({ 'relatedTo.id': tenantId });
+
+        const exportData = {
+            tenant: tenant.toObject(),
+            activeLease: lease ? lease.toObject() : null,
+            payments: payments.map(p => p.toObject()),
+            serviceRequests: serviceRequests.map(sr => sr.toObject()),
+            documents: documents.map(d => ({
+                title: d.title,
+                type: d.type,
+                createdAt: d.createdAt
+            })),
+            exportedAt: new Date(),
+            exportedBy: req.session.userId
+        };
+
+        res.json({
+            success: true,
+            data: exportData
+        });
+    } catch (error) {
+        logger.error(`Export tenant data error: ${error}`);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to export tenant data'
         });
     }
 };
