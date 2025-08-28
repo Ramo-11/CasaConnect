@@ -17,7 +17,7 @@ const documentSchema = new mongoose.Schema({
   },
   url: {
     type: String,
-    required: true
+    default: null
   },
   size: {
     type: Number,
@@ -30,7 +30,7 @@ const documentSchema = new mongoose.Schema({
   relatedTo: {
     model: {
       type: String,
-      enum: ['User', 'Unit', 'Lease', null],
+      enum: ['User', 'Unit', 'Lease'],
       default: null
     },
     id: {

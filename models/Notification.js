@@ -33,7 +33,7 @@ const notificationSchema = new mongoose.Schema({
   },
   relatedModel: {
     type: String,
-    enum: ['ServiceRequest', 'Payment', 'Unit', null],
+    enum: ['ServiceRequest', 'Payment', 'Unit', 'User', 'Lease'],
     default: null
   },
   relatedId: {

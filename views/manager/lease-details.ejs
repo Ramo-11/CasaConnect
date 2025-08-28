@@ -1,0 +1,297 @@
+<div id="leaseData" data-lease-id="<%= lease._id %>" style="display: none;"></div>
+
+<!-- Lease Details Page -->
+<div class="lease-details-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <h1>Lease Agreement Details</h1>
+            <p>Unit <%= lease.unit.unitNumber %> - <%= lease.tenant.firstName %> <%= lease.tenant.lastName %></p>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-secondary" onclick="window.location.href='/manager/dashboard'">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </button>
+            <% if (lease.status === 'active') { %>
+            <button class="btn btn-primary" onclick="renewLease('<%= lease._id %>')">
+                <i class="fas fa-sync"></i> Renew Lease
+            </button>
+            <% } %>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="details-grid">
+        <!-- Lease Status Card -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Lease Status</h3>
+                <span class="badge badge-<%= lease.status %>"><%= lease.status %></span>
+            </div>
+            <div class="card-body">
+                <div class="lease-progress">
+                    <div class="progress-info">
+                        <span>Lease Progress</span>
+                        <span><%= Math.round((new Date() - new Date(lease.startDate)) / (new Date(lease.endDate) - new Date(lease.startDate)) * 100) %>%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: <%= Math.min(100, Math.max(0, Math.round((new Date() - new Date(lease.startDate)) / (new Date(lease.endDate) - new Date(lease.startDate)) * 100))) %>%;"> </div>
+                    </div>
+                </div>
+                
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>Start Date</label>
+                        <span><%= new Date(lease.startDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) %></span>
+                    </div>
+                    <div class="info-item">
+                        <label>End Date</label>
+                        <span><%= new Date(lease.endDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) %></span>
+                    </div>
+                    <div class="info-item">
+                        <label>Term Length</label>
+                        <span><%= lease.termMonths %> months</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Days Remaining</label>
+                        <span class="<%= lease.daysRemaining < 60 ? 'text-warning' : '' %>">
+                            <%= lease.daysRemaining %> days
+                            <% if (lease.daysRemaining < 60) { %>
+                                <i class="fas fa-exclamation-triangle"></i>
+                            <% } %>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Financial Details Card -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Financial Details</h3>
+            </div>
+            <div class="card-body">
+                <div class="financial-summary">
+                    <div class="amount-box">
+                        <label>Monthly Rent</label>
+                        <span class="amount-value">$<%= lease.monthlyRent.toFixed(2) %></span>
+                    </div>
+                    <div class="amount-box">
+                        <label>Security Deposit</label>
+                        <span class="amount-value">$<%= lease.securityDeposit.toFixed(2) %></span>
+                    </div>
+                </div>
+                
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>Rent Due Day</label>
+                        <span>Day <%= lease.rentDueDay %> of each month</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Late Fee Amount</label>
+                        <span>$<%= lease.lateFeeAmount %> per day</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Grace Period</label>
+                        <span><%= lease.gracePeriodDays %> days</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Total Contract Value</label>
+                        <span>$<%= (lease.monthlyRent * lease.termMonths).toFixed(2) %></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tenant Information Card -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Tenant Information</h3>
+                <button class="btn-link" onclick="viewTenant('<%= lease.tenant._id %>')">
+                    View Full Profile <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="tenant-summary">
+                    <div class="tenant-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="tenant-details">
+                        <h4><%= lease.tenant.firstName %> <%= lease.tenant.lastName %></h4>
+                        <p><a href="mailto:<%= lease.tenant.email %>"><%= lease.tenant.email %></a></p>
+                        <p><a href="tel:<%= lease.tenant.phone %>"><%= lease.tenant.phone %></a></p>
+                    </div>
+                </div>
+                
+                <% if (lease.additionalTenants && lease.additionalTenants.length > 0) { %>
+                <div class="additional-tenants">
+                    <label>Additional Tenants</label>
+                    <% lease.additionalTenants.forEach(tenant => { %>
+                        <div class="additional-tenant-item">
+                            <i class="fas fa-user-plus"></i>
+                            <span><%= tenant.firstName %> <%= tenant.lastName %></span>
+                        </div>
+                    <% }) %>
+                </div>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- Unit Information Card -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Unit Information</h3>
+                <button class="btn-link" onclick="viewUnit('<%= lease.unit._id %>')">
+                    View Unit Details <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="unit-summary">
+                    <h4>Unit <%= lease.unit.unitNumber %></h4>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>Property Type</label>
+                            <span><%= lease.unit.propertyType %></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Bedrooms</label>
+                            <span><%= lease.unit.bedrooms %></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Bathrooms</label>
+                            <span><%= lease.unit.bathrooms %></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Square Feet</label>
+                            <span><%= lease.unit.squareFeet %> sq ft</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Address</label>
+                            <span><%= lease.unit.fullAddress %></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lease Document Card -->
+        <div class="card full-width">
+            <div class="card-header">
+                <h3>Lease Document</h3>
+                <% if (!lease.document) { %>
+                <button class="btn btn-primary btn-small" onclick="uploadLeaseDocument('<%= lease._id %>')">
+                    <i class="fas fa-upload"></i> Upload Document
+                </button>
+                <% } %>
+            </div>
+            <div class="card-body">
+                <% if (lease.document) { %>
+                <div class="document-viewer">
+                    <div class="document-item">
+                        <div class="document-icon">
+                            <i class="fas fa-file-contract"></i>
+                        </div>
+                        <div class="document-info">
+                            <h5>Signed Lease Agreement</h5>
+                            <span class="document-meta">
+                                Uploaded <%= new Date(lease.createdAt).toLocaleDateString() %>
+                            </span>
+                        </div>
+                        <div class="document-actions">
+                            <button class="btn-icon" onclick="viewDocument('<%= lease.document._id %>')" title="View">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn-icon" onclick="downloadDocument('<%= JSON.stringify(lease.document) %>')" title="Download">
+                                <i class="fas fa-download"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <% } else { %>
+                <div class="empty-state-small">
+                    <i class="fas fa-file-upload"></i>
+                    <p>No lease document uploaded</p>
+                </div>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- Notes Section -->
+        <% if (lease.notes) { %>
+        <div class="card full-width">
+            <div class="card-header">
+                <h3>Lease Notes</h3>
+            </div>
+            <div class="card-body">
+                <div class="notes-content">
+                    <%= lease.notes %>
+                </div>
+            </div>
+        </div>
+        <% } %>
+
+        <!-- Actions Card -->
+        <div class="card full-width">
+            <div class="card-header">
+                <h3>Lease Actions</h3>
+            </div>
+            <div class="card-body">
+                <div class="action-grid">
+                    <button class="action-button" onclick="editLease('<%= lease._id %>')">
+                        <i class="fas fa-edit"></i>
+                        <span>Edit Lease Terms</span>
+                    </button>
+                    <button class="action-button" onclick="printLease('<%= lease._id %>')">
+                        <i class="fas fa-print"></i>
+                        <span>Print Lease</span>
+                    </button>
+                    <button class="action-button" onclick="emailLease('<%= lease._id %>')">
+                        <i class="fas fa-envelope"></i>
+                        <span>Email to Tenant</span>
+                    </button>
+                    <% if (lease.status === 'active' && lease.daysRemaining < 90) { %>
+                    <button class="action-button warning" onclick="renewLease('<%= lease._id %>')">
+                        <i class="fas fa-sync"></i>
+                        <span>Renew Lease</span>
+                    </button>
+                    <% } %>
+                    <% if (lease.status === 'active') { %>
+                    <button class="action-button danger" onclick="terminateLease('<%= lease._id %>')">
+                        <i class="fas fa-times-circle"></i>
+                        <span>Terminate Lease</span>
+                    </button>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Terminate Lease Modal -->
+<div id="terminateModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Terminate Lease</h2>
+            <button class="modal-close" onclick="closeTerminateModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>Warning:</strong> Terminating this lease will end the rental agreement immediately.
+            </div>
+            
+            <form id="terminateForm">
+                <div class="form-group">
+                    <label for="terminationReason">Reason for Termination *</label>
+                    <textarea id="terminationReason" name="reason" rows="4" required 
+                              placeholder="Please provide a reason for terminating this lease..."></textarea>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeTerminateModal()">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Terminate Lease</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

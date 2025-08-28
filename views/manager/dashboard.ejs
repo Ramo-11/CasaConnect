@@ -77,6 +77,9 @@
                       <div class="tenant-name">
                         <span class="name"><%= tenant.fullName %></span>
                         <span class="lease-info">Lease ends: <%= tenant.leaseEnd %></span>
+                        <a href="/manager/lease/<%= tenant.leaseId %>" class="lease-link">
+                            View Lease Details
+                        </a>
                       </div>
                     </td>
                     <td><span class="unit-badge"><%= tenant.unitNumber %></span></td>

@@ -351,8 +351,8 @@ exports.getTenants = async (req, res) => {
         res.render("manager/tenants", {
             title: "Tenants Management",
             layout: "layout",
-            additionalCSS: ["common.css", "tenants.css"],
-            additionalJS: ["common.js", "tenants.js"],
+            additionalCSS: ["tenants.css"],
+            additionalJS: ["tenants.js"],
             tenants: tenantsWithFullInfo,
             availableUnits,
         });

@@ -23,7 +23,6 @@ exports.uploadDocument = async (req, res) => {
             title: title || file.originalname,
             type: type || 'other',
             fileName: uploadResult.fileName,
-            url: uploadResult.url,
             size: uploadResult.size,
             mimeType: uploadResult.mimeType,
             relatedTo: {
@@ -32,6 +31,21 @@ exports.uploadDocument = async (req, res) => {
             },
             uploadedBy: req.session.userId
         });
+
+        // // Save document record
+        // const document = new Document({
+        //     title: title || file.originalname,
+        //     type: type || 'other',
+        //     fileName: uploadResult.fileName,
+        //     url: uploadResult.url,
+        //     size: uploadResult.size,
+        //     mimeType: uploadResult.mimeType,
+        //     relatedTo: {
+        //         model: relatedModel || null,
+        //         id: relatedId || null
+        //     },
+        //     uploadedBy: req.session.userId
+        // });
 
         await document.save();
 
@@ -103,6 +117,57 @@ exports.deleteDocument = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Failed to delete document'
+        });
+    }
+};
+
+exports.viewDocument = async (req, res) => {
+  try {
+    const { documentId } = req.params;
+    const document = await Document.findById(documentId);
+    if (!document) {
+      logger.error(`View document error: Document with id ${documentId} not found`);
+      return res.status(404).json({
+        success: false,
+        message: 'Document not found'
+      });
+    }
+
+    const signedUrl = await storageService.getSignedUrl(document.fileName);
+    res.redirect(signedUrl);
+  } catch (error) {
+    logger.error(`View document error: ${error}`);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to view document'
+    });
+  }
+};
+
+// Download Document (redirect with download header)
+exports.downloadDocument = async (req, res) => {
+    try {
+        const { documentId } = req.params;
+        const document = await Document.findById(documentId);
+        
+        if (!document) {
+            return res.status(404).json({
+                success: false,
+                message: 'Document not found'
+            });
+        }
+        
+        // Set download headers and redirect
+        res.set({
+            'Content-Disposition': `attachment; filename="${document.fileName}"`,
+            'Content-Type': document.mimeType
+        });
+        res.redirect(document.url);
+    } catch (error) {
+        logger.error(`Download document error: ${error}`);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to download document'
         });
     }
 };

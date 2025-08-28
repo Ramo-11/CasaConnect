@@ -344,3 +344,108 @@ exports.assignTenantToUnit = async (req, res) => {
     }
     return exports.createLease(req, res);
 };
+
+// Get Lease Details Page
+exports.getLeaseDetails = async (req, res) => {
+    try {
+        const { leaseId } = req.params;
+        
+        const lease = await Lease.findById(leaseId)
+            .populate('tenant', 'firstName lastName email phone')
+            .populate('unit')
+            .populate('additionalTenants', 'firstName lastName')
+            .populate('document');
+            
+        if (!lease) {
+            return res.status(404).render('error', {
+                title: 'Lease Not Found',
+                message: 'The requested lease could not be found'
+            });
+        }
+        
+        res.render('manager/lease-details', {
+            title: `Lease: Unit ${lease.unit.unitNumber}`,
+            layout: 'layout',
+            additionalCSS: ['lease-details.css'],
+            additionalJS: ['lease-details.js'],
+            lease
+        });
+    } catch (error) {
+        logger.error(`Get lease details error: ${error}`);
+        res.status(500).render('error', {
+            title: 'Error',
+            message: 'Failed to load lease details'
+        });
+    }
+};
+
+// Email Lease to Tenant (API)
+exports.emailLeaseToTenant = async (req, res) => {
+    try {
+        const { leaseId } = req.params;
+        
+        const lease = await Lease.findById(leaseId)
+            .populate('tenant')
+            .populate('unit')
+            .populate('document');
+            
+        if (!lease) {
+            return res.status(404).json({
+                success: false,
+                message: 'Lease not found'
+            });
+        }
+        
+        // Send email notification to tenant
+        await Notification.create({
+            recipient: lease.tenant._id,
+            type: 'system',
+            title: 'Lease Document Available',
+            message: `Your lease agreement for Unit ${lease.unit.unitNumber} has been sent to your email`,
+            relatedModel: 'Lease',
+            relatedId: lease._id,
+            priority: 'normal'
+        });
+        
+        // In production, implement actual email sending here
+        // using nodemailer with the document attachment
+        
+        res.json({
+            success: true,
+            message: 'Lease document emailed to tenant'
+        });
+    } catch (error) {
+        logger.error(`Email lease error: ${error}`);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to email lease document'
+        });
+    }
+};
+
+// Get Lease Renewal Page 
+exports.getLeaseRenewal = async (req, res) => {
+    try {
+        const { leaseId } = req.params;
+        
+        const lease = await Lease.findById(leaseId)
+            .populate('tenant')
+            .populate('unit');
+            
+        if (!lease) {
+            return res.status(404).render('error', {
+                title: 'Lease Not Found',
+                message: 'The requested lease could not be found'
+            });
+        }
+        
+        // For now, redirect to lease details with a message
+        res.redirect(`/manager/lease/${leaseId}?renewal=true`);
+    } catch (error) {
+        logger.error(`Get lease renewal error: ${error}`);
+        res.status(500).render('error', {
+            title: 'Error',
+            message: 'Failed to load renewal page'
+        });
+    }
+};

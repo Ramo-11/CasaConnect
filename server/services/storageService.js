@@ -6,10 +6,11 @@ const supabase = createClient(
   process.env.SUPABASE_ANON_KEY
 );
 
+// Don't call getPublicUrl here
 exports.uploadFile = async (file, folder = 'documents') => {
   try {
     const fileName = `${folder}/${Date.now()}-${file.originalname}`;
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from('casaconnect')
       .upload(fileName, file.buffer, {
         contentType: file.mimetype,
@@ -18,13 +19,10 @@ exports.uploadFile = async (file, folder = 'documents') => {
 
     if (error) throw error;
 
-    const { data: { publicUrl } } = supabase.storage
-      .from('casaconnect')
-      .getPublicUrl(fileName);
-
+    logger.debug(`Uploaded file name: ${fileName}`);
+    
     return {
       fileName,
-      url: publicUrl,
       size: file.size,
       mimeType: file.mimetype
     };
@@ -33,6 +31,35 @@ exports.uploadFile = async (file, folder = 'documents') => {
     throw error;
   }
 };
+
+
+// exports.uploadFile = async (file, folder = 'documents') => {
+//   try {
+//     const fileName = `${folder}/${Date.now()}-${file.originalname}`;
+//     const { data, error } = await supabase.storage
+//       .from('casaconnect')
+//       .upload(fileName, file.buffer, {
+//         contentType: file.mimetype,
+//         cacheControl: '3600'
+//       });
+
+//     if (error) throw error;
+
+//     const { data: signedUrl } = await supabase.storage
+//       .from('casaconnect')
+//       .createSignedUrl(fileName, 60 * 60); // 1 hour
+
+//     return {
+//       fileName,
+//       url: signedUrl,
+//       size: file.size,
+//       mimeType: file.mimetype
+//     };
+//   } catch (error) {
+//     logger.error(`File upload error: ${error}`);
+//     throw error;
+//   }
+// };
 
 exports.deleteFile = async (fileName) => {
   try {
@@ -50,6 +77,7 @@ exports.deleteFile = async (fileName) => {
 
 exports.getSignedUrl = async (fileName, expiresIn = 3600) => {
   try {
+    logger.debug(`Generating signed URL for file: ${fileName}`);
     const { data, error } = await supabase.storage
       .from('casaconnect')
       .createSignedUrl(fileName, expiresIn);

@@ -75,6 +75,8 @@ route.get("/api/manager/tenant/:tenantId/export", tenantManagement.exportTenantD
 route.post("/api/manager/documents", upload.single('file'), documentManagement.uploadDocument);
 route.get("/api/manager/documents", documentManagement.getDocuments);
 route.delete("/api/manager/documents/:documentId", documentManagement.deleteDocument);
+route.get("/api/manager/documents/:documentId/view", documentManagement.viewDocument);
+route.get("/api/manager/documents/:documentId/download", documentManagement.downloadDocument);
 
 // Lease Management Routes
 route.post("/api/manager/lease/create", upload.single('document'), leaseManagement.createLease);
@@ -85,6 +87,9 @@ route.get("/api/manager/lease/:leaseId", leaseManagement.getLease);
 route.get("/api/manager/leases", leaseManagement.getLeases);
 route.post("/api/manager/tenant/assign-unit", leaseManagement.assignUnitToTenant);
 route.post("/api/manager/unit/assign-tenant", leaseManagement.assignTenantToUnit);
+route.get("/manager/lease/:leaseId", leaseManagement.getLeaseDetails);
+route.post("/api/manager/lease/:leaseId/email", leaseManagement.emailLeaseToTenant);
+route.get("/manager/lease/:leaseId/renew", leaseManagement.getLeaseRenewal);
 
 // Units Management Routes
 route.get("/manager/units", unitManagement.getUnits);
