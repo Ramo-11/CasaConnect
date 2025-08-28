@@ -26,20 +26,21 @@ const { isAuthenticated, isManager, isTenant, attachUserToLocals } = authControl
 
 // Development bypass - modify session AFTER it exists
 const isDevelopment = process.env.NODE_ENV !== "production";
-const authMiddleware = isDevelopment
-    ? (req, res, next) => {
-          // Mock session data for development
-          if (req.session) {
-              req.session.userId = "507f1f77bcf86cd799439011"; // mock manager ID
-              req.session.userRole = "manager";
-              req.session.userName = "Dev Manager";
-          }
-          next();
-      }
-    : isAuthenticated;
+// const authMiddleware = isDevelopment
+//     ? (req, res, next) => {
+//           // Mock session data for development
+//           if (req.session) {
+//               req.session.userId = "507f1f77bcf86cd799439011"; // mock manager ID
+//               req.session.userRole = "manager";
+//               req.session.userName = "Dev Manager";
+//           }
+//           next();
+//       }
+//     : isAuthenticated;
 
 const managerMiddleware = isDevelopment ? (req, res, next) => next() : isManager;
 const tenantMiddleware = isDevelopment ? (req, res, next) => next() : isTenant;
+const authMiddleware = isAuthenticated;
 
 // Make current user available to templates (safe if not logged in)
 route.use(attachUserToLocals);
@@ -62,7 +63,7 @@ route.get("/api/manager/dashboard-stats", managerController.getDashboardStats);
 // Tenant Management Routes
 route.get("/manager/tenants", tenantManagement.getTenants);
 route.post("/manager/tenants", tenantManagement.createTenant);
-route.post("/manager/send-credentials", tenantManagement.sendCredentials);
+route.post("/api/manager/tenant/send-credentials", tenantManagement.sendCredentials);
 route.post("/manager/tenant/:tenantId/update", tenantManagement.updateTenant);
 route.get("/manager/tenant/:tenantId", tenantManagement.viewTenant);
 route.get("/manager/tenant/:tenantId/edit", tenantManagement.editTenant);
@@ -82,7 +83,7 @@ route.get("/api/manager/documents/:documentId/download", documentManagement.down
 route.post("/api/manager/lease/create", upload.single('document'), leaseManagement.createLease);
 route.put("/api/manager/lease/:leaseId", leaseManagement.updateLease);
 route.post("/api/manager/lease/:leaseId/terminate", leaseManagement.terminateLease);
-route.post("/api/manager/lease/:leaseId/renew", leaseManagement.renewLease);
+route.post("/api/manager/lease/:leaseId/renew", upload.single('document'), leaseManagement.renewLease);
 route.get("/api/manager/lease/:leaseId", leaseManagement.getLease);
 route.get("/api/manager/leases", leaseManagement.getLeases);
 route.post("/api/manager/tenant/assign-unit", leaseManagement.assignUnitToTenant);

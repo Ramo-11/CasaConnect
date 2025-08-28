@@ -3,7 +3,8 @@ const Unit = require('../../models/Unit');
 const ServiceRequest = require('../../models/ServiceRequest');
 const Payment = require('../../models/Payment');
 const Notification = require('../../models/Notification');
-const logger = require('../logger')
+const { logger } = require('../logger')
+const Lease = require('../../models/Lease');
 
 // Format date helper
 const formatDate = (date) => {
@@ -17,12 +18,10 @@ const formatDate = (date) => {
 // Get Tenant Dashboard
 exports.getDashboard = async (req, res) => {
   try {
-    const Lease = require('../../models/Lease'); // Add this import at top of file
-    
     // Get tenant info
     const tenantId = req.session?.userId || req.params.tenantId;
     const tenant = await User.findById(tenantId);
-    
+
     if (!tenant || tenant.role !== 'tenant') {
       return res.status(403).render('error', { 
         message: 'Access denied',
@@ -50,7 +49,7 @@ exports.getDashboard = async (req, res) => {
     const unit = lease.unit;
     
     // Get payment status
-    const paymentInfo = await calculatePaymentStatus(tenant);
+    const paymentInfo = await calculatePaymentStatus(lease);
     const monthlyRent = unit.monthlyRent;
     const amountDue = paymentInfo.paymentDue ? 
       monthlyRent + paymentInfo.lateFee : 0;
@@ -380,15 +379,14 @@ exports.markNotificationRead = async (req, res) => {
 };
 
 // Helper function to calculate payment status
-const calculatePaymentStatus = async (tenant) => {
+const calculatePaymentStatus = async (lease) => { 
   const now = new Date();
   const currentDay = now.getDate();
   const currentMonth = now.getMonth() + 1;
   const currentYear = now.getFullYear();
 
   const rentPaid = await Payment.findOne({
-    tenant: tenant._id,
-    lease: lease._id,
+    tenant: lease.tenant,
     type: 'rent',
     month: currentMonth,
     year: currentYear,
@@ -396,11 +394,11 @@ const calculatePaymentStatus = async (tenant) => {
   });
 
   const paymentDue = !rentPaid && currentDay >= 1;
-  const daysOverdue = paymentDue ? Math.max(0, currentDay - 1) : 0;
-  const lateFee = daysOverdue > 5 ? (daysOverdue - 5) * 50 : 0;
+  const daysOverdue = paymentDue ? Math.max(0, currentDay - lease.rentDueDay) : 0;
+  const lateFee = daysOverdue > lease.gracePeriodDays ? (daysOverdue - lease.gracePeriodDays) * lease.lateFeeAmount : 0;
 
   let status = { class: 'success', text: 'Current' };
-  if (daysOverdue > 5) {
+  if (daysOverdue > lease.gracePeriodDays) {
     status = { class: 'danger', text: 'Overdue' };
   } else if (daysOverdue > 0) {
     status = { class: 'warning', text: 'Due' };

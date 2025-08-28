@@ -116,17 +116,17 @@
       </div>
     </div>
 
-    <!-- Available Units -->
+    <!-- All Units -->
     <div class="card">
       <div class="card-header">
-        <h3>Units</h3>
+        <h3>All Units</h3>
         <a href="/manager/units" class="link-view-all">View All Units</a>
       </div>
       <div class="card-body">
         <div class="units-grid">
-          <% if (availableUnitsList && availableUnitsList.length > 0) { %>
-            <% availableUnitsList.forEach(unit => { %>
-              <div class="unit-card available">
+          <% if (allUnitsList && allUnitsList.length > 0) { %>
+            <% allUnitsList.forEach(unit => { %>
+              <div class="unit-card <%= unit.occupied ? 'occupied' : 'available' %>">
                 <div class="unit-number"><%= unit.unitNumber %></div>
                 <div class="unit-details">
                   <span><%= unit.bedrooms %> bed, <%= unit.bathrooms %> bath</span>
@@ -136,7 +136,7 @@
               </div>
             <% }) %>
           <% } else { %>
-            <p class="no-data">No available units</p>
+            <p class="no-data">No Units</p>
           <% } %>
         </div>
       </div>

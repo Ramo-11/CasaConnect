@@ -12,11 +12,6 @@
             <button class="btn btn-secondary" onclick="window.location.href='/manager/dashboard'">
                 <i class="fas fa-arrow-left"></i> Back to Dashboard
             </button>
-            <% if (lease.status === 'active') { %>
-            <button class="btn btn-primary" onclick="renewLease('<%= lease._id %>')">
-                <i class="fas fa-sync"></i> Renew Lease
-            </button>
-            <% } %>
         </div>
     </div>
 
@@ -263,6 +258,225 @@
                     <% } %>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Lease Modal -->
+<div id="editLeaseModal" class="modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h2>Edit Lease Terms</h2>
+            <button class="modal-close" onclick="closeEditLeaseModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="editLeaseForm">
+                <input type="hidden" id="editLeaseId" value="<%= lease._id %>">
+                
+                <div class="form-section">
+                    <h3>Lease Dates</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editStartDate">Start Date *</label>
+                            <input type="date" id="editStartDate" name="startDate" 
+                                   value="<%= lease.startDate.toISOString().split('T')[0] %>" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editEndDate">End Date *</label>
+                            <input type="date" id="editEndDate" name="endDate" 
+                                   value="<%= lease.endDate.toISOString().split('T')[0] %>" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Financial Terms</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editMonthlyRent">Monthly Rent ($) *</label>
+                            <input type="number" id="editMonthlyRent" name="monthlyRent" 
+                                   value="<%= lease.monthlyRent %>" min="0" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editSecurityDeposit">Security Deposit ($) *</label>
+                            <input type="number" id="editSecurityDeposit" name="securityDeposit" 
+                                   value="<%= lease.securityDeposit %>" min="0" step="0.01" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editRentDueDay">Rent Due Day (1-28) *</label>
+                            <input type="number" id="editRentDueDay" name="rentDueDay" 
+                                   value="<%= lease.rentDueDay %>" min="1" max="28" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editLateFeeAmount">Late Fee Amount ($)</label>
+                            <input type="number" id="editLateFeeAmount" name="lateFeeAmount" 
+                                   value="<%= lease.lateFeeAmount %>" min="0" step="0.01">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editGracePeriodDays">Grace Period (Days)</label>
+                        <input type="number" id="editGracePeriodDays" name="gracePeriodDays" 
+                               value="<%= lease.gracePeriodDays %>" min="0" max="30">
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Lease Status</h3>
+                    <div class="form-group">
+                        <label for="editLeaseStatus">Status</label>
+                        <select id="editLeaseStatus" name="status">
+                            <option value="active" <%= lease.status === 'active' ? 'selected' : '' %>>Active</option>
+                            <option value="pending" <%= lease.status === 'pending' ? 'selected' : '' %>>Pending</option>
+                            <option value="expired" <%= lease.status === 'expired' ? 'selected' : '' %>>Expired</option>
+                            <option value="terminated" <%= lease.status === 'terminated' ? 'selected' : '' %>>Terminated</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Notes</h3>
+                    <div class="form-group">
+                        <label for="editNotes">Internal Notes (Optional)</label>
+                        <textarea id="editNotes" name="notes" rows="4" 
+                                  placeholder="Add any notes about this lease..."><%= lease.notes || '' %></textarea>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Update Document (Optional)</h3>
+                    <div class="form-group">
+                        <label for="editLeaseDocument">Replace Lease Document</label>
+                        <input type="file" id="editLeaseDocument" name="document" accept="application/pdf">
+                        <small class="form-help">Leave blank to keep existing document</small>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeEditLeaseModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <span class="btn-text">Save Changes</span>
+                        <span class="btn-loading" style="display: none;">
+                            <span class="spinner"></span> Saving...
+                        </span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Renew Lease Modal -->
+<div id="renewLeaseModal" class="modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h2>Renew Lease Agreement</h2>
+            <button class="modal-close" onclick="closeRenewLeaseModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="renewal-info">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <div>
+                        <strong>Current Lease Information:</strong><br>
+                        Tenant: <%= lease.tenant.firstName %> <%= lease.tenant.lastName %><br>
+                        Unit: <%= lease.unit.unitNumber %><br>
+                        Current End Date: <%= new Date(lease.endDate).toLocaleDateString() %><br>
+                        Current Rent: $<%= lease.monthlyRent %>/month
+                    </div>
+                </div>
+            </div>
+
+            <form id="renewLeaseForm">
+                <input type="hidden" id="renewalLeaseId" value="<%= lease._id %>">
+                
+                <div class="form-section">
+                    <h3>Renewal Terms</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="renewalStartDate">New Start Date *</label>
+                            <input type="date" id="renewalStartDate" name="startDate" 
+                                   value="<%= new Date(new Date(lease.endDate).getTime() + 86400000).toISOString().split('T')[0] %>" 
+                                   min="<%= new Date(lease.endDate).toISOString().split('T')[0] %>" required>
+                            <small class="form-help">Typically starts the day after current lease ends</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="renewalEndDate">New End Date *</label>
+                            <input type="date" id="renewalEndDate" name="endDate" 
+                                   value="<%= new Date(new Date(lease.endDate).setFullYear(new Date(lease.endDate).getFullYear() + 1)).toISOString().split('T')[0] %>" 
+                                   required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="renewalMonthlyRent">New Monthly Rent ($) *</label>
+                            <input type="number" id="renewalMonthlyRent" name="monthlyRent" 
+                                   value="<%= lease.monthlyRent %>" min="0" step="50" required>
+                            <small class="form-help">Current: $<%= lease.monthlyRent %>/month</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="renewalSecurityDeposit">Security Deposit ($) *</label>
+                            <input type="number" id="renewalSecurityDeposit" name="securityDeposit" 
+                                   value="<%= lease.securityDeposit %>" min="0" step="0.01" required>
+                            <small class="form-help">Adjust if needed based on rent increase</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Payment Terms</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="renewalRentDueDay">Rent Due Day (1-28)</label>
+                            <input type="number" id="renewalRentDueDay" name="rentDueDay" 
+                                   value="<%= lease.rentDueDay %>" min="1" max="28">
+                        </div>
+                        <div class="form-group">
+                            <label for="renewalLateFeeAmount">Late Fee Amount ($)</label>
+                            <input type="number" id="renewalLateFeeAmount" name="lateFeeAmount" 
+                                   value="<%= lease.lateFeeAmount %>" min="0" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label for="renewalGracePeriodDays">Grace Period (Days)</label>
+                            <input type="number" id="renewalGracePeriodDays" name="gracePeriodDays" 
+                                   value="<%= lease.gracePeriodDays %>" min="0" max="30">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Renewal Document *</h3>
+                    <div class="form-group">
+                        <label for="renewalDocument">Upload New Lease Agreement *</label>
+                        <input type="file" id="renewalDocument" name="document" 
+                               accept="application/pdf" required>
+                        <small class="form-help">Please upload the signed renewal agreement as a PDF file</small>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Notes</h3>
+                    <div class="form-group">
+                        <label for="renewalNotes">Renewal Notes (Optional)</label>
+                        <textarea id="renewalNotes" name="notes" rows="4" 
+                                  placeholder="Add any notes about this renewal...">Renewal of lease <%= lease._id %> for Unit <%= lease.unit.unitNumber %></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeRenewLeaseModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <span class="btn-text">Create Renewal</span>
+                        <span class="btn-loading" style="display: none;">
+                            <span class="spinner"></span> Processing...
+                        </span>
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

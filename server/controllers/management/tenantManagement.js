@@ -10,15 +10,7 @@ const nodemailer = require("nodemailer");
 const { logger } = require("../../logger");
 const storageService = require('../../services/storageService');
 const crypto = require('crypto');
-
-// Helper Functions
-function formatDate(date) {
-    return new Date(date).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-    });
-}
+require("dotenv").config();
 
 function generateTempPassword() {
     const length = 12;
@@ -149,14 +141,12 @@ exports.sendCredentials = async (req, res) => {
 
         // Update password if new one provided
         if (newPassword) {
-            const salt = await bcrypt.genSalt(10);
-            tenant.password = await bcrypt.hash(newPassword, salt);
+            tenant.password = newPassword; // Will be hashed by pre-save hook
             await tenant.save();
         } else {
             // Generate new temporary password
             password = generateTempPassword();
-            const salt = await bcrypt.genSalt(10);
-            tenant.password = await bcrypt.hash(password, salt);
+            tenant.password = password; // Will be hashed by pre-save hook
             await tenant.save();
         }
 

@@ -1,6 +1,7 @@
 const Lease = require("../../../models/Lease");
 const Unit = require("../../../models/Unit");
 const User = require("../../../models/User");
+const ServiceRequest = require("../../../models/ServiceRequest");
 const storageService = require("../../services/storageService");
 const Document = require("../../../models/Document");
 const Notification = require("../../../models/Notification");
@@ -140,6 +141,7 @@ exports.createLease = async (req, res) => {
 };
 
 // Update Lease
+// Update Lease
 exports.updateLease = async (req, res) => {
     try {
         const { leaseId } = req.params;
@@ -156,16 +158,73 @@ exports.updateLease = async (req, res) => {
         // Don't allow changing tenant or unit through update
         delete updates.tenant;
         delete updates.unit;
+        delete updates._id;
 
+        // Track if important changes were made
+        const importantChanges = [];
+        
+        // Check for important changes
+        if (updates.monthlyRent && updates.monthlyRent != lease.monthlyRent) {
+            importantChanges.push(`Monthly rent changed from $${lease.monthlyRent} to $${updates.monthlyRent}`);
+        }
+        if (updates.endDate && new Date(updates.endDate).getTime() !== new Date(lease.endDate).getTime()) {
+            importantChanges.push(`Lease end date changed from ${new Date(lease.endDate).toLocaleDateString()} to ${new Date(updates.endDate).toLocaleDateString()}`);
+        }
+        if (updates.status && updates.status !== lease.status) {
+            importantChanges.push(`Lease status changed from ${lease.status} to ${updates.status}`);
+        }
+
+        // Update document if provided
+        if (updates.document) {
+            // Delete old document reference if exists
+            if (lease.document) {
+                try {
+                    await Document.findByIdAndDelete(lease.document);
+                } catch (docError) {
+                    logger.warn(`Failed to delete old document: ${docError}`);
+                }
+            }
+            lease.document = updates.document;
+            delete updates.document;
+        }
+
+        // Apply updates
         Object.keys(updates).forEach((key) => {
-            lease[key] = updates[key];
+            if (updates[key] !== undefined && updates[key] !== '') {
+                lease[key] = updates[key];
+            }
         });
 
+        // Update the updatedAt timestamp
+        lease.updatedAt = new Date();
+
         await lease.save();
+
+        // Notify tenant of important changes
+        if (importantChanges.length > 0) {
+            await Notification.create({
+                recipient: lease.tenant,
+                type: "system",
+                title: "Lease Terms Updated",
+                message: `Your lease has been updated: ${importantChanges.join(', ')}`,
+                relatedModel: "Lease",
+                relatedId: lease._id,
+                priority: "high",
+            });
+        }
+
+        // Log the update
+        if (updates.notes) {
+            const existingNotes = lease.notes || '';
+            const updateNote = `\n[${new Date().toLocaleDateString()}] Lease updated by manager. Changes: ${importantChanges.join(', ') || 'Minor updates'}`;
+            lease.notes = existingNotes + updateNote;
+            await lease.save();
+        }
 
         res.json({
             success: true,
             message: "Lease updated successfully",
+            changes: importantChanges,
         });
     } catch (error) {
         logger.error(`Update lease error: ${error}`);
@@ -190,26 +249,61 @@ exports.terminateLease = async (req, res) => {
             });
         }
 
+        if (lease.status === 'terminated') {
+            return res.status(400).json({
+                success: false,
+                message: "Lease is already terminated",
+            });
+        }
+
+        // Update lease status and add termination info
         lease.status = "terminated";
-        lease.notes = lease.notes
-            ? `${lease.notes}\n\nTermination reason: ${reason}`
-            : `Termination reason: ${reason}`;
+        lease.terminatedAt = new Date();
+        lease.terminatedBy = req.session.userId;
+        
+        const terminationNote = `\n[${new Date().toLocaleDateString()}] LEASE TERMINATED\nReason: ${reason}\nTerminated by: Manager`;
+        lease.notes = lease.notes ? `${lease.notes}\n${terminationNote}` : terminationNote;
+        
         await lease.save();
 
-        // Notify tenant
+        // The unit becomes available automatically since we check for active leases
+        // No need to update unit status as it's determined by active lease existence
+
+        // Cancel any pending payments or service requests if needed
+        await ServiceRequest.updateMany(
+            { 
+                tenant: lease.tenant._id, 
+                unit: lease.unit._id,
+                status: { $in: ['pending', 'assigned'] }
+            },
+            { 
+                status: 'cancelled',
+                notes: { $concat: ['$notes', '\nCancelled due to lease termination'] }
+            }
+        );
+
+        // Notify tenant with more details
         await Notification.create({
             recipient: lease.tenant._id,
             type: "system",
-            title: "Lease Terminated",
-            message: `Your lease for Unit ${lease.unit.unitNumber} has been terminated`,
+            title: "Lease Terminated - Immediate Action Required",
+            message: `Your lease for Unit ${lease.unit.unitNumber} has been terminated effective immediately. Reason: ${reason}. Please contact management to arrange move-out.`,
             relatedModel: "Lease",
             relatedId: lease._id,
             priority: "high",
         });
 
+        // Log the termination
+        logger.info(`Lease terminated: ${leaseId} for Unit ${lease.unit.unitNumber} - Reason: ${reason}`);
+
         res.json({
             success: true,
             message: "Lease terminated successfully",
+            data: {
+                leaseId: lease._id,
+                unitNumber: lease.unit.unitNumber,
+                tenant: `${lease.tenant.firstName} ${lease.tenant.lastName}`
+            }
         });
     } catch (error) {
         logger.error(`Terminate lease error: ${error}`);
@@ -278,12 +372,36 @@ exports.getLeases = async (req, res) => {
 };
 
 // Renew Lease
+// Renew Lease
 exports.renewLease = async (req, res) => {
     try {
         const { leaseId } = req.params;
-        const { newEndDate, newMonthlyRent, notes } = req.body;
+        const {
+            startDate,
+            endDate,
+            monthlyRent,
+            securityDeposit,
+            rentDueDay,
+            lateFeeAmount,
+            gracePeriodDays,
+            notes
+        } = req.body;
+        
+        const file = req.file;
 
-        const currentLease = await Lease.findById(leaseId);
+        // Validate that a document was provided
+        if (!file) {
+            return res.status(400).json({
+                success: false,
+                message: "Renewal agreement document is required",
+            });
+        }
+
+        // Get current lease
+        const currentLease = await Lease.findById(leaseId)
+            .populate('tenant')
+            .populate('unit');
+            
         if (!currentLease) {
             return res.status(404).json({
                 success: false,
@@ -298,33 +416,111 @@ exports.renewLease = async (req, res) => {
             });
         }
 
-        // Create new lease as renewal
+        // Validate dates
+        const newStartDate = new Date(startDate);
+        const newEndDate = new Date(endDate);
+        
+        if (newStartDate <= currentLease.endDate) {
+            return res.status(400).json({
+                success: false,
+                message: "Renewal start date must be after current lease end date",
+            });
+        }
+
+        // Upload renewal document
+        const uploadResult = await storageService.uploadFile(file, "leases");
+
+        // Create document record
+        const document = new Document({
+            title: `Lease Renewal - Unit ${currentLease.unit.unitNumber} - ${new Date(startDate).toLocaleDateString()}`,
+            type: "lease",
+            fileName: uploadResult.fileName,
+            url: uploadResult.url,
+            size: uploadResult.size,
+            mimeType: uploadResult.mimeType,
+            uploadedBy: req.session.userId,
+            relatedTo: {
+                model: "Lease",
+                id: null, // Will update after lease creation
+            },
+        });
+
+        await document.save();
+
+        // Create renewal lease
         const renewalLease = new Lease({
-            tenant: currentLease.tenant,
-            unit: currentLease.unit,
-            startDate: currentLease.endDate,
-            endDate: new Date(newEndDate),
-            monthlyRent: newMonthlyRent || currentLease.monthlyRent,
-            securityDeposit: currentLease.securityDeposit,
-            rentDueDay: currentLease.rentDueDay,
-            lateFeeAmount: currentLease.lateFeeAmount,
-            gracePeriodDays: currentLease.gracePeriodDays,
-            notes: notes || `Renewal of lease ${currentLease._id}`,
-            status: "pending",
+            tenant: currentLease.tenant._id,
+            unit: currentLease.unit._id,
+            startDate: newStartDate,
+            endDate: newEndDate,
+            monthlyRent: parseFloat(monthlyRent) || currentLease.monthlyRent,
+            securityDeposit: parseFloat(securityDeposit) || currentLease.securityDeposit,
+            rentDueDay: parseInt(rentDueDay) || currentLease.rentDueDay,
+            lateFeeAmount: parseFloat(lateFeeAmount) || currentLease.lateFeeAmount,
+            gracePeriodDays: parseInt(gracePeriodDays) || currentLease.gracePeriodDays,
+            document: document._id,
+            status: "pending", // Will become active when current lease expires
+            notes: notes || `Renewal of lease ${currentLease._id} for Unit ${currentLease.unit.unitNumber}`,
         });
 
         await renewalLease.save();
 
+        // Update document with new lease ID
+        document.relatedTo.id = renewalLease._id;
+        await document.save();
+
+        // Also create a copy for tenant records
+        const tenantDoc = new Document({
+            title: document.title,
+            type: "lease",
+            fileName: document.fileName,
+            url: document.url,
+            size: document.size,
+            mimeType: document.mimeType,
+            uploadedBy: req.session.userId,
+            relatedTo: {
+                model: "User",
+                id: currentLease.tenant._id,
+            },
+            sharedWith: [currentLease.tenant._id],
+        });
+        await tenantDoc.save();
+
+        // Mark current lease for expiration (it will expire naturally on its end date)
+        // Add a note to current lease about the renewal
+        currentLease.notes = (currentLease.notes || '') + 
+            `\n[${new Date().toLocaleDateString()}] Renewal created: New lease ID ${renewalLease._id} starting ${newStartDate.toLocaleDateString()}`;
+        await currentLease.save();
+
+        // Notify tenant about renewal
+        await Notification.create({
+            recipient: currentLease.tenant._id,
+            type: "system",
+            title: "Lease Renewed",
+            message: `Your lease for Unit ${currentLease.unit.unitNumber} has been renewed. New term: ${newStartDate.toLocaleDateString()} to ${newEndDate.toLocaleDateString()}`,
+            relatedModel: "Lease",
+            relatedId: renewalLease._id,
+            priority: "high",
+        });
+
+        // Log the renewal
+        logger.info(`Lease renewed: Current lease ${leaseId} -> New lease ${renewalLease._id}`);
+
         res.json({
             success: true,
-            message: "Lease renewal created",
-            leaseId: renewalLease._id,
+            message: "Lease renewal created successfully",
+            data: {
+                newLeaseId: renewalLease._id,
+                currentLeaseId: currentLease._id,
+                startDate: newStartDate,
+                endDate: newEndDate,
+            }
         });
     } catch (error) {
         logger.error(`Renew lease error: ${error}`);
         res.status(500).json({
             success: false,
-            message: "Failed to renew lease",
+            message: "Failed to renew lease: " + error.message,
         });
     }
 };

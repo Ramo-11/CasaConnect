@@ -24,7 +24,11 @@ exports.getUnits = async (req, res) => {
             { $project: { firstName: 1, lastName: 1, email: 1 } }
         ]);
 
+        logger.debug(`Tenants without active leases: ${JSON.stringify(tenantsWithoutActiveLeases)}`);
+
         const units = await Unit.find().sort("unitNumber");
+
+        logger.debug(`Units found: ${JSON.stringify(units)}`);
 
         // For each unit, find if it has an active lease
         const unitsWithTenants = await Promise.all(

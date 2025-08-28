@@ -38,18 +38,16 @@ exports.getDashboard = async (req, res) => {
         const occupiedUnits = occupiedUnitIds.length;
         const availableUnits = totalUnits - occupiedUnits;
 
-        // Get available units list (units without active leases)
-        const availableUnitsList = units
-            .filter(u => !occupiedUnitIds.includes(u._id.toString()))
-            .map(u => ({
-                id: u._id,
-                unitNumber: u.unitNumber,
-                building: u.building,
-                bedrooms: u.bedrooms,
-                bathrooms: u.bathrooms,
-                squareFeet: u.squareFeet,
-                monthlyRent: u.monthlyRent,
-            }));
+        const allUnitsList = units.map(u => ({
+            id: u._id,
+            unitNumber: u.unitNumber,
+            building: u.building,
+            bedrooms: u.bedrooms,
+            bathrooms: u.bathrooms,
+            squareFeet: u.squareFeet,
+            monthlyRent: u.monthlyRent,
+            occupied: occupiedUnitIds.includes(u._id.toString())
+        }));
 
         // Get active service requests count
         const activeRequests = await ServiceRequest.countDocuments({
@@ -153,15 +151,15 @@ exports.getDashboard = async (req, res) => {
         res.render("manager/dashboard", {
             title: "Manager Dashboard",
             layout: "layout",
-            additionalCSS: ["common.css", "manager.css"],
-            additionalJS: ["common.js", "manager.js"],
+            additionalCSS: ["manager.css"],
+            additionalJS: ["manager.js"],
             user: manager,
             totalUnits,
             occupiedUnits,
             availableUnits,
             activeRequests,
             tenants: formattedTenants,
-            availableUnitsList,
+            allUnitsList,
             recentRequests: formattedRequests,
             expiringLeases: formattedExpiringLeases, // New data
             portalUrl: process.env.PORTAL_URL || "http://localhost:3000",

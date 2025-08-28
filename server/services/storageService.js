@@ -33,34 +33,6 @@ exports.uploadFile = async (file, folder = 'documents') => {
 };
 
 
-// exports.uploadFile = async (file, folder = 'documents') => {
-//   try {
-//     const fileName = `${folder}/${Date.now()}-${file.originalname}`;
-//     const { data, error } = await supabase.storage
-//       .from('casaconnect')
-//       .upload(fileName, file.buffer, {
-//         contentType: file.mimetype,
-//         cacheControl: '3600'
-//       });
-
-//     if (error) throw error;
-
-//     const { data: signedUrl } = await supabase.storage
-//       .from('casaconnect')
-//       .createSignedUrl(fileName, 60 * 60); // 1 hour
-
-//     return {
-//       fileName,
-//       url: signedUrl,
-//       size: file.size,
-//       mimeType: file.mimetype
-//     };
-//   } catch (error) {
-//     logger.error(`File upload error: ${error}`);
-//     throw error;
-//   }
-// };
-
 exports.deleteFile = async (fileName) => {
   try {
     const { error } = await supabase.storage

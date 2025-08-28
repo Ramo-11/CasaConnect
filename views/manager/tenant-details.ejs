@@ -398,13 +398,15 @@
                         <i class="fas fa-bell"></i>
                         <span>Send Notification</span>
                     </button>
+                    <% if (!activeLease) { %>
                     <button
                         class="action-button"
-                        onclick="generateLeaseDocument('<%= tenant._id %>')"
+                        onclick="openCreateLeaseModal('<%= tenant._id %>')"
                     >
                         <i class="fas fa-file-contract"></i>
-                        <span>Generate Lease</span>
+                        <span>Create Lease</span>
                     </button>
+                    <% } %>
                     <button
                         class="action-button"
                         onclick="viewDocuments('<%= tenant._id %>')"
@@ -419,6 +421,7 @@
                         <i class="fas fa-download"></i>
                         <span>Export Data</span>
                     </button>
+                    <% if (tenant.isActive) { %>
                     <button
                         class="action-button warning"
                         onclick="suspendAccount('<%= tenant._id %>')"
@@ -426,6 +429,7 @@
                         <i class="fas fa-pause-circle"></i>
                         <span>Suspend Account</span>
                     </button>
+                    <% } %>
                     <button
                         class="action-button danger"
                         onclick="deleteTenant('<%= tenant._id %>')"

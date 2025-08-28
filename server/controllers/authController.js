@@ -1,6 +1,7 @@
 const User = require("../../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { logger } = require("../logger");
 
 // controllers/authController.js (add at bottom or where appropriate)
 exports.attachUserToLocals = (req, res, next) => {
@@ -52,9 +53,10 @@ exports.login = async (req, res) => {
         const user = await User.findOne({ email: email.toLowerCase() });
 
         if (!user) {
+            logger.error(`Login failed - User not found: ${email}`);
             return res.status(401).json({
                 success: false,
-                message: "Invalid email or password",
+                message: "Invalid email",
             });
         }
 
@@ -71,6 +73,7 @@ exports.login = async (req, res) => {
         const isPasswordValid = await user.comparePassword(password);
 
         if (!isPasswordValid) {
+            logger.error(`Login failed - Invalid password for user: ${email}`);
             return res.status(401).json({
                 success: false,
                 message: "Invalid email or password",

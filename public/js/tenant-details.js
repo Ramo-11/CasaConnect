@@ -67,7 +67,7 @@ async function confirmSendCredentials(tenantId) {
         }
 
         const response = await CasaConnect.APIClient.post(
-            "/manager/send-credentials",
+            "/api/manager/tenant/send-credentials",
             data
         );
 
@@ -84,7 +84,6 @@ async function confirmSendCredentials(tenantId) {
     }
 }
 
-// Reset Password
 async function resetPassword(tenantId) {
     if (
         !confirm(
@@ -96,7 +95,7 @@ async function resetPassword(tenantId) {
 
     try {
         const response = await CasaConnect.APIClient.post(
-            "/manager/reset-password",
+            "/api/manager/tenant/reset-password",
             {
                 tenantId: tenantId,
             }
@@ -207,7 +206,7 @@ async function suspendAccount(tenantId) {
 
     try {
         const response = await CasaConnect.APIClient.put(
-            `/manager/tenant/${tenantId}/suspend`,
+            `/api/manager/tenant/${tenantId}/suspend`,
             {}
         );
 
