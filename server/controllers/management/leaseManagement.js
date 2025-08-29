@@ -141,7 +141,6 @@ exports.createLease = async (req, res) => {
 };
 
 // Update Lease
-// Update Lease
 exports.updateLease = async (req, res) => {
     try {
         const { leaseId } = req.params;

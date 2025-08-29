@@ -258,7 +258,13 @@
                 return;
             }
 
-            formData.append("tenantId", tenantId);
+            // Only set tenantId if it's not already in the form
+            if (!formData.has("tenantId")) {
+                formData.set("tenantId", tenantId);
+            } else {
+                // Replace the existing value instead of appending
+                formData.set("tenantId", tenantId);
+            }
 
             const btn = form.querySelector('button[type="submit"]');
             const btnText = btn.querySelector(".btn-text");
@@ -450,7 +456,7 @@
                 }
             }
 
-            CasaConnect.ModalManager.openModal('sendCredentialsModal');
+            CasaConnect.ModalManager.openModal("sendCredentialsModal");
             document.dispatchEvent(
                 new CustomEvent("tenantModalOpen", {
                     detail: { modalId: "sendCredentialsModal" },
@@ -537,36 +543,47 @@
             tenantModalState.selectedTenantId = null;
         }
 
-        // === ACTION METHODS ===
-
         generatePassword() {
-            const length = 12;
-            const charset =
-                "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%";
-            let password = "";
-
-            for (let i = 0; i < length; i++) {
-                password += charset.charAt(
-                    Math.floor(Math.random() * charset.length)
-                );
-            }
-
-            const passwordInput = document.getElementById("password");
-            if (passwordInput) {
-                passwordInput.value = password;
-            }
-
+            const password = FormManager.generatePassword();
+            FormManager.setFieldValue("password", password);
             return password;
         }
 
         generateNewPassword() {
-            const password = this.generatePassword();
-            const newPasswordInput = document.getElementById("newPassword");
-            if (newPasswordInput) {
-                newPasswordInput.value = password;
-            }
+            const password = FormManager.generatePassword();
+            FormManager.setFieldValue("newPassword", password);
+            return password;
         }
 
+        openSuccessModal(title, message, callback) {
+            const titleEl = document.getElementById("successModalTitle");
+            const messageEl = document.getElementById("successModalMessage");
+            const buttonEl = document.getElementById("successModalButton");
+
+            if (titleEl) titleEl.textContent = title || "Success";
+            if (messageEl)
+                messageEl.textContent =
+                    message || "Operation completed successfully.";
+
+            if (callback && buttonEl) {
+                buttonEl.onclick = () => {
+                    this.closeSuccessModal();
+                    callback();
+                };
+            }
+
+            CasaConnect.ModalManager.openModal("successModal");
+        }
+
+        closeSuccessModal() {
+            CasaConnect.ModalManager.closeModal("successModal");
+            // Reset button onclick
+            const buttonEl = document.getElementById("successModalButton");
+            if (buttonEl) {
+                buttonEl.onclick = () => this.closeSuccessModal();
+            }
+        }
+        // === ACTION METHODS ===
         async confirmSendCredentials() {
             if (!tenantModalState.selectedTenantId) return;
 
@@ -643,7 +660,6 @@
         }
 
         // === HELPER METHODS ===
-
         viewTenant(tenantId) {
             window.location.href = `/manager/tenant/${tenantId}`;
         }
@@ -653,52 +669,45 @@
         }
     }
 
-    // Initialize and expose globally
-    let tenantModalManager = null;
+    // === SINGLETON PATTERN - PUT THIS AFTER THE CLASS ===
+    let instance = null;
+
+    function getInstance() {
+        if (!instance) {
+            instance = new TenantModalManager();
+        }
+        return instance;
+    }
+
+    // Expose global functions that auto-initialize if needed
+    window.openAddTenantModal = () => getInstance().openAddTenantModal();
+    window.openCreateLeaseModal = (tenantId) =>
+        getInstance().openCreateLeaseModal(tenantId);
+    window.sendCredentials = (tenantId) =>
+        getInstance().openSendCredentialsModal(tenantId);
+    window.assignUnitToTenant = (tenantId) =>
+        getInstance().openAssignUnitModal(tenantId);
+    window.deleteTenant = (tenantId) =>
+        getInstance().openDeleteTenantModal(tenantId);
+
+    window.closeAddTenantModal = () => getInstance().closeAddTenantModal();
+    window.closeCreateLeaseModal = () => getInstance().closeCreateLeaseModal();
+    window.closeSendCredentialsModal = () =>
+        getInstance().closeSendCredentialsModal();
+    window.closeAssignUnitModal = () => getInstance().closeAssignUnitModal();
+    window.closeDeleteTenantModal = () =>
+        getInstance().closeDeleteTenantModal();
+
+    window.generatePassword = () => getInstance().generatePassword();
+    window.generateNewPassword = () => getInstance().generateNewPassword();
+    window.confirmSendCredentials = () =>
+        getInstance().confirmSendCredentials();
+    window.confirmDeleteTenant = () => getInstance().confirmDeleteTenant();
+
+    window.viewTenant = (tenantId) => getInstance().viewTenant(tenantId);
+    window.editTenant = (tenantId) => getInstance().editTenant(tenantId);
 
     CasaConnect.ready(() => {
-        tenantModalManager = new TenantModalManager();
+        getInstance();
     });
-
-    // Expose global functions that can be called from onclick handlers
-    window.openAddTenantModal = () => tenantModalManager?.openAddTenantModal();
-    window.openCreateLeaseModal = (tenantId) =>
-        tenantModalManager?.openCreateLeaseModal(tenantId);
-    window.sendCredentials = (tenantId) =>
-        tenantModalManager?.openSendCredentialsModal(tenantId);
-    window.assignUnitToTenant = (tenantId) =>
-        tenantModalManager?.openAssignUnitModal(tenantId);
-    window.deleteTenant = (tenantId) =>
-        tenantModalManager?.openDeleteTenantModal(tenantId);
-
-    window.closeAddTenantModal = () =>
-        tenantModalManager?.closeAddTenantModal();
-    window.closeCreateLeaseModal = () =>
-        tenantModalManager?.closeCreateLeaseModal();
-    window.closeSendCredentialsModal = () =>
-        tenantModalManager?.closeSendCredentialsModal();
-    window.closeAssignUnitModal = () =>
-        tenantModalManager?.closeAssignUnitModal();
-    window.closeDeleteTenantModal = () =>
-        tenantModalManager?.closeDeleteTenantModal();
-
-    window.generatePassword = () => tenantModalManager?.generatePassword();
-    window.generateNewPassword = () =>
-        tenantModalManager?.generateNewPassword();
-    window.confirmSendCredentials = () =>
-        tenantModalManager?.confirmSendCredentials();
-    window.confirmDeleteTenant = () =>
-        tenantModalManager?.confirmDeleteTenant();
-
-    // Navigation helpers (these could be anywhere but are tenant-related)
-    window.viewTenant = (tenantId) => tenantModalManager?.viewTenant(tenantId);
-    window.editTenant = (tenantId) => tenantModalManager?.editTenant(tenantId);
-
-    // Override for create lease form submission
-    window.createLease = (tenantId) => {
-        const form = document.getElementById("createLeaseForm");
-        if (form) {
-            form.dispatchEvent(new Event("submit", { cancelable: true }));
-        }
-    };
 })();

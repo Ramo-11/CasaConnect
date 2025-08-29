@@ -17,9 +17,9 @@
         <div class="header-actions">
             <button
                 class="btn btn-secondary"
-                onclick="window.location.href='/manager/tenants'"
+                onclick="window.location.href='/manager/dashboard'"
             >
-                <i class="fas fa-arrow-left"></i> Back to Tenants
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
             </button>
             <button
                 class="btn btn-primary"
@@ -436,6 +436,14 @@
                     >
                         <i class="fas fa-pause-circle"></i>
                         <span>Suspend Account</span>
+                    </button>
+                    <% } else { %>
+                    <button
+                        class="action-button warning"
+                        onclick="activateAccount('<%= tenant._id %>')"
+                    >
+                        <i class="fas fa-play-circle"></i>
+                        <span>Activate Account</span>
                     </button>
                     <% } %>
                     <button

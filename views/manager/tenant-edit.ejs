@@ -1,4 +1,10 @@
 <!-- Edit Tenant Page -->
+ <div id="tenantData" style="display:none;" 
+     data-tenant-id="<%= tenant._id %>"
+     data-tenant-name="<%= tenant.firstName %> <%= tenant.lastName %>"
+     data-tenant-email="<%= tenant.email %>">
+</div>
+
 <div class="tenant-edit-container">
   <!-- Page Header -->
   <div class="page-header">
@@ -118,7 +124,7 @@
             <!-- No Active Lease -->
             <div class="no-lease-message">
               <p>This tenant has no active lease.</p>
-              <button type="button" class="btn btn-primary" onclick="window.location.href='/manager/lease/new?tenant=<%= tenant._id %>'">
+              <button type="button" class="btn btn-primary" onclick="openCreateLeaseModal('<%= tenant._id %>')">
                 Create New Lease
               </button>
             </div>
@@ -175,39 +181,18 @@
 
       <!-- Form Actions -->
       <div class="form-actions">
-        <button type="button" class="btn btn-secondary" onclick="window.location.href='/manager/tenant/<%= tenant._id %>'">
-          Cancel
-        </button>
-        <button type="submit" class="btn btn-primary">
-          <span class="btn-text">
-            <i class="fas fa-save"></i> Save Changes
-          </span>
-          <span class="btn-loading" style="display: none;">
-            <span class="spinner"></span> Saving...
-          </span>
-        </button>
+          <button type="button" class="btn btn-secondary" onclick="navigateBack()">
+              Cancel
+          </button>
+          <button type="submit" class="btn btn-primary">
+              <span class="btn-text">
+                  <i class="fas fa-save"></i> Save Changes
+              </span>
+              <span class="btn-loading" style="display: none;">
+                  <span class="spinner"></span> Saving...
+              </span>
+          </button>
       </div>
     </form>
-  </div>
-</div>
-
-<!-- Success Modal -->
-<div id="successModal" class="modal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h2>Changes Saved</h2>
-      <button class="modal-close" onclick="closeSuccessModal()">&times;</button>
-    </div>
-    <div class="modal-body">
-      <div class="success-message">
-        <i class="fas fa-check-circle"></i>
-        <p>Tenant information has been successfully updated.</p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-primary" onclick="redirectToDetails()">
-          View Tenant Details
-        </button>
-      </div>
-    </div>
   </div>
 </div>

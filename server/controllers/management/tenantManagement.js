@@ -237,8 +237,9 @@ exports.editTenant = async (req, res) => {
         res.render("manager/tenant-edit", {
             title: `Edit Tenant: ${tenant.firstName} ${tenant.lastName}`,
             layout: "layout",
-            additionalCSS: ['common.css', 'tenant-edit.css'],
-            additionalJS: ['common.js', 'tenant-edit.js'],
+            additionalCSS: ['tenant-edit.css'],
+            additionalJS: ["pages/manager-tenant-edit.js"],
+            user: req.session.user || { role: 'manager' },
             tenant,
             activeLease,
             availableUnits,
@@ -431,16 +432,22 @@ exports.resetPassword = async (req, res) => {
     }
 };
 
-// Suspend Account
 exports.suspendAccount = async (req, res) => {
     try {
         const { tenantId } = req.params;
-        const tenant = await User.findById(tenantId);
+        const tenant = await User.findById(tenantId); 
         
         if (!tenant || tenant.role !== 'tenant') {
             return res.status(404).json({
                 success: false,
                 message: 'Tenant not found'
+            });
+        }
+
+        if (!tenant.isActive) {
+            return res.status(400).json({
+                success: false,
+                message: 'Account is already suspended'
             });
         }
 
@@ -458,6 +465,43 @@ exports.suspendAccount = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Failed to suspend account'
+        });
+    }
+};
+
+exports.activateAccount = async (req, res) => {
+    try {
+        const { tenantId } = req.params;
+        const tenant = await User.findById(tenantId);
+        
+        if (!tenant || tenant.role !== 'tenant') {
+            return res.status(404).json({
+                success: false,
+                message: 'Tenant not found'
+            });
+        }
+
+        if (tenant.isActive) {
+            return res.status(400).json({
+                success: false,
+                message: 'Account is already active'
+            });
+        }
+        
+        tenant.isActive = true;
+        tenant.suspendedAt = null;
+        tenant.suspendedBy = null;
+        await tenant.save();
+
+        res.json({
+            success: true,
+            message: 'Account activated successfully'
+        });
+    } catch (error) {
+        logger.error(`Activate account error: ${error}`);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to activate account'
         });
     }
 };

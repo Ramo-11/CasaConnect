@@ -162,6 +162,34 @@ async function suspendAccount(tenantId) {
     }
 }
 
+async function activateAccount(tenantId) {
+    if (
+        !confirm(
+            "Are you sure you want to activate this tenant account?"
+        )
+    ) {
+        return;
+    }
+
+    try {
+        const response = await CasaConnect.APIClient.put(
+            `/api/manager/tenant/${tenantId}/activate`,
+            {}
+        );
+
+        if (response.success) {
+            CasaConnect.NotificationManager.success(
+                "Account activated successfully"
+            );
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            throw new Error(response.error || "Failed to activate account");
+        }
+    } catch (error) {
+        CasaConnect.NotificationManager.error(error.message);
+    }
+}
+
 // Auto-refresh payment status
 function autoRefreshData() {
     setInterval(async () => {

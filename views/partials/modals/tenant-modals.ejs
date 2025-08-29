@@ -286,3 +286,24 @@
         </div>
     </div>
 </div>
+
+<!-- Generic Success Modal -->
+<div id="successModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="successModalTitle">Success</h2>
+            <button class="modal-close" onclick="closeSuccessModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="success-message">
+                <i class="fas fa-check-circle"></i>
+                <p id="successModalMessage">Operation completed successfully.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="successModalButton" onclick="closeSuccessModal()">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
