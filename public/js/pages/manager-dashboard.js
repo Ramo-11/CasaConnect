@@ -5,8 +5,6 @@ let selectedTenantId = null;
 // Initialize manager dashboard
 CasaConnect.ready(() => {
   initializeTenantSearch();
-  initializeAddTenantForm();
-  initializePasswordGenerator();
 });
 
 // Tenant Search

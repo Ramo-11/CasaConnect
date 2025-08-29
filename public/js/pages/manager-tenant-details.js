@@ -247,7 +247,7 @@ async function loadDocuments(tenantId) {
         );
 
         if (response.success) {
-            renderDocuments(response.data);
+            renderDocuments(response.data.data);
         } else {
             container.innerHTML =
                 '<p class="no-data">Failed to load documents</p>';
@@ -266,7 +266,6 @@ function renderDocuments(documents) {
         container.innerHTML = '<p class="no-data">No documents uploaded</p>';
         return;
     }
-
     const html = documents
         .map(
             (doc) => `

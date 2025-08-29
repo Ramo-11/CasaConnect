@@ -152,7 +152,7 @@ exports.getDashboard = async (req, res) => {
             title: "Manager Dashboard",
             layout: "layout",
             additionalCSS: ["manager.css"],
-            additionalJS: ["manager.js"],
+            additionalJS: ["pages/manager-dashboard.js"],
             user: manager,
             totalUnits,
             occupiedUnits,

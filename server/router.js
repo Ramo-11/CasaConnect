@@ -63,8 +63,8 @@ route.get("/api/manager/dashboard-stats", managerController.getDashboardStats);
 // Tenant Management Routes
 route.get("/manager/tenants", tenantManagement.getTenants);
 route.post("/manager/tenants", tenantManagement.createTenant);
-route.post("/api/manager/tenant/send-credentials", tenantManagement.sendCredentials);
 route.post("/manager/tenant/:tenantId/update", tenantManagement.updateTenant);
+route.post("/api/manager/tenant/send-credentials", tenantManagement.sendCredentials);
 route.get("/manager/tenant/:tenantId", tenantManagement.viewTenant);
 route.get("/manager/tenant/:tenantId/edit", tenantManagement.editTenant);
 route.delete("/api/manager/tenant/:tenantId", tenantManagement.deleteTenant);

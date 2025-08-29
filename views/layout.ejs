@@ -68,8 +68,16 @@
         <!-- Main Content -->
         <main class="main-content"><%- body %></main>
 
-        <!-- JavaScript Files -->
         <script src="/js/common.js"></script>
+
+        <% if (typeof user !== 'undefined' && user && user.role === 'manager') { %>
+            <script src="/js/modals/manager-tenant-modal.js"></script>
+        <% } %>
+
+        <% if (typeof user !== 'undefined' && user && user.role === 'manager') { %>
+            <%- include('partials/modals/tenant-modals') %>
+        <% } %>
+        
         <% if (typeof additionalJS !== 'undefined') { %> <%
             additionalJS.forEach(function(js) { %>
             <script src="/js/<%= js %>"></script>
