@@ -1,0 +1,51 @@
+/* Unit Edit Page Styles */
+.unit-edit-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--spacing-lg);
+}
+
+.edit-form-container {
+    margin-top: var(--spacing-xl);
+}
+
+.amenities-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    border: 1px solid #e5e7eb;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.checkbox-label:hover {
+    background: #f9fafb;
+    border-color: var(--primary-color);
+}
+
+.checkbox-label input[type="checkbox"]:checked + span {
+    color: var(--primary-color);
+    font-weight: var(--font-weight-medium);
+}
+
+.alert-warning {
+    padding: var(--spacing-md);
+    background: #fef3c7;
+    color: #92400e;
+    border-radius: var(--border-radius-md);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.alert-warning i {
+    color: #f59e0b;
+}

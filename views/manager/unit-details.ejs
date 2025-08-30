@@ -1,0 +1,224 @@
+<!-- Unit Details Page -->
+<div class="unit-details-container" data-unit-id="<%= unit._id %>">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <h1>Unit <%= unit.unitNumber %></h1>
+            <p><%= unit.propertyType %> - <%= unit.fullAddress %></p>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-secondary" onclick="window.location.href='/manager/units'">
+                <i class="fas fa-arrow-left"></i> Back to Units
+            </button>
+            <button class="btn btn-primary" onclick="editUnitPage('<%= unit._id %>')">
+                <i class="fas fa-edit"></i> Edit Unit
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="details-grid">
+        <!-- Unit Status Card -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Unit Status</h3>
+                <span class="badge badge-<%= activeLease ? 'occupied' : 'available' %>">
+                    <%= activeLease ? 'Occupied' : 'Available' %>
+                </span>
+            </div>
+            <div class="card-body">
+                <% if (activeLease) { %>
+                    <div class="current-lease-info">
+                        <h4>Current Tenant</h4>
+                        <div class="tenant-info-box">
+                            <p><strong><%= activeLease.tenant.firstName %> <%= activeLease.tenant.lastName %></strong></p>
+                            <p><%= activeLease.tenant.email %></p>
+                            <p><%= activeLease.tenant.phone %></p>
+                        </div>
+                        <div class="lease-dates">
+                            <div class="info-item">
+                                <label>Lease Start</label>
+                                <span><%= new Date(activeLease.startDate).toLocaleDateString() %></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Lease End</label>
+                                <span><%= new Date(activeLease.endDate).toLocaleDateString() %></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Days Remaining</label>
+                                <span><%= activeLease.daysRemaining %> days</span>
+                            </div>
+                        </div>
+                        <div class="action-row">
+                            <button class="btn btn-secondary" onclick="viewTenant('<%= activeLease.tenant._id %>')">
+                                View Tenant Details
+                            </button>
+                            <button class="btn btn-secondary" onclick="window.location.href='/manager/lease/<%= activeLease._id %>'">
+                                View Lease Details
+                            </button>
+                        </div>
+                    </div>
+                <% } else { %>
+                    <div class="empty-state-small">
+                        <i class="fas fa-key"></i>
+                        <p>This unit is currently available</p>
+                        <button class="btn btn-primary" onclick="openCreateLeaseModal(null, '<%= unit._id %>')">
+                            Create New Lease
+                        </button>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- Property Details Card -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Property Details</h3>
+            </div>
+            <div class="card-body">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>Unit Number</label>
+                        <span><%= unit.unitNumber %></span>
+                    </div>
+                    <div class="info-item">
+                        <label>Property Type</label>
+                        <span><%= unit.propertyType %></span>
+                    </div>
+                    <% if (unit.building) { %>
+                    <div class="info-item">
+                        <label>Building</label>
+                        <span><%= unit.building %></span>
+                    </div>
+                    <% } %>
+                    <% if (unit.floor !== null && unit.floor !== undefined) { %>
+                    <div class="info-item">
+                        <label>Floor</label>
+                        <span><%= unit.floor %></span>
+                    </div>
+                    <% } %>
+                    <div class="info-item">
+                        <label>Bedrooms</label>
+                        <span><%= unit.bedrooms %></span>
+                    </div>
+                    <div class="info-item">
+                        <label>Bathrooms</label>
+                        <span><%= unit.bathrooms %></span>
+                    </div>
+                    <div class="info-item">
+                        <label>Square Feet</label>
+                        <span><%= unit.squareFeet %> sq ft</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Monthly Rent</label>
+                        <span class="rent-amount">$<%= unit.monthlyRent %></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Address Card -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Location</h3>
+            </div>
+            <div class="card-body">
+                <div class="address-display">
+                    <p class="address-line"><%= unit.streetAddress %></p>
+                    <p class="address-line"><%= unit.city %>, <%= unit.state %> <%= unit.zipCode %></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Amenities Card -->
+        <% if (unit.amenities && unit.amenities.length > 0) { %>
+        <div class="card">
+            <div class="card-header">
+                <h3>Amenities</h3>
+            </div>
+            <div class="card-body">
+                <div class="amenities-list">
+                    <% unit.amenities.forEach(amenity => { %>
+                        <span class="amenity-tag"><%= amenity %></span>
+                    <% }) %>
+                </div>
+            </div>
+        </div>
+        <% } %>
+
+        <!-- Lease History Card -->
+        <div class="card full-width">
+            <div class="card-header">
+                <h3>Lease History</h3>
+            </div>
+            <div class="card-body">
+                <% if (leaseHistory && leaseHistory.length > 0) { %>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Tenant</th>
+                                    <th>Start Date</th>
+                                    <th>End Date</th>
+                                    <th>Monthly Rent</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% leaseHistory.forEach(lease => { %>
+                                <tr>
+                                    <td><%= lease.tenant.firstName %> <%= lease.tenant.lastName %></td>
+                                    <td><%= new Date(lease.startDate).toLocaleDateString() %></td>
+                                    <td><%= new Date(lease.endDate).toLocaleDateString() %></td>
+                                    <td>$<%= lease.monthlyRent %></td>
+                                    <td>
+                                        <span class="badge badge-<%= lease.status %>">
+                                            <%= lease.status %>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="btn-icon" onclick="window.location.href='/manager/lease/<%= lease._id %>'" title="View">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <% }) %>
+                            </tbody>
+                        </table>
+                    </div>
+                <% } else { %>
+                    <div class="empty-state-small">
+                        <i class="fas fa-history"></i>
+                        <p>No lease history for this unit</p>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- Actions Card -->
+        <div class="card full-width">
+            <div class="card-header">
+                <h3>Unit Actions</h3>
+            </div>
+            <div class="card-body">
+                <div class="action-grid">
+                    <button class="action-button" onclick="editUnitPage('<%= unit._id %>')">
+                        <i class="fas fa-edit"></i>
+                        <span>Edit Unit Details</span>
+                    </button>
+                    <% if (!activeLease) { %>
+                    <button class="action-button" onclick="openCreateLeaseModal(null, '<%= unit._id %>')">
+                        <i class="fas fa-file-contract"></i>
+                        <span>Create Lease</span>
+                    </button>
+                    <button class="action-button danger" onclick="deleteUnit('<%= unit._id %>')">
+                        <i class="fas fa-trash"></i>
+                        <span>Delete Unit</span>
+                    </button>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

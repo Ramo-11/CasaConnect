@@ -95,12 +95,14 @@ route.get("/manager/lease/:leaseId/renew", leaseManagement.getLeaseRenewal);
 
 // Units Management Routes
 route.get("/manager/units", unitManagement.getUnits);
+route.get("/manager/units/:unitId", unitManagement.viewUnit);
+route.get("/manager/units/:unitId/edit", unitManagement.editUnit);
 route.get("/api/manager/units/available", unitManagement.getAvailableUnits);
 route.post("/api/manager/units", unitManagement.createUnit);
 route.get("/api/manager/units/:unitId", unitManagement.getUnit);
-route.put("/api/manager/units/:unitId", unitManagement.updateUnit);
 route.delete("/api/manager/units/:unitId", unitManagement.deleteUnit);
 route.get("/api/manager/units/stats", unitManagement.getUnitsStats);
+route.put("/api/manager/units/:unitId", unitManagement.updateUnit);
 
 // Service Requests Management Routes
 route.get("/manager/service-requests", serviceRequestManagement.getServiceRequests);

@@ -146,28 +146,21 @@ exports.viewDocument = async (req, res) => {
 
 // Download Document (redirect with download header)
 exports.downloadDocument = async (req, res) => {
-    try {
-        const { documentId } = req.params;
-        const document = await Document.findById(documentId);
-        
-        if (!document) {
-            return res.status(404).json({
-                success: false,
-                message: 'Document not found'
-            });
-        }
-        
-        // Set download headers and redirect
-        res.set({
-            'Content-Disposition': `attachment; filename="${document.fileName}"`,
-            'Content-Type': document.mimeType
-        });
-        res.redirect(document.url);
-    } catch (error) {
-        logger.error(`Download document error: ${error}`);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to download document'
-        });
+  try {
+    const { documentId } = req.params;
+    const document = await Document.findById(documentId);
+    if (!document) {
+      return res.status(404).json({ success: false, message: 'Document not found' });
     }
+
+    // Force download; keep original filename (or pass a custom name string)
+    const signedUrl = await storageService.getSignedUrl(document.fileName, 60, {
+      download: document.originalName || true
+    });
+
+    return res.redirect(signedUrl);
+  } catch (error) {
+    logger.error(`Download document error: ${error}`);
+    res.status(500).json({ success: false, message: 'Failed to download document' });
+  }
 };

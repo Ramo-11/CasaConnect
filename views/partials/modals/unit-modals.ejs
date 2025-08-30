@@ -1,0 +1,358 @@
+<!-- Add Unit Modal -->
+<div id="addUnitModal" class="modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h2>Add New Unit</h2>
+            <button class="modal-close" onclick="closeAddUnitModal()">
+                &times;
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="addUnitForm">
+                <div class="form-section">
+                    <h3>Property Information</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="unitNumber">Unit Number *</label>
+                            <input
+                                type="text"
+                                id="unitNumber"
+                                name="unitNumber"
+                                required
+                                placeholder="e.g., 101, A, or house number"
+                            />
+                        </div>
+                        <div class="form-group">
+                            <label for="propertyType">Property Type *</label>
+                            <select
+                                id="propertyType"
+                                name="propertyType"
+                                required
+                                onchange="togglePropertyFields()"
+                            >
+                                <option value="">Select Type</option>
+                                <option value="apartment">Apartment</option>
+                                <option value="house">House</option>
+                                <option value="townhouse">Townhouse</option>
+                                <option value="condo">Condo</option>
+                                <option value="duplex">Duplex</option>
+                                <option value="studio">Studio</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div
+                        class="form-row"
+                        id="buildingFloorRow"
+                        style="display: none"
+                    >
+                        <div class="form-group">
+                            <label for="building">Building (Optional)</label>
+                            <input
+                                type="text"
+                                id="building"
+                                name="building"
+                                placeholder="e.g., Building A, North Tower"
+                            />
+                        </div>
+                        <div class="form-group">
+                            <label for="floor">Floor (Optional)</label>
+                            <input
+                                type="number"
+                                id="floor"
+                                name="floor"
+                                min="0"
+                                placeholder="0 for ground floor"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Address</h3>
+                    <div class="form-group">
+                        <label for="streetAddress">Street Address *</label>
+                        <input
+                            type="text"
+                            id="streetAddress"
+                            name="streetAddress"
+                            required
+                            placeholder="Start typing address..."
+                            autocomplete="off"
+                        />
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="city">City *</label>
+                            <input type="text" id="city" name="city" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="state">State *</label>
+                            <input
+                                type="text"
+                                id="state"
+                                name="state"
+                                required
+                                maxlength="2"
+                                placeholder="e.g., CA"
+                            />
+                        </div>
+                        <div class="form-group">
+                            <label for="zipCode">ZIP Code *</label>
+                            <input
+                                type="text"
+                                id="zipCode"
+                                name="zipCode"
+                                required
+                                pattern="^\d{5}(-\d{4})?$"
+                                placeholder="e.g., 90210"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Unit Details</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="bedrooms">Bedrooms *</label>
+                            <select id="bedrooms" name="bedrooms" required>
+                                <option value="0">Studio</option>
+                                <option value="1">1 Bedroom</option>
+                                <option value="2">2 Bedrooms</option>
+                                <option value="3">3 Bedrooms</option>
+                                <option value="4">4 Bedrooms</option>
+                                <option value="5">5+ Bedrooms</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="bathrooms">Bathrooms *</label>
+                            <select id="bathrooms" name="bathrooms" required>
+                                <option value="1">1 Bathroom</option>
+                                <option value="1.5">1.5 Bathrooms</option>
+                                <option value="2">2 Bathrooms</option>
+                                <option value="2.5">2.5 Bathrooms</option>
+                                <option value="3">3 Bathrooms</option>
+                                <option value="3.5">3.5 Bathrooms</option>
+                                <option value="4">4+ Bathrooms</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="squareFeet">Square Feet *</label>
+                            <input
+                                type="number"
+                                id="squareFeet"
+                                name="squareFeet"
+                                required
+                                min="100"
+                                placeholder="e.g., 850"
+                            />
+                        </div>
+                        <div class="form-group">
+                            <label for="monthlyRent">Monthly Rent ($) *</label>
+                            <input
+                                type="number"
+                                id="monthlyRent"
+                                name="monthlyRent"
+                                required
+                                min="0"
+                                step="50"
+                                placeholder="e.g., 1500"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Keep the amenities and status sections as they are -->
+
+                <div class="form-section">
+                    <h3>Amenities</h3>
+                    <div class="amenities-grid">
+                        <label class="checkbox-label">
+                            <input
+                                type="checkbox"
+                                name="amenities"
+                                value="Parking"
+                            />
+                            <span>Parking</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input
+                                type="checkbox"
+                                name="amenities"
+                                value="Laundry"
+                            />
+                            <span>In-Unit Laundry</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input
+                                type="checkbox"
+                                name="amenities"
+                                value="Dishwasher"
+                            />
+                            <span>Dishwasher</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input
+                                type="checkbox"
+                                name="amenities"
+                                value="AC"
+                            />
+                            <span>Air Conditioning</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input
+                                type="checkbox"
+                                name="amenities"
+                                value="Heating"
+                            />
+                            <span>Heating</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input
+                                type="checkbox"
+                                name="amenities"
+                                value="Balcony"
+                            />
+                            <span>Balcony/Patio</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input
+                                type="checkbox"
+                                name="amenities"
+                                value="Storage"
+                            />
+                            <span>Storage Unit</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input
+                                type="checkbox"
+                                name="amenities"
+                                value="Pet Friendly"
+                            />
+                            <span>Pet Friendly</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Status</h3>
+                    <div class="form-group">
+                        <label for="status">Unit Status *</label>
+                        <select id="status" name="status" required>
+                            <option value="available">Available</option>
+                            <option value="occupied">Occupied</option>
+                            <option value="maintenance">
+                                Under Maintenance
+                            </option>
+                            <option value="reserved">Reserved</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div
+                    id="tenantSelectGroup"
+                    class="form-group"
+                    style="display: none"
+                >
+                    <label for="currentTenant">Assign Tenant *</label>
+                    <select id="currentTenant" name="currentTenant">
+                        <option value="">Select a tenant...</option>
+                        <% if (locals.availableTenants) { %> <%
+                        availableTenants.forEach(tenant => { %>
+                        <option value="<%= tenant._id %>">
+                            <%= tenant.firstName %> <%= tenant.lastName %> - <%=
+                            tenant.email %>
+                        </option>
+                        <% }) %> <% } %>
+                    </select>
+                </div>
+
+                <div class="modal-footer">
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        onclick="closeAddUnitModal()"
+                    >
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <span class="btn-text">Add Unit</span>
+                        <span class="btn-loading" style="display: none">
+                            <span class="spinner"></span> Adding...
+                        </span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Assign Tenant Modal -->
+<div id="assignTenantModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Assign Tenant to Unit</h2>
+      <button class="modal-close" onclick="closeAssignTenantModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="assignTenantForm">
+        <input type="hidden" id="assignUnitId" name="unitId">
+        
+        <div class="unit-preview">
+          <h4 id="assignUnitNumber"></h4>
+          <p id="assignUnitDetails"></p>
+        </div>
+        
+        <% if (locals.availableTenants && availableTenants.length > 0) { %>
+          <div class="form-group">
+            <label for="assignTenantSelect">Select Tenant *</label>
+            <select id="assignTenantSelect" name="tenantId" required>
+              <option value="">Choose a tenant...</option>
+              <% availableTenants.forEach(tenant => { %>
+                <option value="<%= tenant._id %>">
+                  <%= tenant.firstName %> <%= tenant.lastName %> - <%= tenant.email %>
+                </option>
+              <% }) %>
+            </select>
+          </div>
+          
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeAssignTenantModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary">Assign Tenant</button>
+          </div>
+        <% } else { %>
+          <div class="empty-state-small">
+            <i class="fas fa-users"></i>
+            <p>No tenants without units available</p>
+            <button type="button" class="btn btn-primary" onclick="window.location.href='/manager/tenants'">
+              Go to Tenants Page
+            </button>
+          </div>
+        <% } %>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Unit Modal -->
+<div id="editUnitModal" class="modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h2>Edit Unit</h2>
+            <button class="modal-close" onclick="closeEditUnitModal()">
+                &times;
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="editUnitForm">
+                <!-- Same form structure as add unit, will be populated dynamically -->
+            </form>
+        </div>
+    </div>
+</div>

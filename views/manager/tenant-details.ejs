@@ -399,13 +399,13 @@
             </div>
             <div class="card-body">
                 <div class="action-grid">
-                    <button
+                    <!-- <button
                         class="action-button"
                         onclick="sendNotification('<%= tenant._id %>')"
                     >
                         <i class="fas fa-bell"></i>
                         <span>Send Notification</span>
-                    </button>
+                    </button> -->
                     <% if (!activeLease) { %>
                     <button
                         class="action-button"
@@ -422,13 +422,13 @@
                         <i class="fas fa-folder-open"></i>
                         <span>View Documents</span>
                     </button>
-                    <button
+                    <!-- <button
                         class="action-button"
                         onclick="exportTenantData('<%= tenant._id %>')"
                     >
                         <i class="fas fa-download"></i>
                         <span>Export Data</span>
-                    </button>
+                    </button> -->
                     <% if (tenant.isActive) { %>
                     <button
                         class="action-button warning"

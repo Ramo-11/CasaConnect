@@ -72,11 +72,13 @@
         <script src="/js/common.js"></script>
 
         <% if (typeof user !== 'undefined' && user && user.role === 'manager') { %>
+            <script src="/js/modals/manager-unit-modal.js"></script>
             <script src="/js/modals/manager-tenant-modal.js"></script>
         <% } %>
 
         <% if (typeof user !== 'undefined' && user && user.role === 'manager') { %>
             <%- include('partials/modals/tenant-modals') %>
+            <%- include('partials/modals/unit-modals') %>
         <% } %>
         
         <% if (typeof additionalJS !== 'undefined') { %> <%

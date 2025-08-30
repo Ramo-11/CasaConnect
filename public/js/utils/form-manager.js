@@ -72,25 +72,7 @@ class FormManager {
         formElement.addEventListener('input', autoSave);
         formElement.addEventListener('change', autoSave);
         
-        // Load draft on init
-        this.loadDraft(formElement, draftKey);
-        
         return autoSave;
-    }
-    
-    static loadDraft(formElement, draftKey) {
-        const draft = CasaConnect.StorageHelper.get(draftKey);
-        if (draft) {
-            if (confirm('A draft of your changes was found. Would you like to restore it?')) {
-                Object.keys(draft).forEach(key => {
-                    const field = formElement.querySelector(`[name="${key}"]`);
-                    if (field) {
-                        field.value = draft[key];
-                    }
-                });
-            }
-            CasaConnect.StorageHelper.remove(draftKey);
-        }
     }
     
     static clearDraft(draftKey) {

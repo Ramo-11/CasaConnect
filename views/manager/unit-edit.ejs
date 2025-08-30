@@ -1,0 +1,180 @@
+<!-- Edit Unit Page -->
+<div class="unit-edit-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <h1>Edit Unit <%= unit.unitNumber %></h1>
+            <p>Update unit information</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-secondary" onclick="window.location.href='/manager/units/<%= unit._id %>'">
+                <i class="fas fa-arrow-left"></i> Back to Details
+            </button>
+        </div>
+    </div>
+
+    <!-- Edit Form -->
+    <div class="edit-form-container">
+        <form id="editUnitForm" data-unit-id="<%= unit._id %>">
+            <!-- Property Information Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Property Information</h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="unitNumber">Unit Number *</label>
+                            <input type="text" id="unitNumber" name="unitNumber" value="<%= unit.unitNumber %>" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="propertyType">Property Type *</label>
+                            <select id="propertyType" name="propertyType" required onchange="togglePropertyFields()">
+                                <option value="apartment" <%= unit.propertyType === 'apartment' ? 'selected' : '' %>>Apartment</option>
+                                <option value="house" <%= unit.propertyType === 'house' ? 'selected' : '' %>>House</option>
+                                <option value="townhouse" <%= unit.propertyType === 'townhouse' ? 'selected' : '' %>>Townhouse</option>
+                                <option value="condo" <%= unit.propertyType === 'condo' ? 'selected' : '' %>>Condo</option>
+                                <option value="duplex" <%= unit.propertyType === 'duplex' ? 'selected' : '' %>>Duplex</option>
+                                <option value="studio" <%= unit.propertyType === 'studio' ? 'selected' : '' %>>Studio</option>
+                                <option value="other" <%= unit.propertyType === 'other' ? 'selected' : '' %>>Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row" id="buildingFloorRow" style="<%= ['apartment', 'condo', 'studio'].includes(unit.propertyType) ? 'display: flex;' : 'display: none;' %>">
+                        <div class="form-group">
+                            <label for="building">Building (Optional)</label>
+                            <input type="text" id="building" name="building" value="<%= unit.building || '' %>">
+                        </div>
+                        <div class="form-group">
+                            <label for="floor">Floor (Optional)</label>
+                            <input type="number" id="floor" name="floor" value="<%= unit.floor || '' %>" min="0">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Address Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Address</h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="streetAddress">Street Address *</label>
+                        <input type="text" id="streetAddress" name="streetAddress" value="<%= unit.streetAddress %>" required>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="city">City *</label>
+                            <input type="text" id="city" name="city" value="<%= unit.city %>" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="state">State *</label>
+                            <input type="text" id="state" name="state" value="<%= unit.state %>" required maxlength="2">
+                        </div>
+                        <div class="form-group">
+                            <label for="zipCode">ZIP Code *</label>
+                            <input type="text" id="zipCode" name="zipCode" value="<%= unit.zipCode %>" required pattern="^\d{5}(-\d{4})?$">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Unit Details Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Unit Details</h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="bedrooms">Bedrooms *</label>
+                            <select id="bedrooms" name="bedrooms" required>
+                                <% for(let i = 0; i <= 5; i++) { %>
+                                    <option value="<%= i %>" <%= unit.bedrooms === i ? 'selected' : '' %>>
+                                        <%= i === 0 ? 'Studio' : (i === 5 ? '5+ Bedrooms' : i + ' Bedroom' + (i > 1 ? 's' : '')) %>
+                                    </option>
+                                <% } %>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="bathrooms">Bathrooms *</label>
+                            <select id="bathrooms" name="bathrooms" required>
+                                <option value="1" <%= unit.bathrooms === 1 ? 'selected' : '' %>>1 Bathroom</option>
+                                <option value="1.5" <%= unit.bathrooms === 1.5 ? 'selected' : '' %>>1.5 Bathrooms</option>
+                                <option value="2" <%= unit.bathrooms === 2 ? 'selected' : '' %>>2 Bathrooms</option>
+                                <option value="2.5" <%= unit.bathrooms === 2.5 ? 'selected' : '' %>>2.5 Bathrooms</option>
+                                <option value="3" <%= unit.bathrooms === 3 ? 'selected' : '' %>>3 Bathrooms</option>
+                                <option value="3.5" <%= unit.bathrooms === 3.5 ? 'selected' : '' %>>3.5 Bathrooms</option>
+                                <option value="4" <%= unit.bathrooms >= 4 ? 'selected' : '' %>>4+ Bathrooms</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="squareFeet">Square Feet *</label>
+                            <input type="number" id="squareFeet" name="squareFeet" value="<%= unit.squareFeet %>" required min="100">
+                        </div>
+                        <div class="form-group">
+                            <label for="monthlyRent">Monthly Rent ($) *</label>
+                            <input type="number" id="monthlyRent" name="monthlyRent" value="<%= unit.monthlyRent %>" required min="0" step="50">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Amenities Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Amenities</h3>
+                </div>
+                <div class="card-body">
+                    <div class="amenities-grid">
+                        <% const amenityOptions = ['Parking', 'Laundry', 'Dishwasher', 'AC', 'Heating', 'Balcony', 'Storage', 'Pet Friendly']; %>
+                        <% amenityOptions.forEach(amenity => { %>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="amenities" value="<%= amenity %>" 
+                                       <%= unit.amenities && unit.amenities.includes(amenity) ? 'checked' : '' %>>
+                                <span><%= amenity === 'AC' ? 'Air Conditioning' : (amenity === 'Laundry' ? 'In-Unit Laundry' : (amenity === 'Storage' ? 'Storage Unit' : (amenity === 'Balcony' ? 'Balcony/Patio' : amenity))) %></span>
+                            </label>
+                        <% }) %>
+                    </div>
+                </div>
+            </div>
+
+            <% if (activeLease) { %>
+            <!-- Current Lease Warning -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Current Lease Information</h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        This unit has an active lease with <%= activeLease.tenant.firstName %> <%= activeLease.tenant.lastName %>.
+                        Changes will not affect the existing lease terms.
+                    </div>
+                </div>
+            </div>
+            <% } %>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="navigateBack()">
+                    Cancel
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <span class="btn-text">
+                        <i class="fas fa-save"></i> Save Changes
+                    </span>
+                    <span class="btn-loading" style="display: none;">
+                        <span class="spinner"></span> Saving...
+                    </span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

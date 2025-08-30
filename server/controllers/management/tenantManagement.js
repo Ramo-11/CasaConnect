@@ -344,7 +344,8 @@ exports.getTenants = async (req, res) => {
             title: "Tenants Management",
             layout: "layout",
             additionalCSS: ["tenants.css"],
-            additionalJS: ["tenants.js"],
+            additionalJS: ["pages/manager-tenants.js"],
+            user: req.session.user || { role: 'manager' },
             tenants: tenantsWithFullInfo,
             availableUnits,
         });

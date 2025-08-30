@@ -315,15 +315,8 @@ function renderDocuments(documents) {
         }')" title="View">
           <i class="fas fa-eye"></i>
         </button>
-        <button class="btn-icon" onclick="downloadDocument('${doc.url}', '${
-                doc.title
-            }')" title="Download">
+        <button class="btn-icon" onclick="downloadDocument('${doc._id}')" title="Download">
           <i class="fas fa-download"></i>
-        </button>
-        <button class="btn-icon danger" onclick="deleteDocument('${
-            doc._id
-        }', '${currentTenantId}')" title="Delete">
-          <i class="fas fa-trash"></i>
         </button>
       </div>
     </div>
@@ -360,33 +353,28 @@ function viewDocument(documentId) {
 }
 
 // Download document
-function downloadDocument(url, title) {
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = title;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+function downloadDocument(documentId) {
+    window.open(`/api/manager/documents/${documentId}/download`, "_blank");
 }
 
 // Delete document
-async function deleteDocument(documentId, tenantId) {
-    if (!confirm("Are you sure you want to delete this document?")) return;
+// async function deleteDocument(documentId, tenantId) {
+//     if (!confirm("Are you sure you want to delete this document?")) return;
 
-    try {
-        const response = await CasaConnect.APIClient.delete(
-            `/api/manager/documents/${documentId}`
-        );
+//     try {
+//         const response = await CasaConnect.APIClient.delete(
+//             `/api/manager/documents/${documentId}`
+//         );
 
-        if (response.success) {
-            CasaConnect.NotificationManager.success(
-                "Document deleted successfully"
-            );
-            loadDocuments(tenantId);
-        } else {
-            throw new Error(response.message);
-        }
-    } catch (error) {
-        CasaConnect.NotificationManager.error(error.message);
-    }
-}
+//         if (response.success) {
+//             CasaConnect.NotificationManager.success(
+//                 "Document deleted successfully"
+//             );
+//             loadDocuments(tenantId);
+//         } else {
+//             throw new Error(response.message);
+//         }
+//     } catch (error) {
+//         CasaConnect.NotificationManager.error(error.message);
+//     }
+// }

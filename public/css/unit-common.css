@@ -1,0 +1,36 @@
+/* Common Unit Styles */
+.unit-card-header {
+    padding: var(--spacing-lg);
+    background: #f9fafb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.status-indicator {
+    padding: 4px 12px;
+    border-radius: var(--border-radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+}
+
+.status-indicator.available {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.status-indicator.occupied {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.amenity-tag {
+    padding: 4px 10px;
+    background: #eef2ff;
+    color: #4338ca;
+    border-radius: var(--border-radius-md);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+}

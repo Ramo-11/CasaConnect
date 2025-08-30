@@ -47,13 +47,14 @@ exports.deleteFile = async (fileName) => {
   }
 };
 
-exports.getSignedUrl = async (fileName, expiresIn = 3600) => {
+exports.getSignedUrl = async (fileName, expiresIn = 3600, opts = {}) => {
   try {
     logger.debug(`Generating signed URL for file: ${fileName}`);
     const { data, error } = await supabase.storage
       .from('casaconnect')
-      .createSignedUrl(fileName, expiresIn);
-    
+      .createSignedUrl(fileName, expiresIn, {
+        download: opts.download || undefined,
+      });
     if (error) throw error;
     return data.signedUrl;
   } catch (error) {

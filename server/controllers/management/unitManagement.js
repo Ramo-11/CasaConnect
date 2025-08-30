@@ -24,11 +24,7 @@ exports.getUnits = async (req, res) => {
             { $project: { firstName: 1, lastName: 1, email: 1 } }
         ]);
 
-        logger.debug(`Tenants without active leases: ${JSON.stringify(tenantsWithoutActiveLeases)}`);
-
         const units = await Unit.find().sort("unitNumber");
-
-        logger.debug(`Units found: ${JSON.stringify(units)}`);
 
         // For each unit, find if it has an active lease
         const unitsWithTenants = await Promise.all(
@@ -49,8 +45,9 @@ exports.getUnits = async (req, res) => {
         res.render("manager/units", {
             title: "Units Management",
             layout: "layout",
-            additionalCSS: ["common.css", "units.css", "manager.css"],
-            additionalJS: ["units.js", "manager.js"],
+            additionalCSS: ["units.css"],
+            additionalJS: ["pages/manager-units.js"],
+            user: req.session.user || { role: 'manager' },
             googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
             units: unitsWithTenants,
             availableTenants: tenantsWithoutActiveLeases,
@@ -163,13 +160,57 @@ exports.getUnit = async (req, res) => {
     }
 };
 
-// Update Unit (API)
+// View Unit Details Page
+exports.viewUnit = async (req, res) => {
+    try {
+        const { unitId } = req.params;
+        const unit = await Unit.findById(unitId);
+        
+        if (!unit) {
+            return res.status(404).render("error", {
+                title: "Unit Not Found",
+                message: "Unit not found",
+            });
+        }
+
+        // Get active lease with tenant info
+        const activeLease = await Lease.findOne({
+            unit: unitId,
+            status: 'active'
+        }).populate('tenant', 'firstName lastName email phone');
+
+        // Get lease history
+        const leaseHistory = await Lease.find({
+            unit: unitId
+        })
+        .populate('tenant', 'firstName lastName')
+        .sort('-createdAt')
+        .limit(10);
+
+        res.render("manager/unit-details", {
+            title: `Unit ${unit.unitNumber}`,
+            layout: "layout",
+            additionalCSS: ["unit-common.css", "unit-details.css"],
+            additionalJS: ["pages/manager-unit-details.js"],
+            user: req.session.user || { role: 'manager' },
+            unit,
+            activeLease,
+            leaseHistory
+        });
+    } catch (error) {
+        logger.error(`View unit error: ${error}`);
+        res.status(500).render("error", {
+            title: "Error",
+            message: "Failed to load unit details",
+        });
+    }
+};
+
 exports.updateUnit = async (req, res) => {
     try {
         const { unitId } = req.params;
         const updates = req.body;
 
-        // Remove fields that shouldn't be directly updated
         delete updates.status;
         delete updates.currentTenant;
 
@@ -196,6 +237,43 @@ exports.updateUnit = async (req, res) => {
         res.status(500).json({
             success: false,
             message: "Failed to update unit",
+        });
+    }
+};
+
+// Edit Unit
+exports.editUnit = async (req, res) => {
+    try {
+        const { unitId } = req.params;
+        const unit = await Unit.findById(unitId);
+        
+        if (!unit) {
+            return res.status(404).render("error", {
+                title: "Unit Not Found",
+                message: "Unit not found",
+            });
+        }
+
+        const activeLease = await Lease.findOne({
+            unit: unitId,
+            status: 'active'
+        }).populate('tenant');
+
+        res.render("manager/unit-edit", {
+            title: `Edit Unit ${unit.unitNumber}`,
+            layout: "layout",
+            additionalCSS: ["unit-common.css", "unit-edit.css"],
+            additionalJS: ["pages/manager-unit-edit.js"],
+            user: req.session.user || { role: 'manager' },
+            googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
+            unit,
+            activeLease
+        });
+    } catch (error) {
+        logger.error(`Edit unit error: ${error}`);
+        res.status(500).render("error", {
+            title: "Error",
+            message: "Failed to load unit edit form",
         });
     }
 };
