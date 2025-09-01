@@ -12,7 +12,7 @@ const { sessionMiddleware } = require("./server/controllers/sessionController")
 
 // ********** Initialization **************
 const app = express()
-require('dotenv').config()
+require('dotenv').config({ quiet: true });
 logger.debug("Running in " + process.env.NODE_ENV + " mode")
 connectDB()
 app.set('view engine', 'ejs');

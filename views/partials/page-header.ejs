@@ -1,0 +1,35 @@
+<%
+// Default values
+const headerTitle = locals.headerTitle || title || 'Page Title';
+const headerSubtitle = locals.headerSubtitle || '';
+const backButton = locals.backButton !== false; // Default true
+const backUrl = locals.backUrl || '/manager/dashboard';
+const backText = locals.backText || 'Back to Dashboard';
+const headerActions = locals.headerActions || [];
+%>
+
+<div class="page-header">
+    <div class="header-content">
+        <h1><%= headerTitle %></h1>
+        <% if (headerSubtitle) { %>
+            <p><%= headerSubtitle %></p>
+        <% } %>
+    </div>
+    <div class="header-actions">
+        <% if (backButton) { %>
+            <button class="btn btn-secondary" onclick="window.location.href='<%= backUrl %>'">
+                <i class="fas fa-arrow-left"></i> <%= backText %>
+            </button>
+        <% } %>
+        <% headerActions.forEach(action => { %>
+            <button 
+                class="btn <%= action.btnClass || 'btn-primary' %>" 
+                <% if (action.onclick) { %>onclick="<%= action.onclick %>"<% } %>
+                <% if (action.href) { %>onclick="window.location.href='<%= action.href %>'"<% } %>
+            >
+                <% if (action.icon) { %><i class="<%= action.icon %>"></i><% } %>
+                <%= action.text %>
+            </button>
+        <% }) %>
+    </div>
+</div>

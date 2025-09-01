@@ -101,7 +101,8 @@ exports.getDashboard = async (req, res) => {
                     unitNumber: activeLease?.unit?.unitNumber || "Unassigned",
                     leaseEnd: activeLease ? formatDate(activeLease.endDate) : "N/A",
                     paymentStatus: rentPaid ? "current" : (activeLease ? "due" : "no-lease"),
-                    hasActiveLease: !!activeLease
+                    hasActiveLease: !!activeLease,
+                    leaseId: activeLease?._id || null
                 };
             })
         );

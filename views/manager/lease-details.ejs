@@ -3,17 +3,11 @@
 <!-- Lease Details Page -->
 <div class="lease-details-container">
     <!-- Page Header -->
-    <div class="page-header">
-        <div class="header-content">
-            <h1>Lease Agreement Details</h1>
-            <p>Unit <%= lease.unit.unitNumber %> - <%= lease.tenant.firstName %> <%= lease.tenant.lastName %></p>
-        </div>
-        <div class="header-actions">
-            <button class="btn btn-secondary" onclick="window.location.href='/manager/dashboard'">
-                <i class="fas fa-arrow-left"></i> Back to Dashboard
-            </button>
-        </div>
-    </div>
+    <%- include('../partials/page-header', {
+        headerTitle: 'Lease Agreement Details',
+        headerSubtitle: `Unit ${lease.unit.unitNumber} - ${lease.tenant.firstName} ${lease.tenant.lastName}`,
+        backUrl: '/manager/dashboard'
+    }) %>
 
     <!-- Main Content Grid -->
     <div class="details-grid">

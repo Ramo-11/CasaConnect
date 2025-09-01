@@ -89,28 +89,35 @@ exports.getDocuments = async (req, res) => {
     }
 };
 
-// Delete Document
 exports.deleteDocument = async (req, res) => {
     try {
         const { documentId } = req.params;
-        
+
         const document = await Document.findById(documentId);
         if (!document) {
+            logger.warn(`Delete failed: Document ${documentId} not found`);
             return res.status(404).json({
                 success: false,
                 message: 'Document not found'
             });
         }
 
-        // Delete from storage
-        await storageService.deleteFile(document.fileName);
+        // Delete file from storage
+        try {
+            await storageService.deleteFile(document.fileName);
+        } catch (storageError) {
+            logger.error(`Storage deletion error for file ${document.fileName}: ${storageError}`);
+            // Optionally still proceed with DB deletion if storage isn't critical
+        }
 
-        // Delete record
-        await Document.findByIdAndDelete(documentId);
+        // Delete document record
+        await document.deleteOne();
 
+        logger.info(`Document ${documentId} deleted successfully`);
         res.json({
             success: true,
-            message: 'Document deleted successfully'
+            message: 'Document deleted successfully',
+            data: document
         });
     } catch (error) {
         logger.error(`Delete document error: ${error}`);

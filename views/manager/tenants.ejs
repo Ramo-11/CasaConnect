@@ -1,23 +1,18 @@
 <!-- Tenants Management -->
 <div class="tenants-container">
     <!-- Page Header -->
-    <div class="page-header">
-        <div class="header-content">
-            <h1>Tenants Management</h1>
-            <p>Manage all tenant accounts</p>
-        </div>
-        <div class="header-actions">
-            <button
-                class="btn btn-secondary"
-                onclick="window.location.href='/manager/dashboard'"
-            >
-                <i class="fas fa-arrow-left"></i> Back to Dashboard
-            </button>
-            <button class="btn btn-primary" onclick="openAddTenantModal()">
-                <i class="fas fa-plus"></i> Add New Tenant
-            </button>
-        </div>
-    </div>
+    <%- include('../partials/page-header', {
+        headerTitle: 'Tenants Management',
+        headerSubtitle: 'Manage all tenant accounts',
+        headerActions: [
+            {
+                text: 'Add New Tenant',
+                icon: 'fas fa-plus',
+                onclick: 'openAddTenantModal()',
+                btnClass: 'btn-primary'
+            }
+        ]
+    }) %>
 
     <!-- Tenants Filter Bar -->
     <div class="filter-bar">

@@ -9,26 +9,20 @@
 <!-- Tenant Details Page -->
 <div class="tenant-details-container" data-tenant-id="<%= tenant._id %>">
     <!-- Page Header -->
-    <div class="page-header">
-        <div class="header-content">
-            <h1>Tenant Details</h1>
-            <p><%= tenant.firstName %> <%= tenant.lastName %></p>
-        </div>
-        <div class="header-actions">
-            <button
-                class="btn btn-secondary"
-                onclick="window.location.href='/manager/dashboard'"
-            >
-                <i class="fas fa-arrow-left"></i> Back to Dashboard
-            </button>
-            <button
-                class="btn btn-primary"
-                onclick="editTenant('<%= tenant._id %>')"
-            >
-                <i class="fas fa-edit"></i> Edit Tenant
-            </button>
-        </div>
-    </div>
+    <%- include('../partials/page-header', {
+        headerTitle: 'Tenant Details',
+        headerSubtitle: `${tenant.firstName} ${tenant.lastName}`,
+        backUrl: '/manager/dashboard',
+        backText: 'Back to Dashboard',
+        headerActions: [
+            {
+                text: 'Edit Tenant',
+                icon: 'fas fa-edit',
+                onclick: `editTenant('${tenant._id}')`,
+                btnClass: 'btn-primary'
+            }
+        ]
+    }) %>
 
     <!-- Main Content Grid -->
     <div class="details-grid">
@@ -415,13 +409,13 @@
                         <span>Create Lease</span>
                     </button>
                     <% } %>
-                    <button
+                    <!-- <button
                         class="action-button"
                         onclick="viewDocuments('<%= tenant._id %>')"
                     >
                         <i class="fas fa-folder-open"></i>
                         <span>View Documents</span>
-                    </button>
+                    </button> -->
                     <!-- <button
                         class="action-button"
                         onclick="exportTenantData('<%= tenant._id %>')"

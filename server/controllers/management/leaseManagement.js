@@ -12,8 +12,8 @@ exports.createLease = async (req, res) => {
     try {
         logger.debug("Here")
         const {
-            tenantId,
-            unitId,
+            tenant: tenantId,
+            unit: unitId,
             startDate,
             endDate,
             monthlyRent,
@@ -22,8 +22,6 @@ exports.createLease = async (req, res) => {
             lateFeeAmount,
             gracePeriodDays,
         } = req.body;
-
-        logger.debug(`Creating lease with data: ${JSON.stringify(req.body)}`);
 
         const file = req.file;
 
