@@ -1,0 +1,131 @@
+<!-- Create Lease Modal -->
+<div id="createLeaseModal" class="modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h2>Create New Lease</h2>
+            <button class="modal-close" onclick="closeCreateLeaseModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="createLeaseForm">
+                <div class="form-section">
+                    <h3>Lease Parties</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="leaseTenant">Tenant *</label>
+                            <select id="leaseTenant" name="tenant" required onchange="LeaseModalManager.handleTenantChange(this.value)">
+                                <option value="">Select Tenant...</option>
+                                <% if (locals.availableTenantsForLease) { %>
+                                    <% availableTenantsForLease.forEach(tenant => { %>
+                                        <option value="<%= tenant._id %>">
+                                            <%= tenant.firstName %> <%= tenant.lastName %> - <%= tenant.email %>
+                                        </option>
+                                    <% }) %>
+                                <% } %>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="leaseUnit">Unit *</label>
+                            <select id="leaseUnit" name="unit" required onchange="LeaseModalManager.handleUnitChange(this.value)">
+                                <option value="">Select Unit...</option>
+                                <% if (locals.availableUnitsForLease) { %>
+                                    <% availableUnitsForLease.forEach(unit => { %>
+                                        <option value="<%= unit._id %>" data-rent="<%= unit.monthlyRent %>">
+                                            Unit <%= unit.unitNumber %> - $<%= unit.monthlyRent %>/mo
+                                        </option>
+                                    <% }) %>
+                                <% } %>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Lease Terms</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="leaseStartDate">Start Date *</label>
+                            <input type="date" id="leaseStartDate" name="startDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="leaseEndDate">End Date *</label>
+                            <input type="date" id="leaseEndDate" name="endDate" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="leaseMonthlyRent">Monthly Rent ($) *</label>
+                            <input type="number" id="leaseMonthlyRent" name="monthlyRent" required min="0" step="50" placeholder="Will auto-fill from unit selection">
+                        </div>
+                        <div class="form-group">
+                            <label for="leaseSecurityDeposit">Security Deposit ($) *</label>
+                            <input type="number" id="leaseSecurityDeposit" name="securityDeposit" required min="0" step="50" placeholder="Typically equals monthly rent">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Payment Terms</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="rentDueDay">Rent Due Day *</label>
+                            <select id="rentDueDay" name="rentDueDay" required>
+                                <option value="1" selected>1st of each month</option>
+                                <option value="5">5th of each month</option>
+                                <option value="10">10th of each month</option>
+                                <option value="15">15th of each month</option>
+                                <option value="20">20th of each month</option>
+                                <option value="25">25th of each month</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="gracePeriodDays">Grace Period (Days)</label>
+                            <input type="number" id="gracePeriodDays" name="gracePeriodDays" min="0" max="30" value="5">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="lateFeeAmount">Late Fee Amount ($)</label>
+                            <input type="number" id="lateFeeAmount" name="lateFeeAmount" min="0" step="5" value="50">
+                        </div>
+                        <div class="form-group">
+                            <label for="leaseStatus">Initial Status *</label>
+                            <select id="leaseStatus" name="status" required>
+                                <option value="pending">Pending</option>
+                                <option value="active" selected>Active</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Lease Document</h3>
+                    <div class="form-group">
+                        <label for="leaseDocument">Upload Lease PDF *</label>
+                        <input type="file" id="leaseDocument" name="document" accept="application/pdf" required>
+                        <small class="form-help">Please upload the signed lease agreement as a PDF file (Max 10MB)</small>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Additional Information</h3>
+                    <div class="form-group">
+                        <label for="leaseNotes">Notes (Optional)</label>
+                        <textarea id="leaseNotes" name="notes" rows="3" placeholder="Any additional notes or special terms..."></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeCreateLeaseModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <span class="btn-text">Create Lease</span>
+                        <span class="btn-loading" style="display: none;">
+                            <span class="spinner"></span> Creating...
+                        </span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

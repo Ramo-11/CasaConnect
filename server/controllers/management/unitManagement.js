@@ -6,8 +6,8 @@ const { logger } = require("../../logger");
 // Get Units List
 exports.getUnits = async (req, res) => {
     try {
-        // Get tenants without active leases
-        const tenantsWithoutActiveLeases = await User.aggregate([
+        // Get tenants without active leases for lease creation
+        const availableTenantsForLease = await User.aggregate([
             { $match: { role: "tenant" } },
             {
                 $lookup: {
@@ -42,6 +42,16 @@ exports.getUnits = async (req, res) => {
             })
         );
 
+        // Get available units for lease creation (units without active leases)
+        const availableUnitsForLease = unitsWithTenants
+            .filter(unit => unit.status === 'available')
+            .map(unit => ({
+                _id: unit._id,
+                unitNumber: unit.unitNumber,
+                monthlyRent: unit.monthlyRent,
+                streetAddress: unit.streetAddress
+            }));
+
         res.render("manager/units", {
             title: "Units Management",
             layout: "layout",
@@ -50,7 +60,10 @@ exports.getUnits = async (req, res) => {
             user: req.session.user || { role: 'manager' },
             googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
             units: unitsWithTenants,
-            availableTenants: tenantsWithoutActiveLeases,
+            availableTenants: availableTenantsForLease, // Keep for backward compatibility
+            availableTenantsForLease,
+            availableUnitsForLease,
+            path: req.path
         });
     } catch (error) {
         logger.error(`Get units error: ${error}`);
@@ -195,7 +208,8 @@ exports.viewUnit = async (req, res) => {
             user: req.session.user || { role: 'manager' },
             unit,
             activeLease,
-            leaseHistory
+            leaseHistory,
+            path: req.path
         });
     } catch (error) {
         logger.error(`View unit error: ${error}`);
@@ -267,7 +281,8 @@ exports.editUnit = async (req, res) => {
             user: req.session.user || { role: 'manager' },
             googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
             unit,
-            activeLease
+            activeLease,
+            path: req.path
         });
     } catch (error) {
         logger.error(`Edit unit error: ${error}`);

@@ -49,16 +49,6 @@
                 );
             }
 
-            // Create Lease Form
-            const createLeaseForm = document.getElementById("createLeaseForm");
-            if (createLeaseForm && !createLeaseForm.dataset.initialized) {
-                createLeaseForm.dataset.initialized = "true";
-                createLeaseForm.addEventListener(
-                    "submit",
-                    this.handleCreateLease.bind(this)
-                );
-            }
-
             // Assign Unit Form
             const assignUnitForm = document.getElementById("assignUnitForm");
             if (assignUnitForm && !assignUnitForm.dataset.initialized) {
@@ -74,9 +64,6 @@
         initializeModalTriggers() {
             // When modals open, load necessary data
             document.addEventListener("tenantModalOpen", (e) => {
-                if (e.detail.modalId === "createLeaseModal") {
-                    this.loadAvailableUnits();
-                }
                 if (e.detail.modalId === "assignUnitModal") {
                     this.loadAvailableUnits();
                 }
@@ -87,61 +74,20 @@
             });
         }
 
-        // === DATA LOADING METHODS ===
-
-        async loadAvailableUnits() {
-            try {
-                const response = await CasaConnect.APIClient.get(
-                    "/api/manager/units/available"
-                );
-                if (response.success) {
-                    tenantModalState.availableUnits = response.data.data || [];
-                    this.populateUnitSelects();
-                }
-            } catch (error) {
-                console.error("Failed to load units:", error);
-            }
-        }
-
-        async loadTenantsWithoutLease() {
-            try {
-                const response = await CasaConnect.APIClient.get(
-                    "/api/manager/tenants?noLease=true"
-                );
-                if (response.success) {
-                    const select = document.getElementById("leaseTenantSelect");
-                    if (select) {
-                        select.innerHTML =
-                            '<option value="">Choose a tenant...</option>';
-                        response.data.forEach((tenant) => {
-                            const option = document.createElement("option");
-                            option.value = tenant._id;
-                            option.textContent = `${tenant.firstName} ${tenant.lastName} - ${tenant.email}`;
-                            select.appendChild(option);
-                        });
-                    }
-                }
-            } catch (error) {
-                console.error("Failed to load tenants:", error);
-            }
-        }
-
         // === UI POPULATION METHODS ===
 
         populateUnitSelects() {
-            const selects = ["leaseUnit", "assignUnitSelect"];
-
+            const selects = ["assignUnitSelect"]; // Remove "leaseUnit" - that's for lease modal
+            
             selects.forEach((selectId) => {
                 const select = document.getElementById(selectId);
                 if (select) {
                     const currentValue = select.value;
-                    select.innerHTML =
-                        '<option value="">Choose available unit...</option>';
+                    select.innerHTML = '<option value="">Choose available unit...</option>';
 
                     tenantModalState.availableUnits.forEach((unit) => {
                         const option = document.createElement("option");
                         option.value = unit._id;
-                        option.dataset.rent = unit.monthlyRent;
                         option.textContent = `Unit ${unit.unitNumber} - ${unit.bedrooms} bed, ${unit.bathrooms} bath - $${unit.monthlyRent}/mo`;
                         select.appendChild(option);
                     });
@@ -149,28 +95,20 @@
                     if (currentValue) {
                         select.value = currentValue;
                     }
-
-                    // Auto-fill rent when unit selected (for lease creation)
-                    if (selectId === "leaseUnit") {
-                        select.onchange = function () {
-                            const selectedOption =
-                                this.options[this.selectedIndex];
-                            if (selectedOption.dataset.rent) {
-                                const rentInput =
-                                    document.getElementById("monthlyRent");
-                                const depositInput =
-                                    document.getElementById("securityDeposit");
-                                if (rentInput)
-                                    rentInput.value =
-                                        selectedOption.dataset.rent;
-                                if (depositInput)
-                                    depositInput.value =
-                                        selectedOption.dataset.rent;
-                            }
-                        };
-                    }
                 }
             });
+        }
+
+        async loadAvailableUnits() {
+            try {
+                const response = await CasaConnect.APIClient.get("/api/manager/units/available");
+                if (response.success) {
+                    tenantModalState.availableUnits = response.data.data || response.data || [];
+                    this.populateUnitSelects();
+                }
+            } catch (error) {
+                console.error("Failed to load units:", error);
+            }
         }
 
         populateUnitSelectForNewTenant() {
@@ -237,66 +175,6 @@
             }
         }
 
-        async handleCreateLease(e) {
-            e.preventDefault();
-
-            const form = e.target;
-            const formData = new FormData(form);
-
-            // Get tenant ID from hidden input or select
-            let tenantId = document.getElementById("leaseTenantId").value;
-            if (!tenantId) {
-                const tenantSelect =
-                    document.getElementById("leaseTenantSelect");
-                if (tenantSelect) {
-                    tenantId = tenantSelect.value;
-                }
-            }
-
-            if (!tenantId) {
-                CasaConnect.NotificationManager.error("Please select a tenant");
-                return;
-            }
-
-            // Only set tenantId if it's not already in the form
-            if (!formData.has("tenantId")) {
-                formData.set("tenantId", tenantId);
-            } else {
-                // Replace the existing value instead of appending
-                formData.set("tenantId", tenantId);
-            }
-
-            const btn = form.querySelector('button[type="submit"]');
-            const btnText = btn.querySelector(".btn-text");
-            const btnLoading = btn.querySelector(".btn-loading");
-
-            btnText.style.display = "none";
-            btnLoading.style.display = "inline-block";
-            btn.disabled = true;
-
-            try {
-                const response = await CasaConnect.APIClient.post(
-                    "/api/manager/lease/create",
-                    formData
-                );
-
-                if (response.success) {
-                    CasaConnect.NotificationManager.success(
-                        "Lease created successfully!"
-                    );
-                    this.closeCreateLeaseModal();
-                    setTimeout(() => location.reload(), 1500);
-                } else {
-                    throw new Error(response.error || "Failed to create lease");
-                }
-            } catch (error) {
-                CasaConnect.NotificationManager.error(error.message);
-                btnText.style.display = "inline-block";
-                btnLoading.style.display = "none";
-                btn.disabled = false;
-            }
-        }
-
         async handleAssignUnit(e) {
             e.preventDefault();
 
@@ -331,71 +209,6 @@
             document.dispatchEvent(
                 new CustomEvent("tenantModalOpen", {
                     detail: { modalId: "addTenantModal" },
-                })
-            );
-        }
-
-        openCreateLeaseModal(tenantId = null) {
-            const form = document.getElementById("createLeaseForm");
-            const tenantInput = document.getElementById("leaseTenantId");
-            const tenantInfo = document.getElementById("leaseModalTenantInfo");
-            const tenantSelection = document.getElementById(
-                "tenantSelectionSection"
-            );
-
-            // Reset form
-            if (form) form.reset();
-
-            // Set default dates
-            const today = new Date();
-            const nextYear = new Date(today);
-            nextYear.setFullYear(nextYear.getFullYear() + 1);
-
-            const startDateInput = document.getElementById("leaseStartDate");
-            const endDateInput = document.getElementById("leaseEndDate");
-
-            if (startDateInput)
-                startDateInput.value = today.toISOString().split("T")[0];
-            if (endDateInput)
-                endDateInput.value = nextYear.toISOString().split("T")[0];
-
-            if (tenantId) {
-                // Creating lease for specific tenant
-                if (tenantInput) tenantInput.value = tenantId;
-                if (tenantInfo) tenantInfo.style.display = "block";
-                if (tenantSelection) tenantSelection.style.display = "none";
-
-                // Try to get tenant name from page
-                const tenantCard = document.querySelector(
-                    `[data-tenant-id="${tenantId}"]`
-                );
-                const tenantNameEl = document.getElementById(
-                    "leaseModalTenantName"
-                );
-
-                if (tenantCard && tenantNameEl) {
-                    const name =
-                        tenantCard.getAttribute("data-name") ||
-                        tenantCard.querySelector("h3")?.textContent ||
-                        tenantCard
-                            .querySelector("h1")
-                            ?.textContent?.split(" - ")[0] ||
-                        "Selected Tenant";
-                    tenantNameEl.textContent = name;
-                }
-            } else {
-                // Need to select a tenant
-                if (tenantInput) tenantInput.value = "";
-                if (tenantInfo) tenantInfo.style.display = "none";
-                if (tenantSelection) tenantSelection.style.display = "block";
-                this.loadTenantsWithoutLease();
-            }
-
-            this.loadAvailableUnits();
-            CasaConnect.ModalManager.openModal("createLeaseModal");
-            document.dispatchEvent(
-                new CustomEvent("tenantModalOpen", {
-                    detail: { modalId: "createLeaseModal" },
                 })
             );
         }
@@ -515,12 +328,6 @@
         closeAddTenantModal() {
             CasaConnect.ModalManager.closeModal("addTenantModal");
             const form = document.getElementById("addTenantForm");
-            if (form) form.reset();
-        }
-
-        closeCreateLeaseModal() {
-            CasaConnect.ModalManager.closeModal("createLeaseModal");
-            const form = document.getElementById("createLeaseForm");
             if (form) form.reset();
         }
 
@@ -681,8 +488,6 @@
 
     // Expose global functions that auto-initialize if needed
     window.openAddTenantModal = () => getInstance().openAddTenantModal();
-    window.openCreateLeaseModal = (tenantId) =>
-        getInstance().openCreateLeaseModal(tenantId);
     window.sendCredentials = (tenantId) =>
         getInstance().openSendCredentialsModal(tenantId);
     window.assignUnitToTenant = (tenantId) =>
@@ -691,7 +496,6 @@
         getInstance().openDeleteTenantModal(tenantId);
 
     window.closeAddTenantModal = () => getInstance().closeAddTenantModal();
-    window.closeCreateLeaseModal = () => getInstance().closeCreateLeaseModal();
     window.closeSendCredentialsModal = () =>
         getInstance().closeSendCredentialsModal();
     window.closeAssignUnitModal = () => getInstance().closeAssignUnitModal();

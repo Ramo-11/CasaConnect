@@ -204,6 +204,7 @@ exports.viewTenant = async (req, res) => {
             activeLease,
             payments,
             serviceRequests,
+            path: req.path
         });
     } catch (error) {
         logger.error(`View tenant error: ${error}`);
@@ -243,6 +244,7 @@ exports.editTenant = async (req, res) => {
             tenant,
             activeLease,
             availableUnits,
+            path: req.path
         });
     } catch (error) {
         logger.error(`Edit tenant error: ${error}`);
@@ -348,6 +350,7 @@ exports.getTenants = async (req, res) => {
             user: req.session.user || { role: 'manager' },
             tenants: tenantsWithFullInfo,
             availableUnits,
+            path: req.path
         });
     } catch (error) {
         logger.error(`Get tenants error: ${error}`);

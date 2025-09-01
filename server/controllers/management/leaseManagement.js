@@ -10,6 +10,7 @@ const { logger } = require("../../logger");
 // Create Lease with Document
 exports.createLease = async (req, res) => {
     try {
+        logger.debug("Here")
         const {
             tenantId,
             unitId,
@@ -21,6 +22,8 @@ exports.createLease = async (req, res) => {
             lateFeeAmount,
             gracePeriodDays,
         } = req.body;
+
+        logger.debug(`Creating lease with data: ${JSON.stringify(req.body)}`);
 
         const file = req.file;
 
