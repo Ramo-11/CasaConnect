@@ -22,6 +22,7 @@
         }
 
         openCreateLeaseModal(tenantId = null, unitId = null) {
+            console.log(`Opening create lease modal for Tenant ID: ${tenantId}, Unit ID: ${unitId}`);
             const form = document.getElementById("createLeaseForm");
             const tenantSelect = document.getElementById("leaseTenant");
             const unitSelect = document.getElementById("leaseUnit");
@@ -141,10 +142,6 @@
             try {
                 // Use FormData to handle file upload
                 const formData = new FormData(form);
-
-                for (const [key, value] of formData.entries()) {
-                    console.log(`formData: ${key} = ${value}`);
-                }
                 const response = await CasaConnect.APIClient.post('/api/manager/lease/create', formData);
                 
                 if (response.success) {

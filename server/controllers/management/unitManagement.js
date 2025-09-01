@@ -200,6 +200,32 @@ exports.viewUnit = async (req, res) => {
         .sort('-createdAt')
         .limit(10);
 
+        // Get available tenants for lease creation (ADD THIS)
+        const availableTenantsForLease = await User.aggregate([
+            { $match: { role: "tenant" } },
+            {
+                $lookup: {
+                    from: "leases",
+                    localField: "_id", 
+                    foreignField: "tenant",
+                    pipeline: [
+                        { $match: { status: "active" } }
+                    ],
+                    as: "activeLeases"
+                }
+            },
+            { $match: { activeLeases: { $size: 0 } } },
+            { $project: { firstName: 1, lastName: 1, email: 1 } }
+        ]);
+
+        // For available units, since this unit is available, include it (ADD THIS)
+        const availableUnitsForLease = [{
+            _id: unit._id,
+            unitNumber: unit.unitNumber,
+            monthlyRent: unit.monthlyRent,
+            streetAddress: unit.streetAddress
+        }];
+
         res.render("manager/unit-details", {
             title: `Unit ${unit.unitNumber}`,
             layout: "layout",
@@ -209,6 +235,8 @@ exports.viewUnit = async (req, res) => {
             unit,
             activeLease,
             leaseHistory,
+            availableTenantsForLease,
+            availableUnitsForLease,
             path: req.path
         });
     } catch (error) {

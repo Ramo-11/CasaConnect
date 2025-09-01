@@ -1,20 +1,26 @@
 <!-- Unit Details Page -->
 <div class="unit-details-container" data-unit-id="<%= unit._id %>">
     <!-- Page Header -->
-    <div class="page-header">
-        <div class="header-content">
-            <h1>Unit <%= unit.unitNumber %></h1>
-            <p><%= unit.propertyType %> - <%= unit.fullAddress %></p>
-        </div>
-        <div class="header-actions">
-            <button class="btn btn-secondary" onclick="window.location.href='/manager/units'">
-                <i class="fas fa-arrow-left"></i> Back to Units
-            </button>
-            <button class="btn btn-primary" onclick="editUnitPage('<%= unit._id %>')">
-                <i class="fas fa-edit"></i> Edit Unit
-            </button>
-        </div>
-    </div>
+    <%- include('../partials/page-header', {
+        headerTitle: `Unit ${unit.unitNumber}`,
+        headerSubtitle: `${unit.propertyType} - ${unit.fullAddress}`,
+        backUrl: '/manager/dashboard',
+        backText: 'Back to Dashboard',
+        headerActions: [
+            {
+                text: 'Back to Units',
+                icon: 'fas fa-arrow-left',
+                href: '/manager/units',
+                btnClass: 'btn-secondary'
+            },
+            {
+                text: 'Edit Unit',
+                icon: 'fas fa-edit',
+                onclick: `editUnitPage('${unit._id}')`,
+                btnClass: 'btn-primary'
+            }
+        ]
+    }) %>
 
     <!-- Main Content Grid -->
     <div class="details-grid">

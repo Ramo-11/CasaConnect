@@ -25,7 +25,20 @@ const getEmailTransporter = () => {
 exports.getDashboard = async (req, res) => {
     try {
         const managerId = req.session.userId;
-        const manager = await User.findById(managerId);
+        // Should be updated during production
+        // TODO("update manager details")
+        const manager = await User.findById(managerId) || {
+            firstName: 'Dev',
+            lastName: 'Manager',
+            email: 'dev@example.com',
+            role: 'manager'
+        };
+        if (!manager) {
+            return res.status(404).render("error", {
+                title: "Error",
+                message: "Manager account not found",
+            });
+        }
 
         // Get all units
         const units = await Unit.find();
@@ -41,12 +54,15 @@ exports.getDashboard = async (req, res) => {
         const allUnitsList = units.map(u => ({
             id: u._id,
             unitNumber: u.unitNumber,
+            propertyType: u.propertyType,
+            streetAddress: u.streetAddress,
             building: u.building,
             bedrooms: u.bedrooms,
             bathrooms: u.bathrooms,
             squareFeet: u.squareFeet,
             monthlyRent: u.monthlyRent,
-            occupied: occupiedUnitIds.includes(u._id.toString())
+            occupied: occupiedUnitIds.includes(u._id.toString()),
+            user: req.session.user || { role: 'manager' },
         }));
 
         // Get active service requests count

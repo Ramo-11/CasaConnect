@@ -1,23 +1,20 @@
 <!-- Units Management -->
 <div class="units-container">
     <!-- Page Header -->
-    <div class="page-header">
-        <div class="header-content">
-            <h1>Units Management</h1>
-            <p>Manage all property units</p>
-        </div>
-        <div class="header-actions">
-            <button
-                class="btn btn-secondary"
-                onclick="window.location.href='/manager/dashboard'"
-            >
-                <i class="fas fa-arrow-left"></i> Back to Dashboard
-            </button>
-            <button class="btn btn-primary" onclick="openAddUnitModal()">
-                <i class="fas fa-plus"></i> Add New Unit
-            </button>
-        </div>
-    </div>
+    <%- include('../partials/page-header', {
+        headerTitle: 'Units Management',
+        headerSubtitle: 'Manage all property units',
+        backUrl: '/manager/dashboard',
+        backText: 'Back to Dashboard',
+        headerActions: [
+            {
+                text: 'Add New Unit',
+                icon: 'fas fa-plus',
+                onclick: 'openAddUnitModal()',
+                btnClass: 'btn-primary'
+            }
+        ]
+    }) %>
 
     <!-- Units Filter Bar -->
     <div class="filter-bar">

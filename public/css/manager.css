@@ -352,6 +352,76 @@
     font-size: var(--font-size-sm);
 }
 
+/* Units Legend */
+.units-legend {
+    display: flex;
+    gap: var(--spacing-lg);
+    margin-left: auto;
+    margin-right: var(--spacing-lg);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: var(--font-size-sm);
+    color: #6b7280;
+}
+
+.legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid;
+}
+
+.legend-dot.occupied {
+    background: #dbeafe;
+    border-color: #3b82f6;
+}
+
+.legend-dot.available {
+    background: #d1fae5;
+    border-color: #10b981;
+}
+
+/* Updated Unit Card Styles */
+.unit-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-xs);
+}
+
+.unit-type {
+    font-size: var(--font-size-xs);
+    color: #6b7280;
+    text-transform: capitalize;
+}
+
+.unit-address {
+    font-size: var(--font-size-sm);
+    color: #4b5563;
+    margin-bottom: var(--spacing-sm);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.unit-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+    padding-top: var(--spacing-sm);
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.unit-card .btn-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .manager-header {
