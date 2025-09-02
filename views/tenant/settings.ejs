@@ -1,0 +1,99 @@
+<div class="tenant-container">
+    <%- include('../partials/page-header', {
+        headerTitle: 'Account Settings',
+        headerSubtitle: 'Manage your account preferences',
+        backButton: { href: '/tenant/dashboard', text: 'Back to Dashboard' },
+        headerActions: []
+    }) %>
+    
+    <% if (requirePasswordChange) { %>
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>Password Change Required</strong>
+        <p>You are required to change your password from the default one provided by management.</p>
+    </div>
+    <% } %>
+    
+    <div class="settings-grid">
+        <!-- Change Password Card -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Change Password</h3>
+            </div>
+            <div class="card-body">
+                <form id="changePasswordForm">
+                    <div class="form-group">
+                        <label for="currentPassword">Current Password</label>
+                        <input type="password" 
+                               id="currentPassword" 
+                               name="currentPassword" 
+                               class="form-control" 
+                               required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="newPassword">New Password</label>
+                        <input type="password" 
+                               id="newPassword" 
+                               name="newPassword" 
+                               class="form-control" 
+                               required
+                               minlength="8">
+                        <small class="form-text">Minimum 8 characters</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm New Password</label>
+                        <input type="password" 
+                               id="confirmPassword" 
+                               name="confirmPassword" 
+                               class="form-control" 
+                               required>
+                    </div>
+                    
+                    <div class="password-strength" id="passwordStrength" style="display: none;">
+                        <div class="strength-bar">
+                            <div class="strength-fill"></div>
+                        </div>
+                        <span class="strength-text"></span>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-lock"></i> Change Password
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Account Information Card -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Account Information</h3>
+            </div>
+            <div class="card-body">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>Name</label>
+                        <span><%= user.fullName %></span>
+                    </div>
+                    <div class="info-item">
+                        <label>Email</label>
+                        <span><%= user.email %></span>
+                    </div>
+                    <div class="info-item">
+                        <label>Phone</label>
+                        <span><%= user.phone %></span>
+                    </div>
+                    <div class="info-item">
+                        <label>Account Status</label>
+                        <span class="badge badge-success">Active</span>
+                    </div>
+                </div>
+                <p class="mt-3 text-muted">
+                    <i class="fas fa-info-circle"></i> 
+                    Contact management to update your contact information.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>

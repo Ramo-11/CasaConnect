@@ -5,8 +5,14 @@ const route = express.Router();
 
 // Controllers
 const authController = require("./controllers/authController");
-const tenantController = require("./controllers/tenantController");
 const managerController = require("./controllers/managerController");
+
+// Tenant Controllers
+const tenantDashboard = require("./controllers/tenant/dashboardController");
+const tenantAccount = require("./controllers/tenant/accountController");
+const tenantPayment = require("./controllers/tenant/paymentController");
+const tenantNotifications = require("./controllers/tenant/notificationController");
+const tenantServiceRequest = require("./controllers/tenant/serviceRequestController");
 
 // Management Controllers
 const tenantManagement = require("./controllers/management/tenantManagement");
@@ -26,8 +32,10 @@ const { isAuthenticated, isManager, isTenant, attachUserToLocals } = authControl
 
 // Development bypass - modify session AFTER it exists
 const isDevelopment = process.env.NODE_ENV !== "production";
-const managerMiddleware = isDevelopment ? (req, res, next) => next() : isManager;
-const tenantMiddleware = isDevelopment ? (req, res, next) => next() : isTenant;
+// const managerMiddleware = isDevelopment ? (req, res, next) => next() : isManager;
+// const tenantMiddleware = isDevelopment ? (req, res, next) => next() : isTenant;
+const managerMiddleware = isManager;
+const tenantMiddleware = isTenant;
 const authMiddleware = isAuthenticated;
 
 // Make current user available to templates (safe if not logged in)
@@ -105,18 +113,20 @@ route.use("/tenant", authMiddleware, tenantMiddleware);
 route.use("/api/tenant", authMiddleware, tenantMiddleware);
 
 // Tenant web pages
-route.get("/tenant", tenantController.getDashboard);
-route.get("/tenant/dashboard", tenantController.getDashboard);
-route.get("/tenant/payment-status", tenantController.getPaymentStatus);
-route.get("/tenant/notifications", tenantController.getNotifications);
+route.get("/tenant", tenantDashboard.getDashboard);
+route.get("/tenant/dashboard", tenantDashboard.getDashboard);
+route.get("/tenant/settings", tenantAccount.getSettings);
 
 // Tenant actions
-route.post("/tenant/payment", tenantController.processPayment);
-route.post("/tenant/service-request", tenantController.submitServiceRequest);
-route.post("/tenant/notification/:notificationId/read", tenantController.markNotificationRead);
+route.post("/tenant/payment", tenantPayment.processPayment);
+route.post("/tenant/service-request", tenantServiceRequest.submitServiceRequest);
+route.post("/tenant/change-password", tenantAccount.changePassword);
 
-// *********** Tenant APIs (AJAX) ***********
-route.get("/api/tenant/:tenantId/payment-status", tenantController.getPaymentStatus);
-route.get("/api/tenant/:tenantId/notifications", tenantController.getNotifications);
+// Tenant APIs (AJAX)
+route.get("/api/tenant/payment-status", tenantPayment.getPaymentStatus);
+route.get("/api/tenant/payment-history", tenantPayment.getPaymentHistory);
+route.get("/api/tenant/notifications", tenantNotifications.getNotifications);
+route.post("/api/tenant/notification/:notificationId/read", tenantNotifications.markNotificationRead);
+route.post("/api/tenant/notifications/mark-all-read", tenantNotifications.markAllRead);
 
 module.exports = route;

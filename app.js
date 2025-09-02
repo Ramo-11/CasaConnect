@@ -7,7 +7,8 @@ const bodyParser = require("body-parser")
 const router = require("./server/router")
 const { logger } = require("./server/logger")
 const connectDB = require('./server/controllers/dbController');
-const { sessionMiddleware } = require("./server/controllers/sessionController")
+const { sessionMiddleware } = require("./server/middleware/sessionController")
+const { validateSession, enforceRole } = require("./server/middleware/sessionValidator");
 // ********** End Imports **********
 
 // ********** Initialization **************
@@ -29,6 +30,8 @@ app.use(express.json())
 app.use(express.static("public"))
 app.use(cookieParser())
 app.use(sessionMiddleware)
+app.use(validateSession);
+app.use(enforceRole);
 // ********** End Initialization **********
 
 app.use("/", router)

@@ -143,23 +143,50 @@ exports.logout = (req, res) => {
 
 // Middleware: Check if authenticated
 exports.isAuthenticated = (req, res, next) => {
-    if (req.session && req.session.userId) {
-        return next();
+    // Check for session and userId
+    if (!req.session || !req.session.userId) {
+        // For API routes, return JSON error
+        if (req.path.startsWith("/api/")) {
+            return res.status(401).json({
+                success: false,
+                message: "Authentication required",
+            });
+        }
+
+        // For web routes, redirect to login
+        if (req.flash) {
+            req.flash("error", "Please login to continue");
+        }
+        return res.redirect("/login");
     }
 
-    // For API routes, return JSON error
-    if (req.path.startsWith("/api/")) {
-        return res.status(401).json({
-            success: false,
-            message: "Authentication required",
+    // Verify the session is still valid by checking if user exists
+    User.findById(req.session.userId)
+        .then(user => {
+            if (!user || !user.isActive) {
+                req.session.destroy();
+                if (req.path.startsWith("/api/")) {
+                    return res.status(401).json({
+                        success: false,
+                        message: "Session expired or invalid",
+                    });
+                }
+                return res.redirect("/login");
+            }
+            req.user = user; // Attach user to request
+            next();
+        })
+        .catch(err => {
+            logger.error(`Auth check error: ${err}`);
+            req.session.destroy();
+            if (req.path.startsWith("/api/")) {
+                return res.status(500).json({
+                    success: false,
+                    message: "Authentication error",
+                });
+            }
+            return res.redirect("/login");
         });
-    }
-
-    // For web routes, redirect to login
-    if (req.flash) {
-        req.flash("error", "Please login to continue");
-    }
-    res.redirect("/login");
 };
 
 // Middleware: Check role
@@ -185,6 +212,7 @@ exports.hasRole = (...roles) => {
 
 // Middleware: Check if manager or supervisor
 exports.isManager = (req, res, next) => {
+    // First check authentication
     if (!req.session || !req.session.userId) {
         if (req.path.startsWith("/api/")) {
             return res.status(401).json({
@@ -195,10 +223,26 @@ exports.isManager = (req, res, next) => {
         return res.redirect("/login");
     }
 
+    // Check role
     if (!["manager", "supervisor"].includes(req.session.userRole)) {
-        return res.status(403).render("error", {
+        logger.warn(`Unauthorized access attempt to manager area by user ${req.session.userId} with role ${req.session.userRole}`);
+        
+        if (req.path.startsWith("/api/")) {
+            return res.status(403).json({
+                success: false,
+                message: "Access denied. Manager privileges required.",
+            });
+        }
+        
+        // Redirect to appropriate dashboard based on their actual role
+        if (req.session.userRole === "tenant") {
+            return res.redirect("/tenant/dashboard");
+        }
+        
+        return res.render("error", {
             title: "Access Denied",
             message: "You do not have permission to access this area.",
+            layout: "layout"
         });
     }
 
@@ -207,6 +251,7 @@ exports.isManager = (req, res, next) => {
 
 // Middleware: Check if tenant
 exports.isTenant = (req, res, next) => {
+    // First check authentication
     if (!req.session || !req.session.userId) {
         if (req.path.startsWith("/api/")) {
             return res.status(401).json({
@@ -217,10 +262,26 @@ exports.isTenant = (req, res, next) => {
         return res.redirect("/login");
     }
 
+    // Check role
     if (req.session.userRole !== "tenant") {
-        return res.status(403).render("error", {
+        logger.warn(`Unauthorized access attempt to tenant area by user ${req.session.userId} with role ${req.session.userRole}`);
+        
+        if (req.path.startsWith("/api/")) {
+            return res.status(403).json({
+                success: false,
+                message: "Access denied. Tenant privileges required.",
+            });
+        }
+        
+        // Redirect to appropriate dashboard based on their actual role
+        if (["manager", "supervisor"].includes(req.session.userRole)) {
+            return res.redirect("/manager/dashboard");
+        }
+        
+        return res.render("error", {
             title: "Access Denied",
             message: "This area is for tenants only.",
+            layout: "layout"
         });
     }
 

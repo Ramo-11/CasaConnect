@@ -13,6 +13,14 @@
     </div>
     <% } %>
 
+    <% if (user.requirePasswordChange) { %>
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i>
+        <span>Please change your password from the default one provided.</span>
+        <a href="/tenant/settings" class="btn btn-primary btn-small">Change Password</a>
+    </div>
+    <% } %>
+
     <!-- Header with Unit Info -->
     <%- include('../partials/page-header', {
         headerTitle: `Welcome, ${user.firstName}`,
@@ -20,6 +28,67 @@
         backButton: false,
         headerActions: []
     }) %>
+
+    <!-- Add after the page-header include -->
+    <div class="dashboard-top-bar">
+        <div class="notifications-dropdown">
+            <button class="notification-bell" onclick="toggleNotifications()">
+                <i class="fas fa-bell"></i>
+                <% if (unreadCount > 0) { %>
+                <span class="notification-badge"><%= unreadCount %></span>
+                <% } %>
+            </button>
+            <div class="notifications-panel" id="notificationsPanel" style="display: none;">
+                <div class="notifications-header">
+                    <h4>Notifications</h4>
+                    <% if (unreadCount > 0) { %>
+                    <button class="btn-link" onclick="markAllAsRead()">Mark all as read</button>
+                    <% } %>
+                </div>
+                <div class="notifications-list">
+                    <% if (notifications && notifications.length > 0) { %>
+                        <% notifications.forEach(notification => { %>
+                        <div class="notification-item priority-<%= notification.priority %>" data-id="<%= notification.id %>">
+                            <div class="notification-icon">
+                                <i class="fas fa-<%= getNotificationIcon(notification.type) %>"></i>
+                            </div>
+                            <div class="notification-content">
+                                <h5><%= notification.title %></h5>
+                                <p><%= notification.message %></p>
+                                <span class="notification-time"><%= notification.timeAgo %></span>
+                            </div>
+                        </div>
+                        <% }) %>
+                    <% } else { %>
+                        <p class="no-notifications">No new notifications</p>
+                    <% } %>
+                </div>
+                <div class="notifications-footer">
+                    <a href="/tenant/notifications" class="btn-link">View all notifications</a>
+                </div>
+            </div>
+        </div>
+        <a href="/tenant/settings" class="btn btn-secondary">
+            <i class="fas fa-cog"></i> Settings
+        </a>
+    </div>
+
+    <%
+    // Helper function for notification icons
+    function getNotificationIcon(type) {
+        const icons = {
+            'payment_received': 'check-circle',
+            'payment_due': 'exclamation-circle',
+            'payment_failed': 'times-circle',
+            'service_request_updated': 'tools',
+            'service_request_completed': 'check',
+            'maintenance_scheduled': 'calendar',
+            'announcement': 'bullhorn',
+            'system': 'info-circle'
+        };
+        return icons[type] || 'bell';
+    }
+    %>
 
     <!-- Quick Stats -->
     <div class="dashboard-grid">
