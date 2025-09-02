@@ -20,32 +20,13 @@ const sessionMiddleware = session({
     secret: process.env.SESSION_SECRET || "your-secret-key",
     resave: false,
     saveUninitialized: false,
+    rolling: true,
     cookie: {
-        secure: false, // Set to true if using HTTPS
+        secure: false,
         httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+        sameSite: 'lax'
     },
 });
-
-// const userMiddleware = async (req, res, next) => {
-//     try {
-//         // const userData = await getUser(req) || {}
-//         const userData = {};
-//         res.locals.user = userData.user || null;
-//         res.locals.userLoggedIn = !!userData.isLoggedIn;
-//         res.locals.isUserAdmin = !!userData.isAdmin;
-
-//         if (!req.session) req.session = {};
-//         req.session.userLoggedIn = !!userData.isLoggedIn;
-//         req.session.isUserAdmin = !!userData.isAdmin;
-//     } catch (error) {
-//         console.error("Error retrieving user data:", error);
-//         res.locals.user = null;
-//         res.locals.userLoggedIn = false;
-//         res.locals.isUserAdmin = null;
-//     }
-//     res.locals.currentRoute = req.path;
-//     next();
-// };
 
 module.exports = { sessionMiddleware };

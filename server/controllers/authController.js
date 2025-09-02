@@ -39,7 +39,7 @@ exports.getLogin = (req, res) => {
 // Process Login
 exports.login = async (req, res) => {
     try {
-        const { email, password, remember } = req.body;
+        const { email, password } = req.body;
 
         // Validate input
         if (!email || !password) {
@@ -89,13 +89,6 @@ exports.login = async (req, res) => {
         req.session.userRole = user.role;
         req.session.userName = user.fullName;
 
-        // Set session expiry based on remember me
-        if (remember) {
-            req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
-        } else {
-            req.session.cookie.maxAge = 24 * 60 * 60 * 1000; // 24 hours
-        }
-
         // Generate JWT token (optional, for API access)
         const token = jwt.sign(
             {
@@ -104,7 +97,7 @@ exports.login = async (req, res) => {
             },
             process.env.JWT_SECRET || "your-secret-key",
             {
-                expiresIn: remember ? "30d" : "24h",
+                expiresIn: "30d",
             }
         );
 

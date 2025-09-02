@@ -8,19 +8,6 @@ const bcrypt = require("bcryptjs");
 const nodemailer = require("nodemailer");
 const { logger } = require("../logger");
 
-// Email transporter configuration
-const getEmailTransporter = () => {
-    return nodemailer.createTransport({
-        host: process.env.SMTP_HOST || "smtp.gmail.com",
-        port: process.env.SMTP_PORT || 587,
-        secure: false,
-        auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_APP_PASSWORD,
-        },
-    });
-};
-
 // Get Manager Dashboard
 exports.getDashboard = async (req, res) => {
     try {

@@ -82,15 +82,12 @@ CasaConnect.ready(() => {
     });
   }
   
-  // Remember me functionality
-  const rememberCheckbox = document.getElementById('remember');
   const emailInput = document.getElementById('email');
   
   // Load saved email if remember was checked
   const savedEmail = CasaConnect.StorageHelper.get('rememberedEmail');
   if (savedEmail) {
     emailInput.value = savedEmail;
-    rememberCheckbox.checked = true;
   }
   
   // Save/remove email based on checkbox

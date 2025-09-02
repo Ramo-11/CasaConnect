@@ -26,21 +26,9 @@ const { isAuthenticated, isManager, isTenant, attachUserToLocals } = authControl
 
 // Development bypass - modify session AFTER it exists
 const isDevelopment = process.env.NODE_ENV !== "production";
-const authMiddleware = isDevelopment
-    ? (req, res, next) => {
-          // Mock session data for development
-          if (req.session) {
-              req.session.userId = "507f1f77bcf86cd799439011"; // mock manager ID
-              req.session.userRole = "manager";
-              req.session.userName = "Dev Manager";
-          }
-          next();
-      }
-    : isAuthenticated;
-
 const managerMiddleware = isDevelopment ? (req, res, next) => next() : isManager;
 const tenantMiddleware = isDevelopment ? (req, res, next) => next() : isTenant;
-// const authMiddleware = isAuthenticated;
+const authMiddleware = isAuthenticated;
 
 // Make current user available to templates (safe if not logged in)
 route.use(attachUserToLocals);
