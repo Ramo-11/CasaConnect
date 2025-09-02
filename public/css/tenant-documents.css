@@ -1,0 +1,59 @@
+/* tenant-documents.css */
+
+.document-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-lg);
+    border: 1px solid #e5e7eb;
+    border-radius: var(--border-radius-lg);
+    margin-bottom: var(--spacing-md);
+    transition: all var(--transition-normal);
+}
+.document-item:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+.document-icon {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f3f4f6;
+    border-radius: var(--border-radius-lg);
+    font-size: 24px;
+    color: var(--primary-color);
+}
+.document-info {
+    flex: 1;
+}
+.document-info h4 {
+    margin: 0 0 var(--spacing-sm);
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-dark);
+}
+.document-meta {
+    display: flex;
+    gap: var(--spacing-lg);
+    color: #6b7280;
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--spacing-md);
+}
+.lease-status .status-row {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--spacing-sm) 0;
+}
+.document-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--spacing-md);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .document-grid {
+        grid-template-columns: 1fr;
+    }
+}

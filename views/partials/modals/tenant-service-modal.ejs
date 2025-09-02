@@ -1,0 +1,168 @@
+<!-- Service Request Modal -->
+<div id="serviceRequestModal" class="modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h2>Submit Service Request</h2>
+            <button class="modal-close" onclick="closeServiceRequestModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="serviceRequestForm">
+                <!-- Service Fee Notice -->
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Service Fee:</strong> A $10 fee will be charged for this service request.
+                    <br>
+                    <small>For emergencies requiring immediate attention, please call: (555) 123-4567</small>
+                </div>
+
+                <!-- Request Details -->
+                <div class="form-section">
+                    <h4>Request Details</h4>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="requestCategory">Category *</label>
+                            <select id="requestCategory" name="category" required>
+                                <option value="">Select a category...</option>
+                                <option value="electrical">Electrical</option>
+                                <option value="plumbing">Plumbing</option>
+                                <option value="hvac">HVAC / Heating / Cooling</option>
+                                <option value="appliance">Appliance Repair</option>
+                                <option value="general_repair">General Repair</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="requestPriority">Priority *</label>
+                            <select id="requestPriority" name="priority" required>
+                                <option value="low">Low - Can wait a few days</option>
+                                <option value="medium" selected>Medium - Should be addressed soon</option>
+                                <option value="high">High - Within 24 hours</option>
+                                <option value="emergency">Emergency - Immediate attention</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="requestTitle">Issue Title *</label>
+                        <input type="text" id="requestTitle" name="title" required 
+                               placeholder="Brief description of the issue">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="requestDescription">Detailed Description *</label>
+                        <textarea id="requestDescription" name="description" required rows="4" 
+                                  placeholder="Please provide details about the issue, including:
+• Exact location in the unit
+• When the problem started
+• Any attempts you've made to resolve it
+• Any relevant sounds, smells, or visible damage"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="requestLocation">Location in Unit *</label>
+                        <select id="requestLocation" name="location" required>
+                            <option value="">Select location...</option>
+                            <option value="kitchen">Kitchen</option>
+                            <option value="living_room">Living Room</option>
+                            <option value="bedroom_master">Master Bedroom</option>
+                            <option value="bedroom_other">Other Bedroom</option>
+                            <option value="bathroom_master">Master Bathroom</option>
+                            <option value="bathroom_other">Other Bathroom</option>
+                            <option value="laundry">Laundry Area</option>
+                            <option value="garage">Garage</option>
+                            <option value="exterior">Exterior/Outside</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="requestAccess">Access Instructions</label>
+                        <textarea id="requestAccess" name="accessInstructions" rows="2" 
+                                  placeholder="Any special instructions for accessing the unit or problem area? 
+(e.g., 'Dog in bedroom', 'Please call before arriving', 'Use side entrance')"></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="preferredDate">Preferred Service Date</label>
+                            <input type="date" id="preferredDate" name="preferredDate">
+                        </div>
+                        <div class="form-group">
+                            <label for="preferredTime">Preferred Time</label>
+                            <select id="preferredTime" name="preferredTime">
+                                <option value="">No preference</option>
+                                <option value="morning">Morning (8am-12pm)</option>
+                                <option value="afternoon">Afternoon (12pm-5pm)</option>
+                                <option value="evening">Evening (5pm-8pm)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Information -->
+                <div class="form-section">
+                    <h4>Payment Information - $10 Service Fee</h4>
+                    
+                    <div class="payment-methods">
+                        <div class="payment-method active" data-method="card">
+                            <input type="radio" name="servicePaymentMethod" id="serviceMethodCard" value="credit_card" checked>
+                            <label for="serviceMethodCard" class="method-card">
+                                <i class="fas fa-credit-card"></i>
+                                <span>Credit/Debit Card</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="serviceCardNumber">Card Number *</label>
+                        <input type="text" id="serviceCardNumber" name="cardNumber" 
+                               data-format="card" maxlength="19" required
+                               placeholder="1234 5678 9012 3456">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="serviceExpiry">Expiry Date *</label>
+                            <input type="text" id="serviceExpiry" name="cardExpiry" 
+                                   data-format="expiry" maxlength="5" required
+                                   placeholder="MM/YY">
+                        </div>
+                        <div class="form-group">
+                            <label for="serviceCvv">CVV *</label>
+                            <input type="text" id="serviceCvv" name="cardCvv" 
+                                   pattern="[0-9]{3,4}" maxlength="4" required
+                                   placeholder="123">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="serviceCardName">Cardholder Name *</label>
+                        <input type="text" id="serviceCardName" name="cardholderName" required
+                               placeholder="As it appears on card">
+                    </div>
+                </div>
+
+                <!-- Photo Upload (Optional) -->
+                <div class="form-section">
+                    <h4>Photos (Optional)</h4>
+                    <div class="form-group">
+                        <label for="photos">Upload Photos of the Issue</label>
+                        <input type="file" id="photos" name="photos" multiple accept="image/*">
+                        <small class="form-help">You can upload up to 3 photos (max 5MB each)</small>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeServiceRequestModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <span class="btn-text">Submit Request & Pay $10</span>
+                        <span class="btn-loading" style="display: none;">
+                            <span class="spinner"></span> Processing...
+                        </span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

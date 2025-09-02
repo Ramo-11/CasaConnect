@@ -1,0 +1,156 @@
+/* tenant-payment.css */
+
+/* Payment Cards */
+.payment-status-card {
+    border-left: 4px solid var(--primary-color);
+}
+.payment-status-card.warning {
+    border-left-color: #f59e0b;
+}
+.payment-status-card.danger {
+    border-left-color: #ef4444;
+}
+.status-badge {
+    padding: var(--spacing-xs) var(--spacing-md);
+    border-radius: var(--border-radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+}
+.status-badge.success {
+    background: #d1fae5;
+    color: #065f46;
+}
+.status-badge.warning {
+    background: #fed7aa;
+    color: #92400e;
+}
+.status-badge.danger {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* Payment Warnings */
+.payment-due-in {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-dark);
+    margin: var(--spacing-md) 0;
+}
+.payment-warning {
+    color: #f59e0b;
+    font-weight: var(--font-weight-medium);
+    margin: var(--spacing-md) 0;
+}
+.payment-alert {
+    color: #ef4444;
+    font-weight: var(--font-weight-semibold);
+    margin: var(--spacing-md) 0;
+}
+.amount-due {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: var(--spacing-lg) 0;
+    padding: var(--spacing-lg);
+    background: #f9fafb;
+    border-radius: var(--border-radius-md);
+}
+.amount-due .label {
+    color: #6b7280;
+    font-size: var(--font-size-base);
+}
+.amount-due .amount {
+    font-size: var(--font-size-3xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--text-dark);
+}
+
+/* Payment Table */
+.payment-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.payment-table th {
+    text-align: left;
+    padding: var(--spacing-md);
+    background: #f9fafb;
+    font-weight: var(--font-weight-semibold);
+    color: #4b5563;
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    border-bottom: 2px solid #e5e7eb;
+}
+.payment-table td {
+    padding: var(--spacing-md);
+    border-bottom: 1px solid #f3f4f6;
+}
+.payment-table tbody tr:hover {
+    background: #f9fafb;
+}
+
+/* Type Badges */
+.type-badge {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--border-radius-md);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+}
+.type-rent {
+    background: #dbeafe;
+    color: #1e40af;
+}
+.type-service_fee {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+/* Payment Methods */
+.payment-methods {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-md);
+}
+.payment-method {
+    cursor: pointer;
+}
+.payment-method input {
+    display: none;
+}
+.method-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-lg);
+    border: 2px solid #e5e7eb;
+    border-radius: var(--border-radius-lg);
+    transition: all var(--transition-normal);
+}
+.payment-method input:checked + .method-card {
+    border-color: var(--primary-color);
+    background: rgba(208, 167, 100, 0.1);
+}
+.method-card i {
+    font-size: 24px;
+    color: #6b7280;
+}
+.payment-method input:checked + .method-card i {
+    color: var(--primary-color);
+}
+.method-card span {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: #4b5563;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .payment-methods {
+        grid-template-columns: 1fr;
+    }
+    .payment-table {
+        font-size: var(--font-size-sm);
+    }
+}

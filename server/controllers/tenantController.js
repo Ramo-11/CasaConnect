@@ -83,7 +83,12 @@ exports.getDashboard = async (req, res) => {
     // Format data for view
     const viewData = {
       title: 'Tenant Dashboard',
-      additionalCSS: ['tenant.css'],
+      additionalCSS: [
+        'tenant-dashboard.css',
+        'tenant-payment.css',
+        'tenant-service-request.css',
+        'tenant-documents.css'
+      ],
       additionalJS: ['tenant.js'],
       layout: 'layout',
       

@@ -1,0 +1,153 @@
+<!-- Payment Modal -->
+<div id="paymentModal" class="modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h2>Make Rent Payment</h2>
+            <button class="modal-close" onclick="closePaymentModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="paymentForm">
+                <!-- Payment Summary -->
+                <div class="payment-summary card">
+                    <div class="card-body">
+                        <h4>Payment Details</h4>
+                        <div class="summary-row">
+                            <span>Monthly Rent:</span>
+                            <span class="amount">$<%= typeof monthlyRent !== 'undefined' ? monthlyRent.toFixed(2) : '0.00' %></span>
+                        </div>
+                        <% if (typeof lateFee !== 'undefined' && lateFee > 0) { %>
+                        <div class="summary-row late-fee">
+                            <span>Late Fee:</span>
+                            <span class="amount">$<%= lateFee.toFixed(2) %></span>
+                        </div>
+                        <% } %>
+                        <div class="summary-row total">
+                            <strong>Total Due:</strong>
+                            <strong class="amount">$<%= typeof amountDue !== 'undefined' ? amountDue.toFixed(2) : '0.00' %></strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Method Selection -->
+                <div class="form-section">
+                    <h4>Payment Method</h4>
+                    <div class="payment-methods">
+                        <div class="payment-method active" data-method="ach">
+                            <input type="radio" name="paymentMethod" id="methodACH" value="ach" checked>
+                            <label for="methodACH" class="method-card">
+                                <i class="fas fa-university"></i>
+                                <span>Bank Account (ACH)</span>
+                                <small>No transaction fee</small>
+                            </label>
+                        </div>
+                        <div class="payment-method" data-method="card">
+                            <input type="radio" name="paymentMethod" id="methodCard" value="credit_card">
+                            <label for="methodCard" class="method-card">
+                                <i class="fas fa-credit-card"></i>
+                                <span>Credit/Debit Card</span>
+                                <small>2.9% + $0.30 fee</small>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ACH Payment Fields -->
+                <div id="achFields" class="payment-fields">
+                    <h4>Bank Account Information</h4>
+                    <div class="form-group">
+                        <label for="accountType">Account Type *</label>
+                        <select id="accountType" name="accountType" required>
+                            <option value="checking">Checking</option>
+                            <option value="savings">Savings</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="routingNumber">Routing Number *</label>
+                            <input type="text" id="routingNumber" name="routingNumber" 
+                                   pattern="[0-9]{9}" maxlength="9" required
+                                   placeholder="9 digits">
+                            <small class="form-help">Located at the bottom of your check</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="accountNumber">Account Number *</label>
+                            <input type="text" id="accountNumber" name="accountNumber" 
+                                   maxlength="17" required
+                                   placeholder="Up to 17 digits">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="accountHolder">Account Holder Name *</label>
+                        <input type="text" id="accountHolder" name="accountHolder" required
+                               placeholder="As it appears on your bank account">
+                    </div>
+                </div>
+
+                <!-- Card Payment Fields -->
+                <div id="cardFields" class="payment-fields" style="display: none;">
+                    <h4>Card Information</h4>
+                    <div class="form-group">
+                        <label for="cardNumber">Card Number *</label>
+                        <div class="card-input-wrapper">
+                            <input type="text" id="cardNumber" name="cardNumber" 
+                                   data-format="card" maxlength="19"
+                                   placeholder="1234 5678 9012 3456">
+                            <span class="card-type-icon"></span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="expiry">Expiry Date *</label>
+                            <input type="text" id="expiry" name="expiry" 
+                                   data-format="expiry" maxlength="5"
+                                   placeholder="MM/YY">
+                        </div>
+                        <div class="form-group">
+                            <label for="cvv">CVV *</label>
+                            <input type="text" id="cvv" name="cvv" 
+                                   pattern="[0-9]{3,4}" maxlength="4"
+                                   placeholder="123">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="cardholderName">Cardholder Name *</label>
+                        <input type="text" id="cardholderName" name="cardholderName"
+                               placeholder="As it appears on card">
+                    </div>
+                    <div class="form-group">
+                        <label for="billingZip">Billing ZIP Code *</label>
+                        <input type="text" id="billingZip" name="billingZip" 
+                               pattern="[0-9]{5}" maxlength="5"
+                               placeholder="12345">
+                    </div>
+                </div>
+
+                <!-- Save Payment Method -->
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="savePaymentMethod" id="savePaymentMethod">
+                        <span>Save this payment method for future use</span>
+                    </label>
+                </div>
+
+                <!-- Terms Agreement -->
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="agreeToTerms" id="agreeToTerms" required>
+                        <span>I authorize this payment and agree to the terms of service</span>
+                    </label>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closePaymentModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <span class="btn-text">Process Payment</span>
+                        <span class="btn-loading" style="display: none;">
+                            <span class="spinner"></span> Processing...
+                        </span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

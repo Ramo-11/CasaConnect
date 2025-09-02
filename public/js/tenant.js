@@ -413,6 +413,11 @@ CasaConnect.ready(() => {
         // Already handled in ServiceRequestModal.init()
     };
     
+    document.querySelectorAll('.progress-fill[data-progress]').forEach(bar => {
+        const progress = bar.getAttribute('data-progress');
+        bar.style.width = progress + '%';
+    });
+    
     TenantDashboard.initializeFilters = function() {
         FilterManager.init();
     };

@@ -73,10 +73,13 @@
 
         <!-- Modal Scripts - Load based on user role and page context -->
         <% if (typeof user !== 'undefined' && user && user.role === 'manager') { %>
-            <!-- Core Modal Managers -->
             <script src="/js/modals/manager-tenant-modal.js"></script>
             <script src="/js/modals/manager-unit-modal.js"></script>
             <script src="/js/modals/manager-lease-modal.js"></script>
+        <% } %>
+
+        <% if (typeof user !== 'undefined' && user && user.role === 'tenant') { %>
+            <script src="/js/pages/tenant-payment.js"></script>
         <% } %>
 
         <!-- Modal Partials - Include based on page needs -->

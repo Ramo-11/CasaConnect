@@ -1,0 +1,95 @@
+/* tenant-service-request.css */
+
+/* Request Items */
+.request-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md) 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+.request-item:last-child {
+    border-bottom: none;
+}
+.request-title {
+    font-weight: var(--font-weight-medium);
+    color: var(--text-dark);
+}
+.request-status {
+    font-size: var(--font-size-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--border-radius-md);
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+}
+
+/* Request Cards */
+.request-card {
+    border: 1px solid #e5e7eb;
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
+    transition: all var(--transition-normal);
+}
+.request-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+.request-card.completed {
+    background: #f9fafb;
+}
+.request-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--spacing-md);
+}
+.request-header h4 {
+    margin: 0;
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-dark);
+}
+.request-meta {
+    display: flex;
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
+    font-size: var(--font-size-sm);
+    color: #6b7280;
+}
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+.meta-item i {
+    font-size: var(--font-size-sm);
+}
+.priority-high {
+    color: #dc2626;
+}
+.priority-emergency {
+    color: #dc2626;
+    font-weight: var(--font-weight-semibold);
+}
+.request-description {
+    color: #4b5563;
+    line-height: 1.6;
+    margin-bottom: var(--spacing-md);
+}
+
+/* Eviction Warning */
+.eviction-warning {
+    background: #fee2e2;
+    color: #991b1b;
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius-md);
+    font-size: var(--font-size-sm);
+    margin-top: var(--spacing-md);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .request-meta {
+        flex-wrap: wrap;
+    }
+}
