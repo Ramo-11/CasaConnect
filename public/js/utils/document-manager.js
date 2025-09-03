@@ -52,7 +52,7 @@ const DocumentManager = {
                         <button class="btn-icon" onclick="DocumentManager.downloadDocument('${doc._id}')" title="Download">
                             <i class="fas fa-download"></i>
                         </button>
-                        <button class="btn-icon text-danger" onclick="DocumentManager.deleteDocument('${doc._id}')" title="Delete">
+                        <button class="btn-icon text-danger" onclick="deleteDocument('${doc._id}')" title="Delete">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -84,14 +84,17 @@ const DocumentManager = {
 
             if (response.success) {
                 CasaConnect.NotificationManager.success("Document deleted successfully");
-                // Call the reload callback if provided
-                if (reloadCallback && typeof reloadCallback === 'function') {
-                    reloadCallback();
-                }
+                k
+                setTimeout(() => {
+                    if (reloadCallback && typeof reloadCallback === 'function') {
+                        reloadCallback();
+                    }
+                }, 1500);
             } else {
                 throw new Error(response.message || 'Failed to delete document');
             }
         } catch (error) {
+            console.error('Delete error:', error); // Add debugging
             CasaConnect.NotificationManager.error(error.message);
         }
     },

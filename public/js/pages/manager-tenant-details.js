@@ -10,9 +10,9 @@ CasaConnect.ready(() => {
 
     // Initialize document upload form with reload callback
     DocumentManager.initializeUploadForm(() => {
-        if (currentTenantId) {
-            DocumentManager.loadDocuments('documentsContainer', 'User', currentTenantId);
-        }
+        setTimeout(() => {
+            location.reload();
+        }, 1500);
     });
 
     // Load documents if we have a tenant ID
@@ -225,7 +225,9 @@ window.viewDocument = (documentId) => DocumentManager.viewDocument(documentId);
 window.downloadDocument = (documentId) => DocumentManager.downloadDocument(documentId);
 window.deleteDocument = (documentId) => {
     DocumentManager.deleteDocument(documentId, () => {
-        location.reload();
+        setTimeout(() => {
+            location.reload();
+        }, 1500);
     });
 };
 window.attachDocument = (tenantId) => DocumentManager.attachDocument(tenantId, 'User');

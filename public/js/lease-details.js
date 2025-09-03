@@ -266,7 +266,9 @@ CasaConnect.ready(() => {
 CasaConnect.ready(() => {
     if (currentLeaseId) {
         DocumentManager.initializeUploadForm(() => {
-            location.reload();
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
         });
     }
 });
@@ -312,7 +314,9 @@ window.viewDocument = (documentId) => DocumentManager.viewDocument(documentId);
 window.downloadDocument = (documentId) => DocumentManager.downloadDocument(documentId);
 window.deleteDocument = (documentId) => {
     DocumentManager.deleteDocument(documentId, () => {
-        location.reload();
+        setTimeout(() => {
+            location.reload();
+        }, 1500);
     });
 };
 window.uploadLeaseDocument = (leaseId) => {
