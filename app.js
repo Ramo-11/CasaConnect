@@ -14,7 +14,7 @@ const { validateSession, enforceRole } = require("./server/middleware/sessionVal
 // ********** Initialization **************
 const app = express()
 require('dotenv').config({ quiet: true });
-logger.debug("Running in " + process.env.NODE_ENV + " mode")
+logger.info("Running in " + process.env.NODE_ENV + " mode")
 connectDB()
 app.set('view engine', 'ejs');
 app.set('views', './views');

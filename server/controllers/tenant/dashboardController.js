@@ -41,7 +41,8 @@ exports.getDashboard = async (req, res) => {
       return res.render('tenant/no-lease', {
         title: 'No Active Lease',
         user: tenant,
-        layout: 'layout'
+        layout: 'layout',
+        additionalCSS: ['no-lease.css']
       });
     }
     

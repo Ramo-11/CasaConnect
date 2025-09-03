@@ -18,8 +18,6 @@ exports.uploadFile = async (file, folder = 'documents') => {
       });
 
     if (error) throw error;
-
-    logger.debug(`Uploaded file name: ${fileName}`);
     
     return {
       fileName,
@@ -49,7 +47,6 @@ exports.deleteFile = async (fileName) => {
 
 exports.getSignedUrl = async (fileName, expiresIn = 3600, opts = {}) => {
   try {
-    logger.debug(`Generating signed URL for file: ${fileName}`);
     const { data, error } = await supabase.storage
       .from('casaconnect')
       .createSignedUrl(fileName, expiresIn, {

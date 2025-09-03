@@ -96,8 +96,6 @@ const TenantSettings = {
             const response = await CasaConnect.APIClient.post('/tenant/change-password', json);
 
             if (response.success) {
-                console.log(`Password changed successfully for tenant: ${json.tenantId}`);
-                console.log(`response: ${JSON.stringify(response)}`);
                 CasaConnect.NotificationManager.success('Password changed successfully!');
                 form.reset();
                 

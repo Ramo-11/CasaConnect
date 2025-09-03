@@ -1,0 +1,50 @@
+<!-- Upload Document Modal -->
+<div id="uploadDocumentModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Upload Document</h2>
+            <button class="modal-close" onclick="closeUploadDocumentModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="uploadDocumentForm">
+                <input type="hidden" id="documentRelatedId" name="relatedId"/>
+                <input type="hidden" id="documentRelatedModel" name="relatedModel" value="User"/>
+                
+                <div class="form-group">
+                    <label for="documentTitle">Document Title *</label>
+                    <input type="text" id="documentTitle" name="title" required 
+                           placeholder="e.g., ID Verification, Background Check, etc."/>
+                </div>
+                
+                <div class="form-group">
+                    <label for="documentType">Document Type *</label>
+                    <select id="documentType" name="type" required>
+                        <option value="">Select type...</option>
+                        <option value="lease">Lease Agreement</option>
+                        <option value="contract">Contract</option>
+                        <option value="notice">Notice</option>
+                        <option value="invoice">Invoice</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="documentFile">Select File *</label>
+                    <input type="file" id="documentFile" name="file" required 
+                           accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"/>
+                    <small class="form-help">Max file size: 10MB. Supported formats: PDF, DOC, DOCX, JPG, PNG</small>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeUploadDocumentModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <span class="btn-text">Upload Document</span>
+                        <span class="btn-loading" style="display: none;">
+                            <span class="spinner"></span> Uploading...
+                        </span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

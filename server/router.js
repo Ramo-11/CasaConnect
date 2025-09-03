@@ -80,6 +80,7 @@ route.get("/api/manager/documents/:documentId/download", documentManagement.down
 route.post("/api/manager/lease/create", upload.single('document'), leaseManagement.createLease);
 route.put("/api/manager/lease/:leaseId", leaseManagement.updateLease);
 route.post("/api/manager/lease/:leaseId/terminate", leaseManagement.terminateLease);
+route.delete("/api/manager/lease/:leaseId", leaseManagement.deleteLease);
 route.post("/api/manager/lease/:leaseId/renew", upload.single('document'), leaseManagement.renewLease);
 route.get("/api/manager/lease/:leaseId", leaseManagement.getLease);
 route.get("/api/manager/leases", leaseManagement.getLeases);

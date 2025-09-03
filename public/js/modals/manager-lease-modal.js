@@ -22,7 +22,6 @@
         }
 
         openCreateLeaseModal(tenantId = null, unitId = null) {
-            console.log(`Opening create lease modal for Tenant ID: ${tenantId}, Unit ID: ${unitId}`);
             const form = document.getElementById("createLeaseForm");
             const tenantSelect = document.getElementById("leaseTenant");
             const unitSelect = document.getElementById("leaseUnit");
@@ -87,7 +86,6 @@
         }
 
         handleUnitChange(unitId) {
-            console.log(`Unit selected: ${unitId}`);
             if (!unitId) return;
             
             // Get the selected option
@@ -109,7 +107,6 @@
 
         handleTenantChange(tenantId) {
             // Can be used for future enhancements like showing tenant info
-            console.log('Tenant selected:', tenantId);
         }
 
         async populateRentFromUnit(unitId) {

@@ -190,8 +190,11 @@
                             <button class="btn-icon" onclick="viewDocument('<%= lease.document._id %>')" title="View">
                                 <i class="fas fa-eye"></i>
                             </button>
-                            <button class="btn-icon" onclick="downloadDocument('<%= JSON.stringify(lease.document) %>')" title="Download">
+                            <button class="btn-icon" onclick="downloadDocument('<%= lease.document._id %>')" title="Download">
                                 <i class="fas fa-download"></i>
+                            </button>
+                            <button class="btn-icon text-danger" onclick="deleteDocument('<%= lease.document._id %>')" title="Delete">
+                                <i class="fas fa-trash"></i>
                             </button>
                         </div>
                     </div>

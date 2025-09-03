@@ -38,7 +38,6 @@ exports.changePassword = async (req, res) => {
   try {
     const tenantId = req.session?.userId;
     const { currentPassword, newPassword, confirmPassword } = req.body;
-    logger.debug(`tenant ${tenantId} is changing password from ${currentPassword} to ${newPassword} and confirm password is ${confirmPassword}`);
 
     // Validate input
     if (!currentPassword || !newPassword || !confirmPassword) {
@@ -63,8 +62,6 @@ exports.changePassword = async (req, res) => {
     }
     
     const tenant = await User.findById(tenantId);
-
-    logger.debug(`Found tenant: ${tenantId}`);
 
     if (!tenant) {
       logger.error(`Tenant not found: ${tenantId}`);

@@ -97,8 +97,10 @@ exports.createTenant = async (req, res) => {
 
         await tenant.save();
 
+        logger.info(`Tenant created: ${tenant.fullName} (${tenant.email})`);
+
         // Send credentials email if requested
-        if (sendCredentials === "true" || sendCredentials === true) {
+        if (sendCredentials === "on") {
             await sendCredentialsEmail(tenant, password);
         }
 
@@ -167,7 +169,6 @@ exports.sendCredentials = async (req, res) => {
 };
 
 // View Tenant Details
-// View Tenant Details
 exports.viewTenant = async (req, res) => {
     try {
         const { tenantId } = req.params;
@@ -185,17 +186,14 @@ exports.viewTenant = async (req, res) => {
             status: 'active'
         }).populate('unit');
 
-        // Get payment history
         const payments = await Payment.find({ tenant: tenantId })
             .sort("-createdAt")
             .limit(12);
 
-        // Get service requests
         const serviceRequests = await ServiceRequest.find({ tenant: tenantId })
             .sort("-createdAt")
             .limit(10);
 
-        // Get available units for lease creation (units without active leases)
         const availableUnitsForLease = await Unit.aggregate([
             {
                 $lookup: {
@@ -240,8 +238,8 @@ exports.viewTenant = async (req, res) => {
             activeLease,
             payments,
             serviceRequests,
-            availableUnitsForLease,  // Add this
-            availableTenantsForLease, // Add this
+            availableUnitsForLease,
+            availableTenantsForLease,
             path: req.path
         });
     } catch (error) {
@@ -271,7 +269,40 @@ exports.editTenant = async (req, res) => {
             status: 'active'
         }).populate('unit');
 
-        const availableUnits = await Unit.find();
+        // Get available units for lease creation (units without active leases)
+        const availableUnitsForLease = await Unit.aggregate([
+            {
+                $lookup: {
+                    from: "leases",
+                    localField: "_id",
+                    foreignField: "unit",
+                    pipeline: [
+                        { $match: { status: "active" } }
+                    ],
+                    as: "activeLeases"
+                }
+            },
+            { $match: { activeLeases: { $size: 0 } } },
+            { $project: { unitNumber: 1, monthlyRent: 1, streetAddress: 1 } }
+        ]);
+
+        // Get tenants without active leases (for additional tenants if needed)
+        const availableTenantsForLease = await User.aggregate([
+            { $match: { role: "tenant" } },
+            {
+                $lookup: {
+                    from: "leases",
+                    localField: "_id",
+                    foreignField: "tenant",
+                    pipeline: [
+                        { $match: { status: "active" } }
+                    ],
+                    as: "activeLeases"
+                }
+            },
+            { $match: { activeLeases: { $size: 0 } } },
+            { $project: { firstName: 1, lastName: 1, email: 1 } }
+        ]);
 
         res.render("manager/tenant-edit", {
             title: `Edit Tenant: ${tenant.firstName} ${tenant.lastName}`,
@@ -281,7 +312,8 @@ exports.editTenant = async (req, res) => {
             user: req.session.user || { role: 'manager' },
             tenant,
             activeLease,
-            availableUnits,
+            availableUnitsForLease,
+            availableTenantsForLease,
             path: req.path
         });
     } catch (error) {

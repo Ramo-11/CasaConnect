@@ -67,17 +67,12 @@
                 if (e.detail.modalId === "assignUnitModal") {
                     this.loadAvailableUnits();
                 }
-                if (e.detail.modalId === "addTenantModal") {
-                    this.loadAvailableUnits();
-                    this.populateUnitSelectForNewTenant();
-                }
             });
         }
 
         // === UI POPULATION METHODS ===
-
         populateUnitSelects() {
-            const selects = ["assignUnitSelect"]; // Remove "leaseUnit" - that's for lease modal
+            const selects = ["assignUnitSelect"];
             
             selects.forEach((selectId) => {
                 const select = document.getElementById(selectId);
@@ -131,7 +126,6 @@
         }
 
         // === FORM HANDLERS ===
-
         async handleAddTenant(e) {
             e.preventDefault();
 
@@ -201,10 +195,8 @@
         }
 
         // === MODAL OPEN METHODS ===
-
         openAddTenantModal() {
             this.generatePassword();
-            this.populateUnitSelectForNewTenant();
             CasaConnect.ModalManager.openModal("addTenantModal");
             document.dispatchEvent(
                 new CustomEvent("tenantModalOpen", {

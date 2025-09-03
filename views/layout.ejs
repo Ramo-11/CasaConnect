@@ -70,6 +70,7 @@
 
         <script src="/js/utils/form-manager.js"></script>
         <script src="/js/common.js"></script>
+        <script src="/js/utils/document-manager.js"></script>
 
         <!-- Modal Scripts - Load based on user role and page context -->
         <% if (typeof user !== 'undefined' && user && user.role === 'manager') { %>
@@ -92,6 +93,8 @@
             const includeUnitModals = currentPath.includes('unit') || currentPath.includes('dashboard');
             const includeLeaseModals = includeTenantModals || includeUnitModals; // Lease modals needed on both
             %>
+
+            <%- include('partials/modals/shared-modals') %>
 
             <% if (includeTenantModals) { %>
                 <%- include('partials/modals/tenant-modals') %>

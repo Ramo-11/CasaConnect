@@ -24,13 +24,12 @@ async function createAdmin() {
         firstName: "Admin",
         lastName: "Manager",
         email: "admin@casaconnect.com",
-        password: "Admin123!", // Will be hashed automatically
+        password: "Admin123!",
         phone: "(555) 000-0000",
         role: "manager",
         isActive: true,
     });
 
-    console.log("Admin created:", admin.email);
     process.exit();
 }
 
