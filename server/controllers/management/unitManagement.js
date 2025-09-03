@@ -55,7 +55,7 @@ exports.getUnits = async (req, res) => {
         res.render("manager/units", {
             title: "Units Management",
             layout: "layout",
-            additionalCSS: ["units.css"],
+            additionalCSS: ["manager/units.css"],
             additionalJS: ["pages/manager-units.js"],
             user: req.session.user || { role: 'manager' },
             googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
@@ -229,7 +229,7 @@ exports.viewUnit = async (req, res) => {
         res.render("manager/unit-details", {
             title: `Unit ${unit.unitNumber}`,
             layout: "layout",
-            additionalCSS: ["unit-common.css", "unit-details.css"],
+            additionalCSS: ["manager/unit-common.css", "manager/unit-details.css"],
             additionalJS: ["pages/manager-unit-details.js"],
             user: req.session.user || { role: 'manager' },
             unit,
@@ -304,7 +304,7 @@ exports.editUnit = async (req, res) => {
         res.render("manager/unit-edit", {
             title: `Edit Unit ${unit.unitNumber}`,
             layout: "layout",
-            additionalCSS: ["unit-common.css", "unit-edit.css"],
+            additionalCSS: ["manager/unit-common.css", "manager/unit-edit.css"],
             additionalJS: ["pages/manager-unit-edit.js"],
             user: req.session.user || { role: 'manager' },
             googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,

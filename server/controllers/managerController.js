@@ -155,7 +155,7 @@ exports.getDashboard = async (req, res) => {
         res.render("manager/dashboard", {
             title: "Manager Dashboard",
             layout: "layout",
-            additionalCSS: ["manager.css"],
+            additionalCSS: ["manager/dashboard.css"],
             additionalJS: ["pages/manager-dashboard.js"],
             user: manager,
             totalUnits,

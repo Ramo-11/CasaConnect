@@ -440,59 +440,174 @@
 
         <!-- Documents Tab -->
         <div id="documents" class="tab-pane">
+            <!-- Lease Agreement Card -->
             <div class="card">
                 <div class="card-header">
-                    <h3>Lease Agreement</h3>
+                    <h3><i class="fas fa-file-contract"></i> Lease Agreement</h3>
+                    <a href="/tenant/lease/<%= leaseId %>" class="btn-link">
+                        View Full Details <i class="fas fa-arrow-right"></i>
+                    </a>
                 </div>
                 <div class="card-body">
-                    <div class="document-item">
+                    <% if (leaseDocument) { %>
+                    <div class="document-item primary-document">
                         <div class="document-icon">
                             <i class="fas fa-file-contract"></i>
                         </div>
                         <div class="document-info">
-                            <h4>Residential Lease Agreement</h4>
+                            <h4>Current Lease Agreement</h4>
                             <div class="document-meta">
-                                <span><i class="fas fa-calendar"></i> <%= leaseStart %> - <%= leaseEnd %></span>
+                                <span><i class="fas fa-calendar"></i> Effective: <%= leaseStart %> - <%= leaseEnd %></span>
                                 <span><i class="fas fa-home"></i> Unit <%= unit.unitNumber %></span>
                             </div>
                         </div>
                         <div class="document-actions">
-                            <a href="/documents/lease/<%= leaseId %>" class="btn btn-secondary" target="_blank">
-                                <i class="fas fa-download"></i> View PDF
-                            </a>
+                            <button class="btn btn-secondary" onclick="DocumentManager.viewDocument('<%= leaseDocument._id %>')">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                            <button class="btn btn-primary" onclick="DocumentManager.downloadDocument('<%= leaseDocument._id %>')">
+                                <i class="fas fa-download"></i> Download
+                            </button>
                         </div>
                     </div>
+                    <% } else { %>
+                    <div class="empty-state-small">
+                        <i class="fas fa-file-upload"></i>
+                        <p>Lease document not yet uploaded</p>
+                        <p class="text-muted">Please contact management if you need a copy of your lease.</p>
+                    </div>
+                    <% } %>
+                    
+                    <% if (leaseDocuments && leaseDocuments.length > 1) { %>
+                    <div class="mt-3">
+                        <h5>Previous Lease Documents</h5>
+                        <div class="document-list">
+                            <% leaseDocuments.slice(1).forEach(doc => { %>
+                            <div class="document-item secondary">
+                                <div class="document-icon small">
+                                    <i class="fas fa-file-contract"></i>
+                                </div>
+                                <div class="document-info">
+                                    <span><%= doc.title %></span>
+                                    <small class="text-muted"><%= doc.uploadDate %></small>
+                                </div>
+                                <div class="document-actions">
+                                    <button class="btn-icon" onclick="DocumentManager.viewDocument('<%= doc.id %>')" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn-icon" onclick="DocumentManager.downloadDocument('<%= doc.id %>')" title="Download">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <% }) %>
+                        </div>
+                    </div>
+                    <% } %>
                 </div>
             </div>
 
-            <% if (documents && documents.length > 0) { %>
+            <!-- Other Documents Card -->
             <div class="card mt-3">
                 <div class="card-header">
-                    <h3>Other Documents</h3>
+                    <h3><i class="fas fa-folder"></i> Other Documents</h3>
                 </div>
                 <div class="card-body">
+                    <% if (otherDocuments && otherDocuments.length > 0) { %>
                     <div class="document-grid">
-                        <% documents.forEach(doc => { %>
+                        <% otherDocuments.forEach(doc => { %>
                         <div class="document-item">
                             <div class="document-icon">
-                                <i class="fas fa-file"></i>
+                                <i class="fas <%= doc.icon %>"></i>
                             </div>
                             <div class="document-info">
-                                <h4><%= doc.title %></h4>
-                                <span class="document-date"><%= doc.uploadDate %></span>
+                                <h5><%= doc.title %></h5>
+                                <span class="document-meta">
+                                    <p>Document Type: <%= doc.type.replace('_', ' ') %></p>
+                                    <p>File Size: <%= Math.round(doc.size / 1024) %> KB</p>
+                                    <p>Uploaded Date: <%= doc.uploadDate %></p>
+                                </span>
                             </div>
                             <div class="document-actions">
-                                <a href="/documents/<%= doc.id %>" class="btn-link" target="_blank">View</a>
+                                <button class="btn-icon" onclick="DocumentManager.viewDocument('<%= doc.id %>')" title="View">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn-icon" onclick="DocumentManager.downloadDocument('<%= doc.id %>')" title="Download">
+                                    <i class="fas fa-download"></i>
+                                </button>
                             </div>
                         </div>
                         <% }) %>
                     </div>
+                    <% } else { %>
+                    <div class="empty-state-small">
+                        <i class="fas fa-folder-open"></i>
+                        <p>No additional documents</p>
+                        <p class="text-muted">Any documents shared with you by management will appear here.</p>
+                    </div>
+                    <% } %>
                 </div>
             </div>
-            <% } %>
         </div>
     </div>
 </div>
+
+<script>
+// Load tenant documents when documents tab is shown
+document.addEventListener('DOMContentLoaded', function() {
+    const documentsTab = document.querySelector('[data-tab="documents"]');
+    if (documentsTab) {
+        documentsTab.addEventListener('click', function() {
+            loadTenantDocuments();
+        });
+    }
+});
+
+async function loadTenantDocuments() {
+    try {
+        const response = await CasaConnect.APIClient.get('/api/tenant/documents');
+        if (response.success) {
+            renderTenantDocuments(response.data);
+        }
+    } catch (error) {
+        console.error('Failed to load documents:', error);
+    }
+}
+
+function renderTenantDocuments(documents) {
+    const container = document.getElementById('tenantDocumentsContainer');
+    
+    // Filter out lease documents as they're shown separately
+    const otherDocs = documents.filter(doc => doc.type !== 'lease');
+    
+    if (otherDocs.length === 0) {
+        container.innerHTML = '<p class="no-data">No additional documents</p>';
+        return;
+    }
+    
+    container.innerHTML = otherDocs.map(doc => `
+        <div class="document-item">
+            <div class="document-icon">
+                <i class="fas ${DocumentManager.getDocumentIcon(doc.type)}"></i>
+            </div>
+            <div class="document-info">
+                <h5>${doc.title}</h5>
+                <span class="document-meta">
+                    ${doc.type} • ${DocumentManager.formatFileSize(doc.size)} • ${new Date(doc.createdAt).toLocaleDateString()}
+                </span>
+            </div>
+            <div class="document-actions">
+                <button class="btn-icon" onclick="DocumentManager.viewDocument('${doc._id}')" title="View">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn-icon" onclick="DocumentManager.downloadDocument('${doc._id}')" title="Download">
+                    <i class="fas fa-download"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+</script>
 
 <!-- Payment Modal -->
 <%- include('../partials/modals/tenant-payment-modal') %>

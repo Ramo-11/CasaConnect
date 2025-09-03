@@ -121,6 +121,18 @@ a:hover {
   text-decoration: none;
 }
 
+.btn-icon {
+    border: none;
+    background: transparent;
+    outline: none;
+    box-shadow: none;
+}
+
+.btn-icon:focus {
+    outline: none;
+    box-shadow: none;
+}
+
 .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;

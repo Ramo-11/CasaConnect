@@ -13,8 +13,8 @@ exports.getServiceRequests = async (req, res) => {
 
         res.render("manager/service-requests", {
             title: "Service Requests",
-            additionalCSS: ["common.css", "service-requests.css", "manager.css"],
-            additionalJS: ["common.js", "service-requests.js", "manager.js"],
+            additionalCSS: ["manager/service-requests.css"],
+            additionalJS: ["manager/service-requests.js"],
             layout: "layout",
             requests,
         });

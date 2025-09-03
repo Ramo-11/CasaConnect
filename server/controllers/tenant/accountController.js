@@ -18,7 +18,7 @@ exports.getSettings = async (req, res) => {
     
     res.render('tenant/settings', {
       title: 'Account Settings',
-      additionalCSS: ['tenant-settings.css'],
+      additionalCSS: ['tenant/settings.css'],
       additionalJS: ['pages/tenant-settings.js'],
       layout: 'layout',
       user: tenant,

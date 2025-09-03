@@ -564,8 +564,8 @@ exports.getLeaseDetails = async (req, res) => {
         res.render('manager/lease-details', {
             title: `Lease: Unit ${lease.unit.unitNumber}`,
             layout: 'layout',
-            additionalCSS: ['lease-details.css'],
-            additionalJS: ['lease-details.js'],
+            additionalCSS: ['manager/lease-details.css'],
+            additionalJS: ['manager/lease-details.js'],
             lease
         });
     } catch (error) {

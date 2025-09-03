@@ -1,0 +1,233 @@
+<!-- views/tenant/lease-details.ejs -->
+<div class="tenant-container">
+    <!-- Page Header -->
+    <%- include('../partials/page-header', {
+        headerTitle: 'Lease Agreement Details',
+        headerSubtitle: `Unit ${lease.unit.unitNumber}`,
+        backUrl: '/tenant/dashboard',
+        backText: 'Back to Dashboard',
+        headerActions: []
+    }) %>
+
+    <!-- Main Content Grid -->
+    <div class="lease-details-grid">
+        <!-- Lease Status Card -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Lease Status</h3>
+                <span class="badge badge-<%= lease.status %>"><%= lease.status %></span>
+            </div>
+            <div class="card-body">
+                <div class="lease-progress">
+                    <div class="progress-info">
+                        <span>Lease Progress</span>
+                        <span><%= progressPercent %>%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: <%= progressPercent %>%;"></div>
+                    </div>
+                </div>
+                
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>Start Date</label>
+                        <span><%= leaseStartFormatted %></span>
+                    </div>
+                    <div class="info-item">
+                        <label>End Date</label>
+                        <span><%= leaseEndFormatted %></span>
+                    </div>
+                    <div class="info-item">
+                        <label>Term Length</label>
+                        <span><%= lease.termMonths %> months</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Days Remaining</label>
+                        <span class="<%= lease.daysRemaining < 60 ? 'text-warning' : '' %>">
+                            <%= lease.daysRemaining %> days
+                            <% if (lease.daysRemaining < 60) { %>
+                                <i class="fas fa-exclamation-triangle"></i>
+                            <% } %>
+                        </span>
+                    </div>
+                </div>
+
+                <% if (lease.daysRemaining < 90 && lease.status === 'active') { %>
+                <div class="renewal-notice">
+                    <i class="fas fa-info-circle"></i>
+                    <p>Your lease is expiring soon. Please contact management about renewal options.</p>
+                </div>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- Payment Terms Card -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Payment Terms</h3>
+            </div>
+            <div class="card-body">
+                <div class="payment-summary">
+                    <div class="amount-box">
+                        <label>Monthly Rent</label>
+                        <span class="amount-value">$<%= lease.monthlyRent.toFixed(2) %></span>
+                    </div>
+                    <div class="amount-box">
+                        <label>Security Deposit</label>
+                        <span class="amount-value">$<%= lease.securityDeposit.toFixed(2) %></span>
+                    </div>
+                </div>
+                
+                <div class="info-grid mt-3">
+                    <div class="info-item">
+                        <label>Rent Due Day</label>
+                        <span>Day <%= lease.rentDueDay %> of each month</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Grace Period</label>
+                        <span><%= lease.gracePeriodDays %> days</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Late Fee</label>
+                        <span>$<%= lease.lateFeeAmount %> after grace period</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Unit Information Card -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Unit Information</h3>
+            </div>
+            <div class="card-body">
+                <div class="unit-summary">
+                    <h4>Unit <%= lease.unit.unitNumber %></h4>
+                    <p class="unit-address">
+                        <i class="fas fa-map-marker-alt"></i> 
+                        <%= lease.unit.fullAddress %>
+                    </p>
+                    
+                    <div class="info-grid mt-3">
+                        <div class="info-item">
+                            <label>Property Type</label>
+                            <span><%= lease.unit.propertyType %></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Bedrooms</label>
+                            <span><%= lease.unit.bedrooms %></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Bathrooms</label>
+                            <span><%= lease.unit.bathrooms %></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Square Feet</label>
+                            <span><%= lease.unit.squareFeet %> sq ft</span>
+                        </div>
+                    </div>
+
+                    <% if (lease.unit.amenities && lease.unit.amenities.length > 0) { %>
+                    <div class="amenities-section mt-3">
+                        <label>Amenities</label>
+                        <div class="amenities-list">
+                            <% lease.unit.amenities.forEach(amenity => { %>
+                            <span class="amenity-tag"><%= amenity %></span>
+                            <% }) %>
+                        </div>
+                    </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lease Document Card -->
+        <div class="card full-width">
+            <div class="card-header">
+                <h3>Lease Document</h3>
+            </div>
+            <div class="card-body">
+                <% if (lease.document) { %>
+                <div class="document-viewer">
+                    <div class="document-item">
+                        <div class="document-icon">
+                            <i class="fas fa-file-contract"></i>
+                        </div>
+                        <div class="document-info">
+                            <h5>Signed Lease Agreement</h5>
+                            <span class="document-meta">
+                                Effective <%= leaseStartFormatted %> - <%= leaseEndFormatted %>
+                            </span>
+                        </div>
+                        <div class="document-actions">
+                            <button class="btn btn-secondary" onclick="viewLeaseDocument('<%= lease.document._id %>')">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                            <button class="btn btn-primary" onclick="downloadLeaseDocument('<%= lease.document._id %>')">
+                                <i class="fas fa-download"></i> Download
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <% } else { %>
+                <div class="empty-state-small">
+                    <i class="fas fa-file-upload"></i>
+                    <p>No lease document available</p>
+                    <p class="text-muted">Please contact management if you need a copy of your lease.</p>
+                </div>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- Additional Tenants (if any) -->
+        <% if (lease.additionalTenants && lease.additionalTenants.length > 0) { %>
+        <div class="card full-width">
+            <div class="card-header">
+                <h3>Additional Tenants</h3>
+            </div>
+            <div class="card-body">
+                <div class="additional-tenants-list">
+                    <% lease.additionalTenants.forEach(tenant => { %>
+                    <div class="tenant-item">
+                        <i class="fas fa-user"></i>
+                        <span><%= tenant.firstName %> <%= tenant.lastName %></span>
+                    </div>
+                    <% }) %>
+                </div>
+            </div>
+        </div>
+        <% } %>
+
+        <!-- Important Information Card -->
+        <div class="card full-width">
+            <div class="card-header">
+                <h3>Important Information</h3>
+            </div>
+            <div class="card-body">
+                <div class="info-list">
+                    <div class="info-row">
+                        <i class="fas fa-phone"></i>
+                        <div>
+                            <strong>Emergency Maintenance</strong>
+                            <p>(555) 123-4567 - Available 24/7</p>
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <i class="fas fa-envelope"></i>
+                        <div>
+                            <strong>Management Office</strong>
+                            <p>management@casaconnect.com</p>
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <i class="fas fa-clock"></i>
+                        <div>
+                            <strong>Office Hours</strong>
+                            <p>Monday - Friday: 9:00 AM - 5:00 PM</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

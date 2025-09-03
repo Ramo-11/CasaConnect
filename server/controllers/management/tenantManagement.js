@@ -231,7 +231,7 @@ exports.viewTenant = async (req, res) => {
         res.render("manager/tenant-details", {
             title: `Tenant: ${tenant.firstName} ${tenant.lastName}`,
             layout: "layout",
-            additionalCSS: ["tenant-details.css"],
+            additionalCSS: ["manager/tenant-details.css"],
             additionalJS: ["pages/manager-tenant-details.js"],
             user: req.session.user || { role: 'manager' },
             tenant,
@@ -415,7 +415,7 @@ exports.getTenants = async (req, res) => {
         res.render("manager/tenants", {
             title: "Tenants Management",
             layout: "layout",
-            additionalCSS: ["tenants.css"],
+            additionalCSS: ["manager/tenants.css"],
             additionalJS: ["pages/manager-tenants.js"],
             user: req.session.user || { role: 'manager' },
             tenants: tenantsWithFullInfo,

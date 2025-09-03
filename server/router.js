@@ -73,8 +73,6 @@ route.get("/api/manager/tenant/:tenantId/export", tenantManagement.exportTenantD
 route.post("/api/manager/documents", upload.single('file'), documentManagement.uploadDocument);
 route.get("/api/manager/documents", documentManagement.getDocuments);
 route.delete("/api/manager/documents/:documentId", documentManagement.deleteDocument);
-route.get("/api/manager/documents/:documentId/view", documentManagement.viewDocument);
-route.get("/api/manager/documents/:documentId/download", documentManagement.downloadDocument);
 
 // Lease Management Routes
 route.post("/api/manager/lease/create", upload.single('document'), leaseManagement.createLease);
@@ -117,17 +115,23 @@ route.use("/api/tenant", authMiddleware, tenantMiddleware);
 route.get("/tenant", tenantDashboard.getDashboard);
 route.get("/tenant/dashboard", tenantDashboard.getDashboard);
 route.get("/tenant/settings", tenantAccount.getSettings);
+route.get("/tenant/lease/:leaseId", tenantDashboard.getLeaseDetails);
 
 // Tenant actions
 route.post("/tenant/payment", tenantPayment.processPayment);
 route.post("/tenant/service-request", tenantServiceRequest.submitServiceRequest);
 route.post("/tenant/change-password", tenantAccount.changePassword);
 
-// Tenant APIs (AJAX)
+// Tenant APIs
 route.get("/api/tenant/payment-status", tenantPayment.getPaymentStatus);
 route.get("/api/tenant/payment-history", tenantPayment.getPaymentHistory);
 route.get("/api/tenant/notifications", tenantNotifications.getNotifications);
 route.post("/api/tenant/notification/:notificationId/read", tenantNotifications.markNotificationRead);
 route.post("/api/tenant/notifications/mark-all-read", tenantNotifications.markAllRead);
+route.get("/api/tenant/documents", tenantDashboard.getTenantDocuments);
+
+// Shared document routes (with access control in the controller)
+route.get("/api/documents/:documentId/view", authMiddleware, documentManagement.viewDocument);
+route.get("/api/documents/:documentId/download", authMiddleware, documentManagement.downloadDocument);
 
 module.exports = route;

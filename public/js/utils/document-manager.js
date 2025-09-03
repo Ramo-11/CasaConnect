@@ -63,17 +63,14 @@ const DocumentManager = {
         container.innerHTML = html;
     },
 
-    // View document
     viewDocument(documentId) {
-        window.open(`/api/manager/documents/${documentId}/view`, "_blank");
+        window.open(`/api/documents/${documentId}/view`, "_blank");
     },
 
-    // Download document
     downloadDocument(documentId) {
-        window.open(`/api/manager/documents/${documentId}/download`, "_blank");
+        window.open(`/api/documents/${documentId}/download`, "_blank");
     },
 
-    // Delete document with callback for reload
     async deleteDocument(documentId, reloadCallback) {
         if (!confirm("Are you sure you want to delete this document?")) return;
 

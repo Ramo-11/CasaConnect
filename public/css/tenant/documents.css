@@ -1,5 +1,18 @@
 /* tenant-documents.css */
 
+.primary-document {
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    border: 2px solid var(--primary-color);
+    padding: var(--spacing-lg);
+}
+
+.primary-document .document-icon {
+    width: 70px;
+    height: 70px;
+    background: var(--primary-color);
+    color: white;
+}
+
 .document-item {
     display: flex;
     align-items: center;
@@ -13,6 +26,13 @@
 .document-item:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
+
+.document-item.secondary {
+    padding: var(--spacing-sm);
+    background: #f9fafb;
+    margin-bottom: var(--spacing-sm);
+}
+
 .document-icon {
     width: 50px;
     height: 50px;
@@ -24,6 +44,12 @@
     font-size: 24px;
     color: var(--primary-color);
 }
+
+.document-icon.small {
+    width: 40px;
+    height: 40px;
+}
+
 .document-info {
     flex: 1;
 }
@@ -35,20 +61,38 @@
 }
 .document-meta {
     display: flex;
-    gap: var(--spacing-lg);
+    flex-direction: column;
     color: #6b7280;
     font-size: var(--font-size-sm);
-    margin-bottom: var(--spacing-md);
 }
+
+.document-list {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.document-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: var(--spacing-md);
+}
+
 .lease-status .status-row {
     display: flex;
     justify-content: space-between;
     padding: var(--spacing-sm) 0;
 }
-.document-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: var(--spacing-md);
+
+.empty-state-small {
+    text-align: center;
+    padding: var(--spacing-2xl);
+    color: #9ca3af;
+}
+
+.empty-state-small i {
+    font-size: 48px;
+    color: #e5e7eb;
+    margin-bottom: var(--spacing-md);
 }
 
 /* Responsive */
