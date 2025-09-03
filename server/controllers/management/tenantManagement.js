@@ -307,7 +307,7 @@ exports.editTenant = async (req, res) => {
         res.render("manager/tenant-edit", {
             title: `Edit Tenant: ${tenant.firstName} ${tenant.lastName}`,
             layout: "layout",
-            additionalCSS: ['tenant-edit.css'],
+            additionalCSS: ['manager/tenant-edit.css'],
             additionalJS: ["pages/manager-tenant-edit.js"],
             user: req.session.user || { role: 'manager' },
             tenant,
