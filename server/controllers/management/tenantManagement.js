@@ -167,6 +167,7 @@ exports.sendCredentials = async (req, res) => {
 };
 
 // View Tenant Details
+// View Tenant Details
 exports.viewTenant = async (req, res) => {
     try {
         const { tenantId } = req.params;
@@ -182,7 +183,7 @@ exports.viewTenant = async (req, res) => {
         const activeLease = await Lease.findOne({
             tenant: tenantId,
             status: 'active'
-        }).populate('unit');;
+        }).populate('unit');
 
         // Get payment history
         const payments = await Payment.find({ tenant: tenantId })
@@ -194,6 +195,41 @@ exports.viewTenant = async (req, res) => {
             .sort("-createdAt")
             .limit(10);
 
+        // Get available units for lease creation (units without active leases)
+        const availableUnitsForLease = await Unit.aggregate([
+            {
+                $lookup: {
+                    from: "leases",
+                    localField: "_id",
+                    foreignField: "unit",
+                    pipeline: [
+                        { $match: { status: "active" } }
+                    ],
+                    as: "activeLeases"
+                }
+            },
+            { $match: { activeLeases: { $size: 0 } } },
+            { $project: { unitNumber: 1, monthlyRent: 1, streetAddress: 1 } }
+        ]);
+
+        // Get tenants without active leases (for additional tenants if needed)
+        const availableTenantsForLease = await User.aggregate([
+            { $match: { role: "tenant" } },
+            {
+                $lookup: {
+                    from: "leases",
+                    localField: "_id",
+                    foreignField: "tenant",
+                    pipeline: [
+                        { $match: { status: "active" } }
+                    ],
+                    as: "activeLeases"
+                }
+            },
+            { $match: { activeLeases: { $size: 0 } } },
+            { $project: { firstName: 1, lastName: 1, email: 1 } }
+        ]);
+
         res.render("manager/tenant-details", {
             title: `Tenant: ${tenant.firstName} ${tenant.lastName}`,
             layout: "layout",
@@ -204,6 +240,8 @@ exports.viewTenant = async (req, res) => {
             activeLease,
             payments,
             serviceRequests,
+            availableUnitsForLease,  // Add this
+            availableTenantsForLease, // Add this
             path: req.path
         });
     } catch (error) {
@@ -350,8 +388,11 @@ exports.getTenants = async (req, res) => {
             user: req.session.user || { role: 'manager' },
             tenants: tenantsWithFullInfo,
             availableUnits,
+            availableUnitsForLease: availableUnits,
+            availableTenantsForLease: tenants.filter(t => !t.activeLease),
             path: req.path
         });
+
     } catch (error) {
         logger.error(`Get tenants error: ${error}`);
         res.status(500).render("error", {
@@ -407,7 +448,7 @@ exports.resetPassword = async (req, res) => {
     try {
         const { tenantId } = req.body;
         const tenant = await User.findById(tenantId);
-        
+
         if (!tenant || tenant.role !== 'tenant') {
             return res.status(404).json({
                 success: false,
@@ -416,9 +457,8 @@ exports.resetPassword = async (req, res) => {
         }
 
         const tempPassword = generateTempPassword();
-        const salt = await bcrypt.genSalt(10);
-        tenant.password = await bcrypt.hash(tempPassword, salt);
-        tenant.requirePasswordChange = true; // Add this field to User model
+        tenant.password = tempPassword; // Let pre-save hook hash it
+        tenant.requirePasswordChange = true;
         await tenant.save();
 
         await sendCredentialsEmail(tenant, tempPassword);
@@ -435,6 +475,7 @@ exports.resetPassword = async (req, res) => {
         });
     }
 };
+
 
 exports.suspendAccount = async (req, res) => {
     try {

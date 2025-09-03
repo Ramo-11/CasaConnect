@@ -66,6 +66,27 @@ const TenantDashboard = {
         CasaConnect.StorageHelper.set('tenantLastTab', targetTab);
     },
     
+    // Add this function for logout handling
+    async handleLogout() {
+        if (confirm('Are you sure you want to logout?')) {
+            try {
+                const response = await fetch('/logout', {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                });
+                
+                if (response.redirected) {
+                    window.location.href = response.url;
+                } else {
+                    window.location.href = '/login';
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+                window.location.href = '/login';
+            }
+        }
+    },
+
     // Payment Status Check
     async loadPaymentStatus() {
         try {
@@ -429,6 +450,7 @@ window.closePaymentModal = () => PaymentModal.close();
 window.openServiceRequestModal = () => ServiceRequestModal.open();
 window.closeServiceRequestModal = () => ServiceRequestModal.close();
 window.toggleNotes = (requestId) => NotesManager.toggleNotes(requestId);
+window.handleLogout = () => TenantDashboard.handleLogout();
 
 // Keyboard shortcuts
 document.addEventListener('keydown', (e) => {
