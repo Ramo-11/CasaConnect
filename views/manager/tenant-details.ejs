@@ -374,7 +374,7 @@
                 <h3>Documents</h3>
                 <button
                     class="btn btn-primary btn-small"
-                    onclick="attachDocument('<%= tenant._id %>')"
+                    onclick="attachDocument('<%= tenant._id %>', 'User', '<%= hasActiveLease %>')"
                 >
                     <i class="fas fa-upload"></i> Upload Document
                 </button>

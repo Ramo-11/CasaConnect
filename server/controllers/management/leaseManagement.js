@@ -40,10 +40,10 @@ exports.createLease = async (req, res) => {
       return res.status(404).json({ success: false, message: "Unit not found" });
     }
 
-    // Upload file
-    const uploadResult = await storageService.uploadFile(file, "leases");
+    // ✅ Consistent path for lease docs
+    const uploadResult = await storageService.uploadFile(file, "documents/leases");
 
-    // Create lease (document id will be set after doc is created)
+    // Create lease
     const lease = await new Lease({
       tenant: tenantId,
       unit: unitId,
@@ -91,7 +91,6 @@ exports.createLease = async (req, res) => {
     res.status(500).json({ success: false, message: `Failed to create lease: ${error.message}` });
   }
 };
-
 
 exports.updateLease = async (req, res) => {
     try {

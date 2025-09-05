@@ -227,7 +227,7 @@ exports.viewTenant = async (req, res) => {
             { $match: { activeLeases: { $size: 0 } } },
             { $project: { firstName: 1, lastName: 1, email: 1 } }
         ]);
-
+    
         res.render("manager/tenant-details", {
             title: `Tenant: ${tenant.firstName} ${tenant.lastName}`,
             layout: "layout",
@@ -240,7 +240,8 @@ exports.viewTenant = async (req, res) => {
             serviceRequests,
             availableUnitsForLease,
             availableTenantsForLease,
-            path: req.path
+            path: req.path,
+            hasActiveLease: !!activeLease,
         });
     } catch (error) {
         logger.error(`View tenant error: ${error}`);

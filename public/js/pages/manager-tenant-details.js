@@ -230,5 +230,6 @@ window.deleteDocument = (documentId) => {
         }, 1500);
     });
 };
-window.attachDocument = (tenantId) => DocumentManager.attachDocument(tenantId, 'User');
+window.attachDocument = (tenantId, relatedModel, hasActiveLease) => 
+    DocumentManager.attachDocument(tenantId, relatedModel || 'User', hasActiveLease);
 window.closeUploadDocumentModal = () => DocumentManager.closeUploadDocumentModal();

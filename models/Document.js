@@ -8,7 +8,7 @@ const documentSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['lease', 'contract', 'notice', 'invoice', 'other'],
+    enum: ['lease', 'lease_archived', 'contract', 'notice', 'invoice', 'other'],
     required: true
   },
   fileName: {

@@ -81,7 +81,6 @@ const DocumentManager = {
 
             if (response.success) {
                 CasaConnect.NotificationManager.success("Document deleted successfully");
-                k
                 setTimeout(() => {
                     if (reloadCallback && typeof reloadCallback === 'function') {
                         reloadCallback();
@@ -116,13 +115,30 @@ const DocumentManager = {
     },
 
     // Upload document modal handler
-    attachDocument(relatedId, relatedModel = 'User') {
+    attachDocument(relatedId, relatedModel = 'User', hasActiveLease = 'false') {
+        const hasLease = hasActiveLease === 'true' || hasActiveLease === true;
+        
         const relatedIdInput = document.getElementById('documentRelatedId');
         const relatedModelInput = document.getElementById('documentRelatedModel');
         
         if (relatedIdInput) relatedIdInput.value = relatedId;
         if (relatedModelInput) relatedModelInput.value = relatedModel;
         
+        const typeSelect = document.getElementById('documentType');
+        
+        if (typeSelect) {
+            const leaseOption = typeSelect.querySelector('option[value="lease"]');
+            if (leaseOption) {
+                if (relatedModel === 'User' && !hasLease) {
+                    leaseOption.style.display = 'none';
+                    leaseOption.disabled = true;
+                } else {
+                    leaseOption.style.display = '';
+                    leaseOption.disabled = false;
+                }
+            }
+        }
+
         CasaConnect.ModalManager.openModal('uploadDocumentModal');
     },
 
@@ -143,10 +159,32 @@ const DocumentManager = {
             e.preventDefault();
             
             const formData = new FormData(uploadForm);
+            const documentType = formData.get('type');
+            const relatedModel = formData.get('relatedModel');
             const btn = uploadForm.querySelector('button[type="submit"]');
             const btnText = btn.querySelector('.btn-text');
             const btnLoading = btn.querySelector('.btn-loading');
             
+            
+            if (documentType === 'lease' && relatedModel === 'User') {
+                // Double-check on client side
+                const leaseOption = document.querySelector('#documentType option[value="lease"]');
+                if (leaseOption && (leaseOption.disabled || leaseOption.style.display === 'none')) {
+                    CasaConnect.NotificationManager.error('Cannot upload lease document without an active lease');
+                    btnText.style.display = 'inline-block';
+                    btnLoading.style.display = 'none';
+                    btn.disabled = false;
+                    return;
+                }
+                const confirmed = confirm('This will replace the existing lease document. The old document will be archived. Continue?');
+                if (!confirmed) {
+                    btnText.style.display = 'inline-block';
+                    btnLoading.style.display = 'none';
+                    btn.disabled = false;
+                    return;
+                }
+            }
+
             btnText.style.display = 'none';
             btnLoading.style.display = 'inline-block';
             btn.disabled = true;

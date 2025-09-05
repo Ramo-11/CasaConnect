@@ -60,8 +60,8 @@ exports.getDashboard = async (req, res) => {
     
     // Separate lease documents from other documents
     const leaseDocuments = tenantDocuments.filter(doc => doc.type === 'lease');
-    const otherDocuments = tenantDocuments.filter(doc => doc.type !== 'lease');
-    
+    const otherDocuments = tenantDocuments.filter(doc => doc.type !== 'lease' && doc.type !== 'lease_archived');
+
     // Get unread notifications
     const notifications = await Notification.find({
       recipient: tenantId,
@@ -277,8 +277,8 @@ exports.getLeaseDetails = async (req, res) => {
     // Prepare view data
     const viewData = {
       title: `Lease Details - Unit ${lease.unit.unitNumber}`,
-      additionalCSS: ['tenant-lease-details.css'],
-      additionalJS: ['tenant-lease-details.js'],
+      additionalCSS: ['tenant/lease-details.css'],
+      additionalJS: ['tenant/lease-details.js'],
       layout: 'layout',
       user: tenant,
       lease,

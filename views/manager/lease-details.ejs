@@ -165,14 +165,12 @@
 
         <!-- Lease Document Card -->
         <div class="card full-width">
-            <div class="card-header">
+            <!-- <div class="card-header">
                 <h3>Lease Document</h3>
                 <% if (!lease.document) { %>
-                <button class="btn btn-primary btn-small" onclick="uploadLeaseDocument('<%= lease._id %>')">
-                    <i class="fas fa-upload"></i> Upload Document
-                </button>
+                    <p>No document uploaded - create a document from the tenant details page</p>
                 <% } %>
-            </div>
+            </div> -->
             <div class="card-body">
                 <% if (lease.document) { %>
                 <div class="document-viewer">
@@ -202,7 +200,7 @@
                 <% } else { %>
                 <div class="empty-state-small">
                     <i class="fas fa-file-upload"></i>
-                    <p>No lease document uploaded</p>
+                    <p>No lease document uploaded, the document will appear once the lease is created</p>
                 </div>
                 <% } %>
             </div>

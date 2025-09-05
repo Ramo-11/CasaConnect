@@ -3,22 +3,64 @@ const Lease = require('../../../models/Lease');
 const storageService = require('../../services/storageService');
 const { logger } = require('../../logger');
 
-// Upload Document
+
 exports.uploadDocument = async (req, res) => {
   try {
-    const { title, type, relatedModel, relatedId } = req.body;
+    const { title, type } = req.body;
+    let { relatedModel, relatedId } = req.body; // mutable for lease exception
     const file = req.file;
 
     if (!file) {
       return res.status(400).json({ success: false, message: 'No file provided' });
     }
 
-    const uploadResult = await storageService.uploadFile(file, `documents/${type || 'other'}`);
+    const normalizedType = (type || 'other').toLowerCase();
 
-    // Base document
+    let didArchiveOldLeaseDoc = false;
+
+    const prefixArchived = (t) => (t?.startsWith('[ARCHIVED]') ? t : `[ARCHIVED] ${t}`);
+
+    // ------------------------------
+    // Lease-exception pre-checks
+    // ------------------------------
+    if (normalizedType === 'lease' && relatedModel === 'User' && relatedId) {
+      const activeLease = await Lease.findOne({
+        tenant: relatedId,
+        status: 'active'
+      }).populate('document');
+
+      if (!activeLease) {
+        return res.status(400).json({
+          success: false,
+          message:
+            'Cannot upload lease document: Tenant has no active lease. Please create a lease through the proper lease creation process.'
+        });
+      }
+
+      // Archive the old lease document if it exists
+      if (activeLease.document) {
+        const oldDocument = await Document.findById(activeLease.document);
+        if (oldDocument) {
+          oldDocument.type = 'lease_archived';
+          oldDocument.title = prefixArchived(oldDocument.title);
+          await oldDocument.save();
+          didArchiveOldLeaseDoc = true;
+          logger.info(`Archived old lease document ${oldDocument._id}`);
+        }
+      }
+
+      // Retarget to the lease itself
+      relatedModel = 'Lease';
+      relatedId = activeLease._id;
+    }
+
+    const folder = normalizedType === 'lease' ? 'documents/leases' : `documents/${normalizedType}`;
+    const uploadResult = await storageService.uploadFile(file, folder);
+
+    // Create the document base
     const document = new Document({
       title: title || file.originalname,
-      type: type || 'other',
+      type: normalizedType,
       fileName: uploadResult.fileName,
       url: uploadResult.url,
       size: uploadResult.size,
@@ -26,43 +68,34 @@ exports.uploadDocument = async (req, res) => {
       uploadedBy: req.session.userId,
       relatedTo: {
         model: relatedModel || null,
-        id: relatedId || null,
+        id: relatedId || null
       },
-      sharedWith: [] // Initialize as empty, will be populated based on context
+      sharedWith: []
     });
 
-    // Handle different related models and set sharedWith appropriately
+    // Share logic
     if (relatedModel === 'User' && relatedId) {
-      // Document directly related to a user (tenant)
       document.sharedWith = [relatedId];
       logger.info(`Document shared with user ${relatedId}`);
-    } 
-    else if (relatedModel === 'Lease' && relatedId) {
-      // Document related to a lease - share with tenant(s)
+    } else if (relatedModel === 'Lease' && relatedId) {
       const lease = await Lease.findById(relatedId).select('tenant additionalTenants');
       if (lease) {
         const sharedUsers = [lease.tenant];
-        if (lease.additionalTenants && lease.additionalTenants.length > 0) {
-          sharedUsers.push(...lease.additionalTenants);
-        }
+        if (lease.additionalTenants?.length) sharedUsers.push(...lease.additionalTenants);
         document.sharedWith = sharedUsers;
         logger.info(`Document shared with lease tenants: ${sharedUsers.join(', ')}`);
       }
-    }
-    else if (relatedModel === 'Unit' && relatedId) {
-      // Document related to a unit - share with current tenant(s) if any
+    } else if (relatedModel === 'Unit' && relatedId) {
       const activeLease = await Lease.findOne({
         unit: relatedId,
         status: 'active',
         startDate: { $lte: new Date() },
         endDate: { $gte: new Date() }
       }).select('tenant additionalTenants');
-      
+
       if (activeLease) {
         const sharedUsers = [activeLease.tenant];
-        if (activeLease.additionalTenants && activeLease.additionalTenants.length > 0) {
-          sharedUsers.push(...activeLease.additionalTenants);
-        }
+        if (activeLease.additionalTenants?.length) sharedUsers.push(...activeLease.additionalTenants);
         document.sharedWith = sharedUsers;
         logger.info(`Document shared with unit's current tenants: ${sharedUsers.join(', ')}`);
       }
@@ -70,18 +103,38 @@ exports.uploadDocument = async (req, res) => {
 
     await document.save();
 
-    // Special handling for lease type documents
-    if (type === 'lease' && relatedModel === 'Lease' && relatedId) {
+    // ------------------------------
+    // Special handling for lease docs linked to a Lease (archive + relink)
+    // ------------------------------
+    if (normalizedType === 'lease' && relatedModel === 'Lease' && relatedId) {
       const lease = await Lease.findById(relatedId).select('tenant document');
       if (!lease) {
         return res.status(404).json({ success: false, message: 'Lease not found' });
       }
 
-      // Update the lease to reference this document
+      // Archive the previous lease document if it exists,
+      // but only if we haven't already archived it above.
+      if (!didArchiveOldLeaseDoc && lease.document) {
+        const oldDocument = await Document.findById(lease.document);
+        if (oldDocument) {
+          oldDocument.type = 'lease_archived';
+          oldDocument.title = prefixArchived(oldDocument.title);
+          await oldDocument.save();
+          logger.info(`Archived old lease document ${oldDocument._id}`);
+        }
+      }
+
+      // Link the new document back to the lease
       lease.document = document._id;
       await lease.save();
-      
-      logger.info(`Linked lease ${lease._id} to document ${document._id}`);
+
+      // Ensure tenant is shared
+      if (!document.sharedWith.includes(lease.tenant)) {
+        document.sharedWith.push(lease.tenant);
+        await document.save();
+      }
+
+      logger.info(`Updated lease ${lease._id} with new document ${document._id}`);
     }
 
     logger.info(`Document (${document.type}) uploaded successfully`);
@@ -92,7 +145,6 @@ exports.uploadDocument = async (req, res) => {
   }
 };
 
-// Get Documents
 exports.getDocuments = async (req, res) => {
     try {
         const { relatedModel, relatedId } = req.query;
