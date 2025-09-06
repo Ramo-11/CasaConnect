@@ -95,5 +95,22 @@
                 </p>
             </div>
         </div>
+
+        <!-- Payment Methods Card -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Payment Methods</h3>
+                <button class="btn btn-primary btn-small" onclick="openAddPaymentMethodModal()">
+                    <i class="fas fa-plus"></i> Add Method
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="paymentMethodsList">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+
+<%- include('../partials/modals/payment-method-modal') %>

@@ -1,140 +1,39 @@
-<!-- Payment Modal -->
-<div id="paymentModal" class="modal">
-    <div class="modal-content modal-large">
+<div class="modal" id="paymentModal">
+    <div class="modal-content">
         <div class="modal-header">
-            <h2>Make Rent Payment</h2>
+            <h2>Make Payment</h2>
             <button class="modal-close" onclick="closePaymentModal()">&times;</button>
         </div>
         <div class="modal-body">
-            <form id="paymentForm">
-                <!-- Payment Summary -->
-                <div class="payment-summary card">
-                    <div class="card-body">
-                        <h4>Payment Details</h4>
-                        <div class="summary-row">
-                            <span>Monthly Rent:</span>
-                            <span class="amount">$<%= typeof monthlyRent !== 'undefined' ? monthlyRent.toFixed(2) : '0.00' %></span>
-                        </div>
-                        <% if (typeof lateFee !== 'undefined' && lateFee > 0) { %>
-                        <div class="summary-row late-fee">
-                            <span>Late Fee:</span>
-                            <span class="amount">$<%= lateFee.toFixed(2) %></span>
-                        </div>
-                        <% } %>
-                        <div class="summary-row total">
-                            <strong>Total Due:</strong>
-                            <strong class="amount">$<%= typeof amountDue !== 'undefined' ? amountDue.toFixed(2) : '0.00' %></strong>
-                        </div>
-                    </div>
+            <div class="payment-summary">
+                <h3>Payment Amount</h3>
+                <div class="amount-display">
+                    <span class="currency">$</span>
+                    <span class="amount-value" id="paymentAmount">0.00</span>
                 </div>
+            </div>
 
-                <!-- Payment Method Selection -->
-                <div class="form-section">
-                    <h4>Payment Method</h4>
-                    <div class="payment-methods">
-                        <div class="payment-method active" data-method="ach">
-                            <input type="radio" name="paymentMethod" id="methodACH" value="ach" checked>
-                            <label for="methodACH" class="method-card">
-                                <i class="fas fa-university"></i>
-                                <span>Bank Account (ACH)</span>
-                                <small>No transaction fee</small>
-                            </label>
-                        </div>
-                        <div class="payment-method" data-method="card">
-                            <input type="radio" name="paymentMethod" id="methodCard" value="credit_card">
-                            <label for="methodCard" class="method-card">
-                                <i class="fas fa-credit-card"></i>
-                                <span>Credit/Debit Card</span>
-                                <small>2.9% + $0.30 fee</small>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ACH Payment Fields -->
-                <div id="achFields" class="payment-fields">
-                    <h4>Bank Account Information</h4>
-                    <div class="form-group">
-                        <label for="accountType">Account Type *</label>
-                        <select id="accountType" name="accountType" required>
-                            <option value="checking">Checking</option>
-                            <option value="savings">Savings</option>
-                        </select>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="routingNumber">Routing Number *</label>
-                            <input type="text" id="routingNumber" name="routingNumber" 
-                                   pattern="[0-9]{9}" maxlength="9" required
-                                   placeholder="9 digits">
-                            <small class="form-help">Located at the bottom of your check</small>
-                        </div>
-                        <div class="form-group">
-                            <label for="accountNumber">Account Number *</label>
-                            <input type="text" id="accountNumber" name="accountNumber" 
-                                   maxlength="17" required
-                                   placeholder="Up to 17 digits">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="accountHolder">Account Holder Name *</label>
-                        <input type="text" id="accountHolder" name="accountHolder" required
-                               placeholder="As it appears on your bank account">
-                    </div>
-                </div>
-
-                <!-- Card Payment Fields -->
-                <div id="cardFields" class="payment-fields" style="display: none;">
-                    <h4>Card Information</h4>
-                    
-                    <!-- Stripe Card Element Container -->
-                    <div class="form-group">
-                        <label for="stripe-card-element">Card Details *</label>
-                        <div id="stripe-card-element" class="stripe-element">
-                            <!-- Stripe will insert the card element here -->
-                        </div>
-                        <div id="card-errors" class="error-message" role="alert"></div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="cardholderName">Cardholder Name *</label>
-                        <input type="text" id="cardholderName" name="cardholderName"
-                            placeholder="As it appears on card" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="billingZip">Billing ZIP Code *</label>
-                        <input type="text" id="billingZip" name="billingZip" 
-                            pattern="[0-9]{5}" maxlength="5"
-                            placeholder="12345">
-                    </div>
-                </div>
-
-                <!-- Save Payment Method -->
+            <form id="confirmPaymentForm">
                 <div class="form-group">
-                    <label class="checkbox-label">
-                        <input type="checkbox" name="savePaymentMethod" id="savePaymentMethod">
-                        <span>Save this payment method for future use</span>
-                    </label>
+                    <label>Select Payment Method</label>
+                    <div id="savedPaymentMethods">
+                        <!-- Will be populated with saved methods -->
+                    </div>
                 </div>
 
-                <!-- Terms Agreement -->
-                <div class="form-group">
-                    <label class="checkbox-label">
-                        <input type="checkbox" name="agreeToTerms" id="agreeToTerms" required>
-                        <span>I authorize this payment and agree to the terms of service</span>
-                    </label>
+                <div class="no-payment-methods" style="display: none;">
+                    <p>No payment methods saved.</p>
+                    <a href="/tenant/settings" class="btn btn-secondary">
+                        Go to Settings to Add Payment Method
+                    </a>
                 </div>
 
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closePaymentModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">
-                        <span class="btn-text">Process Payment</span>
-                        <span class="btn-loading" style="display: none;">
-                            <span class="spinner"></span> Processing...
-                        </span>
-                    </button>
-                </div>
+                <button type="submit" class="btn btn-primary btn-block" id="confirmPaymentBtn">
+                    <span class="btn-text">Confirm Payment</span>
+                    <span class="btn-loading" style="display: none;">
+                        <span class="spinner"></span> Processing...
+                    </span>
+                </button>
             </form>
         </div>
     </div>

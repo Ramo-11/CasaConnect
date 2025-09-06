@@ -1,7 +1,9 @@
-// routes/index.js (or wherever this Router lives)
+// routes/index.js
 const express = require("express");
 require("dotenv").config();
-const route = express.Router();
+
+// Core router
+const router = express.Router();
 
 // Controllers
 const authController = require("./controllers/authController");
@@ -11,6 +13,7 @@ const managerController = require("./controllers/managerController");
 const tenantDashboard = require("./controllers/tenant/dashboardController");
 const tenantAccount = require("./controllers/tenant/accountController");
 const tenantPayment = require("./controllers/tenant/paymentController");
+const tenantPaymentMethod = require("./controllers/tenant/paymentMethodController");
 const tenantNotifications = require("./controllers/tenant/notificationController");
 const tenantServiceRequest = require("./controllers/tenant/serviceRequestController");
 
@@ -21,121 +24,149 @@ const unitManagement = require("./controllers/management/unitManagement");
 const serviceRequestManagement = require("./controllers/management/serviceRequestManagement");
 const documentManagement = require("./controllers/management/documentManagement");
 
-const multer = require('multer');
-const upload = multer({ 
-    storage: multer.memoryStorage(),
-    limits: { fileSize: 10 * 1024 * 1024 } // 10MB
+// Uploads
+const multer = require("multer");
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
 });
 
-// Pull the middlewares
+// Auth middlewares
 const { isAuthenticated, isManager, isTenant, attachUserToLocals } = authController;
 
-// Development bypass - modify session AFTER it exists
-const isDevelopment = process.env.NODE_ENV !== "production";
-// const managerMiddleware = isDevelopment ? (req, res, next) => next() : isManager;
-// const tenantMiddleware = isDevelopment ? (req, res, next) => next() : isTenant;
-const managerMiddleware = isManager;
-const tenantMiddleware = isTenant;
-const authMiddleware = isAuthenticated;
-
 // Make current user available to templates (safe if not logged in)
-route.use(attachUserToLocals);
+router.use(attachUserToLocals);
 
-// *********** Public (auth) pages **********
-route.get("/", authController.getLogin);
-route.get("/login", authController.getLogin);
-route.get("/logout", authController.logout);
-route.post("/auth/login", authController.login);
+/**
+ * PUBLIC (Auth)
+ */
+router.get(["/", "/login"], authController.getLogin);
+router.get("/logout", authController.logout);
+router.post("/auth/login", authController.login);
 
-// *********** MANAGER: protect both web and API ***********
-route.use("/manager", authMiddleware, managerMiddleware);
-route.use("/api/manager", authMiddleware, managerMiddleware);
+/**
+ * MANAGER (Web + API)
+ */
+const managerWeb = express.Router();
+const managerAPI = express.Router();
 
-// Manager Dashboard Routes (keep in main managerController)
-route.get("/manager", managerController.getDashboard);
-route.get("/manager/dashboard", managerController.getDashboard);
-route.get("/api/manager/dashboard-stats", managerController.getDashboardStats);
+// protect
+managerWeb.use(isAuthenticated, isManager);
+managerAPI.use(isAuthenticated, isManager);
 
-// Tenant Management Routes
-route.get("/manager/tenants", tenantManagement.getTenants);
-route.post("/manager/tenants", tenantManagement.createTenant);
-route.post("/manager/tenant/:tenantId/update", tenantManagement.updateTenant);
-route.post("/api/manager/tenant/send-credentials", tenantManagement.sendCredentials);
-route.get("/manager/tenant/:tenantId", tenantManagement.viewTenant);
-route.get("/manager/tenant/:tenantId/edit", tenantManagement.editTenant);
-route.delete("/api/manager/tenant/:tenantId", tenantManagement.deleteTenant);
-route.post("/api/manager/tenant/reset-password", tenantManagement.resetPassword);
-route.put("/api/manager/tenant/:tenantId/suspend", tenantManagement.suspendAccount);
-route.put("/api/manager/tenant/:tenantId/activate", tenantManagement.activateAccount);
-route.get("/api/manager/tenant/:tenantId/export", tenantManagement.exportTenantData);
+// Manager: Dashboard
+managerWeb.get(["/", "/dashboard"], managerController.getDashboard);
+managerAPI.get("/dashboard-stats", managerController.getDashboardStats);
 
-// Document Management Routes
-route.post("/api/manager/documents", upload.single('file'), documentManagement.uploadDocument);
-route.get("/api/manager/documents", documentManagement.getDocuments);
-route.delete("/api/manager/documents/:documentId", documentManagement.deleteDocument);
+// Manager: Tenant Management
+managerWeb.get("/tenants", tenantManagement.getTenants);
+managerWeb.get("/tenant/:tenantId", tenantManagement.viewTenant);
+managerWeb.get("/tenant/:tenantId/edit", tenantManagement.editTenant);
 
-// Lease Management Routes
-route.post("/api/manager/lease/create", upload.single('document'), leaseManagement.createLease);
-route.put("/api/manager/lease/:leaseId", leaseManagement.updateLease);
-route.post("/api/manager/lease/:leaseId/terminate", leaseManagement.terminateLease);
-route.delete("/api/manager/lease/:leaseId", leaseManagement.deleteLease);
-route.post("/api/manager/lease/:leaseId/renew", upload.single('document'), leaseManagement.renewLease);
-route.get("/api/manager/lease/:leaseId", leaseManagement.getLease);
-route.get("/api/manager/leases", leaseManagement.getLeases);
-route.post("/api/manager/tenant/assign-unit", leaseManagement.assignUnitToTenant);
-route.post("/api/manager/unit/assign-tenant", leaseManagement.assignTenantToUnit);
-route.get("/manager/lease/:leaseId", leaseManagement.getLeaseDetails);
-route.post("/api/manager/lease/:leaseId/email", leaseManagement.emailLeaseToTenant);
-route.get("/manager/lease/:leaseId/renew", leaseManagement.getLeaseRenewal);
+managerAPI.post("/tenants", tenantManagement.createTenant);
+managerAPI.post("/tenant/:tenantId/update", tenantManagement.updateTenant);
+managerAPI.post("/tenant/send-credentials", tenantManagement.sendCredentials);
+managerAPI.delete("/tenant/:tenantId", tenantManagement.deleteTenant);
+managerAPI.post("/tenant/reset-password", tenantManagement.resetPassword);
+managerAPI.put("/tenant/:tenantId/suspend", tenantManagement.suspendAccount);
+managerAPI.put("/tenant/:tenantId/activate", tenantManagement.activateAccount);
+managerAPI.get("/tenant/:tenantId/export", tenantManagement.exportTenantData);
 
-// Units Management Routes
-route.get("/manager/units", unitManagement.getUnits);
-route.get("/manager/units/:unitId", unitManagement.viewUnit);
-route.get("/manager/units/:unitId/edit", unitManagement.editUnit);
-route.get("/api/manager/units/available", unitManagement.getAvailableUnits);
-route.post("/api/manager/units", unitManagement.createUnit);
-route.get("/api/manager/units/:unitId", unitManagement.getUnit);
-route.delete("/api/manager/units/:unitId", unitManagement.deleteUnit);
-route.get("/api/manager/units/stats", unitManagement.getUnitsStats);
-route.put("/api/manager/units/:unitId", unitManagement.updateUnit);
+// Manager: Document Management
+managerAPI.post("/documents", upload.single("file"), documentManagement.uploadDocument);
+managerAPI.get("/documents", documentManagement.getDocuments);
+managerAPI.delete("/documents/:documentId", documentManagement.deleteDocument);
 
-// Service Requests Management Routes
-route.get("/manager/service-requests", serviceRequestManagement.getServiceRequests);
-route.post("/api/manager/service-requests/assign", serviceRequestManagement.assignTechnician);
-route.post("/api/manager/service-requests/note", serviceRequestManagement.addRequestNote);
-route.put("/api/manager/service-requests/:requestId/status", serviceRequestManagement.updateRequestStatus);
-route.put("/api/manager/service-requests/:requestId/cancel", serviceRequestManagement.cancelRequest);
-route.get("/api/manager/service-requests/updates", serviceRequestManagement.checkRequestUpdates);
+// Manager: Lease Management
+managerWeb.get("/lease/:leaseId", leaseManagement.getLeaseDetails);
+managerWeb.get("/lease/:leaseId/renew", leaseManagement.getLeaseRenewal);
 
-// *********** TENANT: protect tenant areas ***********
-route.use("/tenant", authMiddleware, tenantMiddleware);
-route.use("/api/tenant", authMiddleware, tenantMiddleware);
+managerAPI.post("/lease/create", upload.single("document"), leaseManagement.createLease);
+managerAPI.get("/lease/:leaseId", leaseManagement.getLease);
+managerAPI.get("/leases", leaseManagement.getLeases);
+managerAPI.put("/lease/:leaseId", leaseManagement.updateLease);
+managerAPI.post("/lease/:leaseId/terminate", leaseManagement.terminateLease);
+managerAPI.delete("/lease/:leaseId", leaseManagement.deleteLease);
+managerAPI.post("/lease/:leaseId/renew", upload.single("document"), leaseManagement.renewLease);
+managerAPI.post("/lease/:leaseId/email", leaseManagement.emailLeaseToTenant);
+managerAPI.post("/tenant/assign-unit", leaseManagement.assignUnitToTenant);
+managerAPI.post("/unit/assign-tenant", leaseManagement.assignTenantToUnit);
 
-// Tenant web pages
-route.get("/tenant", tenantDashboard.getDashboard);
-route.get("/tenant/dashboard", tenantDashboard.getDashboard);
-route.get("/tenant/settings", tenantAccount.getSettings);
-route.get("/tenant/lease/:leaseId", tenantDashboard.getLeaseDetails);
+// Manager: Units
+managerWeb.get("/units", unitManagement.getUnits);
+managerWeb.get("/units/:unitId", unitManagement.viewUnit);
+managerWeb.get("/units/:unitId/edit", unitManagement.editUnit);
 
-// Tenant actions
-route.post("/tenant/payment", tenantPayment.processPayment);
-route.post("/tenant/service-request", tenantServiceRequest.submitServiceRequest);
-route.post("/tenant/change-password", tenantAccount.changePassword);
+managerAPI.get("/units/available", unitManagement.getAvailableUnits);
+managerAPI.get("/units/:unitId", unitManagement.getUnit);
+managerAPI.get("/units/stats", unitManagement.getUnitsStats);
+managerAPI.post("/units", unitManagement.createUnit);
+managerAPI.put("/units/:unitId", unitManagement.updateUnit);
+managerAPI.delete("/units/:unitId", unitManagement.deleteUnit);
 
-// Tenant APIs
-route.get("/api/tenant/payment-status", tenantPayment.getPaymentStatus);
-route.get("/api/tenant/payment-history", tenantPayment.getPaymentHistory);
-route.get("/api/tenant/notifications", tenantNotifications.getNotifications);
-route.post("/api/tenant/notification/:notificationId/read", tenantNotifications.markNotificationRead);
-route.post("/api/tenant/notifications/mark-all-read", tenantNotifications.markAllRead);
-route.get("/api/tenant/documents", tenantDashboard.getTenantDocuments);
-route.get("/api/tenant/payment-methods", tenantPayment.getPaymentMethods);
-route.get("/api/tenant/service-requests", tenantServiceRequest.getServiceRequests);
-route.post("/api/tenant/payment/create-intent", tenantPayment.createPaymentIntent);
-route.post("/api/tenant/service-fee/create-intent", tenantServiceRequest.createServiceFeeIntent);
+// Manager: Service Requests
+managerWeb.get("/service-requests", serviceRequestManagement.getServiceRequests);
+managerAPI.post("/service-requests/assign", serviceRequestManagement.assignTechnician);
+managerAPI.post("/service-requests/note", serviceRequestManagement.addRequestNote);
+managerAPI.put("/service-requests/:requestId/status", serviceRequestManagement.updateRequestStatus);
+managerAPI.put("/service-requests/:requestId/cancel", serviceRequestManagement.cancelRequest);
+managerAPI.get("/service-requests/updates", serviceRequestManagement.checkRequestUpdates);
 
-// Shared document routes (with access control in the controller)
-route.get("/api/documents/:documentId/view", authMiddleware, documentManagement.viewDocument);
-route.get("/api/documents/:documentId/download", authMiddleware, documentManagement.downloadDocument);
+// Mount Manager routers
+router.use("/manager", managerWeb);
+router.use("/api/manager", managerAPI);
 
-module.exports = route;
+/**
+ * TENANT (Web + API)
+ */
+const tenantWeb = express.Router();
+const tenantAPI = express.Router();
+
+// protect
+tenantWeb.use(isAuthenticated, isTenant);
+tenantAPI.use(isAuthenticated, isTenant);
+
+// Tenant: Web pages
+tenantWeb.get(["/", "/dashboard"], tenantDashboard.getDashboard);
+tenantWeb.get("/settings", tenantAccount.getSettings);
+tenantWeb.get("/lease/:leaseId", tenantDashboard.getLeaseDetails);
+
+// Tenant: Web actions
+tenantWeb.post("/payment", tenantPayment.processPayment);
+tenantWeb.post("/service-request", tenantServiceRequest.submitServiceRequest);
+tenantWeb.post("/change-password", tenantAccount.changePassword);
+
+// Tenant: API - Payments
+tenantAPI.post("/payment/create-intent", tenantPayment.createPaymentIntent);
+tenantAPI.post("/payment/confirm", tenantPayment.confirmPayment);
+tenantAPI.get("/payment-status", tenantPayment.getPaymentStatus);
+tenantAPI.get("/payment-history", tenantPayment.getPaymentHistory);
+tenantAPI.post("/payment/process", tenantPayment.processPaymentWithSavedMethod);
+
+// Tenant: API - Payment Methods (single, non-duplicated set)
+tenantAPI.get("/payment-methods", tenantPaymentMethod.getPaymentMethods);
+tenantAPI.post("/payment-method", tenantPaymentMethod.savePaymentMethod);
+tenantAPI.delete("/payment-method/:methodId", tenantPaymentMethod.deletePaymentMethod);
+tenantAPI.put("/payment-method/:methodId/default", tenantPaymentMethod.setDefaultPaymentMethod);
+
+// Tenant: API - Notifications
+tenantAPI.get("/notifications", tenantNotifications.getNotifications);
+tenantAPI.post("/notification/:notificationId/read", tenantNotifications.markNotificationRead);
+tenantAPI.post("/notifications/mark-all-read", tenantNotifications.markAllRead);
+
+// Tenant: API - Documents & Service Requests
+tenantAPI.get("/documents", tenantDashboard.getTenantDocuments);
+tenantAPI.get("/service-requests", tenantServiceRequest.getServiceRequests);
+tenantAPI.post("/service-fee/create-intent", tenantServiceRequest.createServiceFeeIntent);
+
+// Mount Tenant routers
+router.use("/tenant", tenantWeb);
+router.use("/api/tenant", tenantAPI);
+
+/**
+ * SHARED (Auth required)
+ */
+router.get("/api/documents/:documentId/view", isAuthenticated, documentManagement.viewDocument);
+router.get("/api/documents/:documentId/download", isAuthenticated, documentManagement.downloadDocument);
+
+module.exports = router;

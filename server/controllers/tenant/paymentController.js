@@ -216,6 +216,23 @@ exports.processPayment = async (req, res) => {
   }
 };
 
+
+// Get payment methods
+exports.getPaymentMethods = async (req, res) => {
+  try {
+    const tenantId = req.session?.userId;
+    const PaymentMethod = require('../../../models/PaymentMethod');
+    
+    const methods = await PaymentMethod.find({ user: tenantId }).sort('-isDefault -createdAt');
+    
+    res.json({ success: true, data: methods });
+    
+  } catch (error) {
+    logger.error(`Get payment methods error: ${error}`);
+    res.json({ success: false, error: 'Failed to get payment methods' });
+  }
+};
+
 // Get Payment Status (AJAX)
 exports.getPaymentStatus = async (req, res) => {
   try {
@@ -289,23 +306,93 @@ exports.getPaymentHistory = async (req, res) => {
   }
 };
 
-// Get saved payment methods
-exports.getPaymentMethods = async (req, res) => {
+// Process payment with saved method
+exports.processPaymentWithSavedMethod = async (req, res) => {
   try {
     const tenantId = req.session?.userId;
+    const { paymentMethodId, amount } = req.body;
     
-    // In production, retrieve from payment processor
-    // For now, return empty array
+    // Get payment method
+    const PaymentMethod = require('../../../models/PaymentMethod');
+    const paymentMethod = await PaymentMethod.findOne({
+      _id: paymentMethodId,
+      user: tenantId
+    });
+    
+    if (!paymentMethod) {
+      return res.status(404).json({
+        success: false,
+        message: 'Payment method not found'
+      });
+    }
+    
+    // Get tenant and lease
+    const User = require('../../../models/User');
+    const tenant = await User.findById(tenantId);
+    const lease = await Lease.findOne({
+      tenant: tenantId,
+      status: 'active'
+    }).populate('unit');
+    
+    // Create payment intent with saved method
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(amount * 100),
+      currency: 'usd',
+      customer: tenant.stripeCustomerId,
+      payment_method: paymentMethod.stripePaymentMethodId,
+      off_session: true,
+      confirm: true,
+      metadata: {
+        tenantId: tenantId.toString(),
+        leaseId: lease._id.toString(),
+        unitNumber: lease.unit.unitNumber,
+        paymentType: 'rent',
+        month: new Date().getMonth() + 1,
+        year: new Date().getFullYear()
+      }
+    });
+    
+    // Create payment record
+    const payment = new Payment({
+      tenant: tenantId,
+      unit: lease.unit._id,
+      type: 'rent',
+      amount: amount,
+      paymentMethod: paymentMethod.type === 'card' ? 'credit_card' : 'ach',
+      status: 'completed',
+      transactionId: paymentIntent.id,
+      month: new Date().getMonth() + 1,
+      year: new Date().getFullYear(),
+      paidDate: new Date()
+    });
+    
+    await payment.save();
+    
+    // Create notification
+    await Notification.create({
+      recipient: tenantId,
+      type: 'payment_received',
+      title: 'Payment Received',
+      message: `Your payment of $${amount} has been processed successfully.`,
+      relatedModel: 'Payment',
+      relatedId: payment._id
+    });
+    
+    // Send email
+    await emailService.sendRentPaymentConfirmation(tenant, payment, lease);
+    
+    logger.info(`Payment processed with saved method for tenant ${tenantId}`);
     res.json({
       success: true,
-      data: []
+      message: 'Payment processed successfully',
+      paymentId: payment._id
     });
     
   } catch (error) {
-    logger.error(`Get payment methods error: ${error}`);
-    res.json({ 
-      success: false, 
-      error: 'Failed to get payment methods' 
+    logger.error(`Process payment error: ${error}`);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Payment failed'
     });
   }
 };

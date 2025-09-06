@@ -342,20 +342,43 @@ const TenantPayment = {
         container.style.display = 'block';
     },
     
-    openPaymentModal() {
-        // Check if payment is allowed
-        const payButton = document.querySelector('.btn-pay-now');
-        if (payButton?.disabled) {
-            CasaConnect.NotificationManager.error('Payment is currently not available. Please contact management.');
+    async openPaymentModal() {
+        // First check if user has payment methods
+        const response = await CasaConnect.APIClient.get('/api/tenant/payment-methods');
+        
+        if (!response.success || response.data.length === 0) {
+            CasaConnect.NotificationManager.warning('Please add a payment method in Settings first');
+            window.location.href = '/tenant/settings';
             return;
         }
         
-        CasaConnect.ModalManager.openModal('paymentModal');
+        // Set the payment amount
+        const amountElement = document.querySelector('.amount-due .amount');
+        if (amountElement) {
+            document.getElementById('paymentAmount').textContent = amountElement.textContent.replace('$', '');
+        }
         
-        // Trigger mount event
-        document.dispatchEvent(new CustomEvent('modalOpened', { 
-            detail: { modalId: 'paymentModal' } 
-        }));
+        // Display saved methods
+        this.displaySavedMethodsForPayment(response.data);
+        
+        CasaConnect.ModalManager.openModal('paymentModal');
+    },
+
+    displaySavedMethodsForPayment(methods) {
+        const container = document.getElementById('savedPaymentMethods');
+        
+        container.innerHTML = methods.map((method, index) => `
+            <label class="saved-method-option">
+                <input type="radio" name="paymentMethodId" value="${method._id}" 
+                    ${index === 0 || method.isDefault ? 'checked' : ''}>
+                <div class="method-display">
+                    <i class="fas fa-${method.type === 'card' ? 'credit-card' : 'university'}"></i>
+                    <span>${method.type === 'card' 
+                        ? `${method.brand} •••• ${method.last4}` 
+                        : `Bank •••• ${method.last4}`}</span>
+                </div>
+            </label>
+        `).join('');
     },
     
     closePaymentModal() {
