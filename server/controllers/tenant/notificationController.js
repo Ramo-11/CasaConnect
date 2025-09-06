@@ -19,7 +19,7 @@ exports.getNotifications = async (req, res) => {
     
     res.json({
       success: true,
-      data: notifications.map(n => ({
+      data: notifications.map(n => ({ 
         id: n._id,
         type: n.type,
         title: n.title,

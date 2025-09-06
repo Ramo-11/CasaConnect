@@ -129,6 +129,10 @@ route.get("/api/tenant/notifications", tenantNotifications.getNotifications);
 route.post("/api/tenant/notification/:notificationId/read", tenantNotifications.markNotificationRead);
 route.post("/api/tenant/notifications/mark-all-read", tenantNotifications.markAllRead);
 route.get("/api/tenant/documents", tenantDashboard.getTenantDocuments);
+route.get("/api/tenant/payment-methods", tenantPayment.getPaymentMethods);
+route.get("/api/tenant/service-requests", tenantServiceRequest.getServiceRequests);
+route.post("/api/tenant/payment/create-intent", tenantPayment.createPaymentIntent);
+route.post("/api/tenant/service-fee/create-intent", tenantServiceRequest.createServiceFeeIntent);
 
 // Shared document routes (with access control in the controller)
 route.get("/api/documents/:documentId/view", authMiddleware, documentManagement.viewDocument);

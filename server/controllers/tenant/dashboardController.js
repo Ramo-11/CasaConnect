@@ -5,6 +5,10 @@ const ServiceRequest = require('../../../models/ServiceRequest');
 const Payment = require('../../../models/Payment');
 const Notification = require('../../../models/Notification');
 const { logger } = require('../../logger');
+require('dotenv').config()
+
+const isProd = process.env.NODE_ENV === "production"
+process.env.STRIPE_PUBLIC_KEY = isProd ? process.env.STRIPE_PUBLIC_KEY_PROD : process.env.STRIPE_PUBLIC_KEY_TEST
 
 // Helper function
 const formatDate = (date) => {
@@ -113,8 +117,15 @@ exports.getDashboard = async (req, res) => {
         'tenant/service-request.css',
         'tenant/documents.css'
       ],
-      additionalJS: ['tenant/dashboard.js', 'tenant/notifications.js'],
+      additionalJS: [
+        'tenant/dashboard.js', 
+        'tenant/notifications.js',
+        'tenant/payment.js',
+        'tenant/service-request.js',
+        'tenant/lease-details.js',
+      ],
       layout: 'layout',
+      stripePublicKey: process.env.STRIPE_PUBLIC_KEY,
       
       // User & Unit
       user: tenant,

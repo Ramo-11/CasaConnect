@@ -1,7 +1,8 @@
 const Payment = require('../../../models/Payment');
-const User = require('../../../models/User');
 const Lease = require('../../../models/Lease');
 const Notification = require('../../../models/Notification');
+const stripe = require('../../config/stripe');
+const emailService = require('../../services/emailService');
 const { logger } = require('../../logger');
 
 // Create payment intent for rent
@@ -18,7 +19,8 @@ exports.createPaymentIntent = async (req, res) => {
       });
     }
     
-    // Get tenant's lease for metadata
+    // Get tenant and lease info
+    const tenant = await User.findById(tenantId);
     const lease = await Lease.findOne({
       tenant: tenantId,
       status: 'active'
@@ -35,16 +37,23 @@ exports.createPaymentIntent = async (req, res) => {
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount * 100), // Convert to cents
       currency: 'usd',
+      automatic_payment_methods: {
+        enabled: true,
+      },
       metadata: {
         tenantId: tenantId.toString(),
+        tenantName: `${tenant.firstName} ${tenant.lastName}`,
         leaseId: lease._id.toString(),
         unitNumber: lease.unit.unitNumber,
         paymentType: 'rent',
         month: new Date().getMonth() + 1,
         year: new Date().getFullYear()
       },
-      description: `Rent payment for Unit ${lease.unit.unitNumber}`
+      description: `Rent payment for Unit ${lease.unit.unitNumber} - ${tenant.firstName} ${tenant.lastName}`,
+      receipt_email: tenant.email
     });
+    
+    logger.info(`Payment intent created: ${paymentIntent.id} for tenant ${tenantId}`);
     
     res.json({
       success: true,
@@ -53,7 +62,7 @@ exports.createPaymentIntent = async (req, res) => {
     });
     
   } catch (error) {
-    logger.error(`Create payment intent error: ${error}`);
+    logger.error(`Create payment intent error: ${error.message}`);
     res.status(500).json({
       success: false,
       message: 'Failed to create payment intent'
@@ -77,13 +86,20 @@ exports.confirmPayment = async (req, res) => {
       });
     }
     
+    // Get tenant and lease
+    const tenant = await User.findById(tenantId);
+    const lease = await Lease.findOne({
+      tenant: tenantId,
+      status: 'active'
+    }).populate('unit');
+    
     // Create payment record
     const payment = new Payment({
       tenant: tenantId,
-      unit: paymentIntent.metadata.leaseId,
+      unit: lease.unit._id,
       type: 'rent',
       amount: paymentIntent.amount / 100,
-      paymentMethod: 'credit_card',
+      paymentMethod: paymentIntent.payment_method_types[0] || 'card',
       status: 'completed',
       transactionId: paymentIntent.id,
       month: parseInt(paymentIntent.metadata.month),
@@ -103,14 +119,21 @@ exports.confirmPayment = async (req, res) => {
       relatedId: payment._id
     });
     
+    // Send email confirmation
+    await emailService.sendRentPaymentConfirmation(tenant, payment, lease);
+    
+    logger.info(`Payment confirmed: ${paymentIntent.id} for tenant ${tenantId}`);
+    
     res.json({
       success: true,
       message: 'Payment confirmed successfully',
-      paymentId: payment._id
+      paymentId: payment._id,
+      amount: payment.amount,
+      transactionId: payment.transactionId
     });
     
   } catch (error) {
-    logger.error(`Confirm payment error: ${error}`);
+    logger.error(`Confirm payment error: ${error.message}`);
     res.status(500).json({
       success: false,
       message: 'Failed to confirm payment'
@@ -262,6 +285,50 @@ exports.getPaymentHistory = async (req, res) => {
     res.json({ 
       success: false, 
       error: 'Failed to get payment history' 
+    });
+  }
+};
+
+// Get saved payment methods
+exports.getPaymentMethods = async (req, res) => {
+  try {
+    const tenantId = req.session?.userId;
+    
+    // In production, retrieve from payment processor
+    // For now, return empty array
+    res.json({
+      success: true,
+      data: []
+    });
+    
+  } catch (error) {
+    logger.error(`Get payment methods error: ${error}`);
+    res.json({ 
+      success: false, 
+      error: 'Failed to get payment methods' 
+    });
+  }
+};
+
+// Create service fee payment intent
+exports.createServiceFeeIntent = async (req, res) => {
+  try {
+    const tenantId = req.session?.userId;
+    const { amount, description } = req.body;
+    
+    // For now, return mock data
+    // In production, integrate with Stripe
+    res.json({
+      success: true,
+      clientSecret: 'mock_secret_' + Date.now(),
+      paymentIntentId: 'pi_' + Date.now()
+    });
+    
+  } catch (error) {
+    logger.error(`Create service fee intent error: ${error}`);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create payment intent'
     });
   }
 };

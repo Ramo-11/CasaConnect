@@ -46,7 +46,7 @@ const TenantNotifications = {
         try {
             const response = await CasaConnect.APIClient.get('/api/tenant/notifications?unreadOnly=false');
             if (response.success) {
-                this.updateNotificationDisplay(response.data);
+                this.updateNotificationDisplay(response.data.data || response.data);
             }
         } catch (error) {
             console.error('Failed to load notifications:', error);
@@ -54,6 +54,10 @@ const TenantNotifications = {
     },
     
     updateNotificationDisplay(notifications) {
+        if (!Array.isArray(notifications)) {
+            console.error('Notifications must be an array');
+            return;
+        }
         const panel = document.getElementById('notificationsPanel');
         if (!panel) return;
         
@@ -167,17 +171,20 @@ const TenantNotifications = {
     async checkForNewNotifications() {
         try {
             const response = await CasaConnect.APIClient.get('/api/tenant/notifications?unreadOnly=true');
-            if (response.success && response.data.length > this.unreadCount) {
-                // New notifications received
-                this.loadNotifications();
-                
-                // Show browser notification if permitted
-                if (Notification.permission === 'granted') {
-                    const latestNotification = response.data[0];
-                    new Notification('CasaConnect', {
-                        body: latestNotification.message,
-                        icon: '/favicon.ico'
-                    });
+            if (response.success) {
+                const notifications = response.data.data || response.data; // Extract the array
+                if (notifications.length > this.unreadCount) {
+                    // New notifications received
+                    this.loadNotifications();
+                    
+                    // Show browser notification if permitted
+                    if (Notification.permission === 'granted' && notifications.length > 0) {
+                        const latestNotification = notifications[0];
+                        new Notification('CasaConnect', {
+                            body: latestNotification.message,
+                            icon: '/favicon.ico'
+                        });
+                    }
                 }
             }
         } catch (error) {

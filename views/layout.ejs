@@ -79,13 +79,6 @@
             <script src="/js/modals/manager-lease-modal.js"></script>
         <% } %>
 
-        <% if (typeof user !== 'undefined' && user && user.role === 'tenant') { %>
-            <script src="/js/tenant/dashboard.js"></script>
-            <script src="/js/tenant/payment.js"></script>
-            <script src="/js/tenant/service-request.js"></script>
-            <script src="/js/tenant/notifications.js"></script>
-        <% } %>
-
         <!-- Modal Partials - Include based on page needs -->
         <% if (typeof user !== 'undefined' && user && user.role === 'manager') { %>
             <% 
