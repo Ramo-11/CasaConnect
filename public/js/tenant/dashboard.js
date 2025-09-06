@@ -1,28 +1,28 @@
-// Tenant Dashboard JavaScript - Modular Approach
+// public/js/tenant/dashboard.js
+// Main Dashboard Controller - Coordinates all tenant dashboard functionality
 
-// Initialize when DOM is ready
-CasaConnect.ready(() => {
-    TenantDashboard.init();
-});
-
-// Main Dashboard Manager
 const TenantDashboard = {
-    currentTab: 'overview',
-    paymentInfo: null,
+    currentTab: 'payments',
+    initialized: false,
     
     init() {
+        if (this.initialized) return;
+        
         this.initializeTabs();
-        this.initializePaymentHandlers();
-        this.initializeServiceRequestHandlers();
-        this.loadPaymentStatus();
-        this.initializeFilters();
+        this.loadInitialData();
+        this.setupEventListeners();
         this.checkUrgentNotifications();
+        
+        // Initialize other modules
+        if (window.TenantPayment) TenantPayment.init();
+        if (window.TenantServiceRequest) TenantServiceRequest.init();
+        if (window.TenantNotifications) TenantNotifications.init();
+        
+        this.initialized = true;
     },
     
-    // Tab Management
     initializeTabs() {
         const tabButtons = document.querySelectorAll('.tab-button');
-        const tabPanes = document.querySelectorAll('.tab-pane');
         
         tabButtons.forEach(button => {
             button.addEventListener('click', () => {
@@ -31,14 +31,11 @@ const TenantDashboard = {
             });
         });
         
-        // Handle tab links
-        document.querySelectorAll('[data-tab-target]').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const targetTab = link.getAttribute('data-tab-target');
-                this.switchTab(targetTab);
-            });
-        });
+        // Restore last tab from storage
+        const lastTab = CasaConnect.StorageHelper.get('tenantLastTab');
+        if (lastTab) {
+            this.switchTab(lastTab);
+        }
     },
     
     switchTab(targetTab) {
@@ -46,53 +43,52 @@ const TenantDashboard = {
         
         // Update buttons
         document.querySelectorAll('.tab-button').forEach(button => {
-            if (button.getAttribute('data-tab') === targetTab) {
-                button.classList.add('active');
-            } else {
-                button.classList.remove('active');
-            }
+            button.classList.toggle('active', button.getAttribute('data-tab') === targetTab);
         });
         
         // Update panes
         document.querySelectorAll('.tab-pane').forEach(pane => {
-            if (pane.id === targetTab) {
-                pane.classList.add('active');
-            } else {
-                pane.classList.remove('active');
-            }
+            pane.classList.toggle('active', pane.id === targetTab);
         });
         
         // Save preference
         CasaConnect.StorageHelper.set('tenantLastTab', targetTab);
+        
+        // Trigger tab-specific loading if needed
+        this.onTabChange(targetTab);
     },
     
-    // Add this function for logout handling
-    async handleLogout() {
-        if (confirm('Are you sure you want to logout?')) {
-            try {
-                const response = await fetch('/logout', {
-                    method: 'GET',
-                    credentials: 'same-origin'
-                });
-                
-                if (response.redirected) {
-                    window.location.href = response.url;
-                } else {
-                    window.location.href = '/login';
-                }
-            } catch (error) {
-                console.error('Logout error:', error);
-                window.location.href = '/login';
-            }
+    onTabChange(tab) {
+        switch(tab) {
+            case 'payments':
+                if (window.TenantPayment) TenantPayment.refreshPaymentHistory();
+                break;
+            case 'service':
+                if (window.TenantServiceRequest) TenantServiceRequest.refreshRequests();
+                break;
+            case 'documents':
+                this.loadDocuments();
+                break;
         }
     },
-
-    // Payment Status Check
+    
+    loadInitialData() {
+        // Load payment status
+        this.loadPaymentStatus();
+        
+        // Initialize progress bars
+        document.querySelectorAll('.progress-fill[data-progress]').forEach(bar => {
+            const progress = bar.getAttribute('data-progress');
+            setTimeout(() => {
+                bar.style.width = progress + '%';
+            }, 100);
+        });
+    },
+    
     async loadPaymentStatus() {
         try {
             const response = await CasaConnect.APIClient.get('/api/tenant/payment-status');
             if (response.success) {
-                this.paymentInfo = response.data;
                 this.updatePaymentDisplay(response.data);
             }
         } catch (error) {
@@ -101,379 +97,185 @@ const TenantDashboard = {
     },
     
     updatePaymentDisplay(paymentInfo) {
-        // Update payment status card if needed
+        // Update payment card UI based on status
+        const statusCard = document.querySelector('.payment-status-card');
+        if (!statusCard) return;
+        
         if (paymentInfo.urgent) {
+            statusCard.classList.add('urgent');
             this.showUrgentPaymentNotice();
+        }
+        
+        // Update payment button state
+        const payButton = document.querySelector('.btn-pay-now');
+        if (payButton) {
+            payButton.disabled = paymentInfo.daysOverdue > 10;
         }
     },
     
     showUrgentPaymentNotice() {
-        if (this.paymentInfo && this.paymentInfo.daysOverdue > 5) {
-            CasaConnect.NotificationManager.warning(
-                'Your rent payment is overdue. Please contact management immediately.',
-                10000 // Show for 10 seconds
+        const paymentCard = document.querySelector('.payment-status-card');
+        const daysOverdue = parseInt(paymentCard?.getAttribute('data-days-overdue') || '0');
+        
+        if (daysOverdue > 5) {
+            CasaConnect.NotificationManager.error(
+                'URGENT: Your rent payment is overdue. Please contact management immediately.',
+                true
             );
         }
     },
     
-    // Check for urgent notifications
     checkUrgentNotifications() {
         const paymentCard = document.querySelector('.payment-status-card');
-        if (paymentCard && paymentCard.classList.contains('danger')) {
+        if (paymentCard?.classList.contains('danger')) {
             const daysOverdue = parseInt(paymentCard.getAttribute('data-days-overdue') || '0');
             
             if (daysOverdue > 5) {
                 CasaConnect.NotificationManager.error(
-                    'URGENT: Your rent payment is overdue. Please contact management immediately.',
-                    true // Persistent
+                    'Your rent payment is overdue. Please contact management.',
+                    true
                 );
             } else if (daysOverdue > 0) {
                 CasaConnect.NotificationManager.warning(
                     'Reminder: Your rent payment is due. Pay by the 5th to avoid late fees.',
-                    true // Persistent
+                    true
                 );
             }
         }
-    }
-};
-
-// Payment Modal Manager
-const PaymentModal = {
-    init() {
-        this.initializePaymentMethods();
-        this.initializeFormValidation();
     },
     
-    open() {
-        CasaConnect.ModalManager.openModal('paymentModal');
-    },
-    
-    close() {
-        CasaConnect.ModalManager.closeModal('paymentModal');
-    },
-    
-    initializePaymentMethods() {
-        const paymentMethods = document.querySelectorAll('input[name="paymentMethod"]');
-        const achFields = document.getElementById('achFields');
-        const cardFields = document.getElementById('cardFields');
-        
-        paymentMethods.forEach(method => {
-            method.addEventListener('change', () => {
-                if (method.value === 'ach') {
-                    achFields.style.display = 'block';
-                    cardFields.style.display = 'none';
-                } else {
-                    achFields.style.display = 'none';
-                    cardFields.style.display = 'block';
-                }
-            });
-        });
-    },
-    
-    initializeFormValidation() {
-        const form = document.getElementById('paymentForm');
-        if (!form) return;
-        
-        // Format card expiry
-        const expiryInput = document.getElementById('expiry');
-        if (expiryInput) {
-            expiryInput.addEventListener('input', (e) => {
-                CasaConnect.FormUtils.formatExpiry(e.target);
-            });
-        }
-        
-        // Format card number
-        const cardNumberInput = document.getElementById('cardNumber');
-        if (cardNumberInput) {
-            cardNumberInput.addEventListener('input', (e) => {
-                CasaConnect.FormUtils.formatCardNumber(e.target);
-            });
-        }
-        
-        // Handle form submission
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            await this.processPayment(e);
-        });
-    },
-    
-    async processPayment(e) {
-        const form = e.target;
-        const submitBtn = form.querySelector('button[type="submit"]');
-        
-        CasaConnect.LoadingManager.show(submitBtn, 'Processing...');
-        
-        try {
-            const formData = new FormData(form);
-            const response = await CasaConnect.APIClient.post('/tenant/payment', formData);
-            
-            if (response.success) {
-                CasaConnect.NotificationManager.success('Payment processed successfully!');
-                this.close();
-                setTimeout(() => location.reload(), 1500);
-            } else {
-                throw new Error(response.error || 'Payment failed');
-            }
-        } catch (error) {
-            CasaConnect.NotificationManager.error(error.message);
-            CasaConnect.LoadingManager.hide(submitBtn);
-        }
-    }
-};
-
-// Service Request Modal Manager
-const ServiceRequestModal = {
-    init() {
-        this.initializeFormHandlers();
-        this.initializePaymentFields();
-    },
-    
-    open() {
-        CasaConnect.ModalManager.openModal('serviceRequestModal');
-    },
-    
-    close() {
-        CasaConnect.ModalManager.closeModal('serviceRequestModal');
-    },
-    
-    initializeFormHandlers() {
-        const form = document.getElementById('serviceRequestForm');
-        if (!form) return;
-        
-        // Priority change handler
-        const prioritySelect = document.getElementById('requestPriority');
-        if (prioritySelect) {
-            prioritySelect.addEventListener('change', (e) => {
-                if (e.target.value === 'emergency') {
-                    CasaConnect.NotificationManager.warning(
-                        'For true emergencies, please call maintenance directly at (555) 123-4567'
-                    );
-                }
-            });
-        }
-        
-        // Form submission
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            await this.submitRequest(e);
-        });
-    },
-    
-    initializePaymentFields() {
-        // Format service card expiry
-        const serviceExpiry = document.getElementById('serviceExpiry');
-        if (serviceExpiry) {
-            serviceExpiry.addEventListener('input', (e) => {
-                CasaConnect.FormUtils.formatExpiry(e.target);
-            });
-        }
-        
-        // Format service card number
-        const serviceCardNumber = document.getElementById('serviceCardNumber');
-        if (serviceCardNumber) {
-            serviceCardNumber.addEventListener('input', (e) => {
-                CasaConnect.FormUtils.formatCardNumber(e.target);
-            });
-        }
-    },
-    
-    async submitRequest(e) {
-        const form = e.target;
-        const submitBtn = form.querySelector('button[type="submit"]');
-        
-        // Validate form
-        const category = document.getElementById('requestCategory').value;
-        const title = document.getElementById('requestTitle').value;
-        const description = document.getElementById('requestDescription').value;
-        
-        if (!category || !title || !description) {
-            CasaConnect.NotificationManager.error('Please fill in all required fields');
-            return;
-        }
-        
-        CasaConnect.LoadingManager.show(submitBtn, 'Processing Payment...');
-        
-        try {
-            const formData = new FormData(form);
-            const response = await CasaConnect.APIClient.post('/tenant/service-request', formData);
-            
-            if (response.success) {
-                CasaConnect.NotificationManager.success('Service request submitted successfully!');
-                this.close();
-                setTimeout(() => location.reload(), 1500);
-            } else {
-                throw new Error(response.error || 'Submission failed');
-            }
-        } catch (error) {
-            CasaConnect.NotificationManager.error(error.message);
-            CasaConnect.LoadingManager.hide(submitBtn);
-        }
-    }
-};
-
-// Notes Toggle Handler
-const NotesManager = {
-    toggleNotes(requestId) {
-        const notesDiv = document.getElementById(`notes-${requestId}`);
-        if (notesDiv) {
-            const isHidden = notesDiv.style.display === 'none';
-            notesDiv.style.display = isHidden ? 'block' : 'none';
-            
-            // Update button text
-            const toggleBtn = notesDiv.previousElementSibling;
-            if (toggleBtn && toggleBtn.classList.contains('btn-link')) {
-                const noteCount = notesDiv.querySelectorAll('.note-item').length;
-                toggleBtn.innerHTML = isHidden 
-                    ? `Hide Updates (${noteCount})` 
-                    : `View Updates (${noteCount})`;
-            }
-        }
-    }
-};
-
-// Filter Manager
-const FilterManager = {
-    init() {
-        this.initializePaymentFilter();
-        this.initializeRequestFilter();
-    },
-    
-    initializePaymentFilter() {
+    setupEventListeners() {
+        // Payment filter
         const paymentFilter = document.getElementById('payment-filter');
         if (paymentFilter) {
             paymentFilter.addEventListener('change', (e) => {
                 this.filterPayments(e.target.value);
             });
         }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // ESC to close modals
+            if (e.key === 'Escape') {
+                CasaConnect.ModalManager.closeAll();
+            }
+            
+            // Ctrl/Cmd + P for payment
+            if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+                e.preventDefault();
+                if (window.TenantPayment) TenantPayment.openPaymentModal();
+            }
+        });
     },
     
     filterPayments(filterValue) {
         const rows = document.querySelectorAll('.payment-table tbody tr');
         
         rows.forEach(row => {
-            if (filterValue === 'all' || row.getAttribute('data-type') === filterValue) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
+            const shouldShow = filterValue === 'all' || row.getAttribute('data-type') === filterValue;
+            row.style.display = shouldShow ? '' : 'none';
         });
         
-        // Show no results message if needed
+        // Handle empty state
         const visibleRows = document.querySelectorAll('.payment-table tbody tr:not([style*="display: none"])');
-        this.handleEmptyState(visibleRows.length, 'payment-table');
+        this.handleEmptyState(visibleRows.length === 0);
     },
     
-    initializeRequestFilter() {
-        // Add filter for service requests if needed
-    },
-    
-    handleEmptyState(visibleCount, tableClass) {
-        const table = document.querySelector(`.${tableClass}`);
+    handleEmptyState(isEmpty) {
+        const table = document.querySelector('.payment-table');
         if (!table) return;
         
         let emptyRow = table.querySelector('.empty-row');
         
-        if (visibleCount === 0) {
-            if (!emptyRow) {
-                const tbody = table.querySelector('tbody');
-                const colCount = table.querySelectorAll('thead th').length;
-                emptyRow = document.createElement('tr');
-                emptyRow.className = 'empty-row';
-                emptyRow.innerHTML = `<td colspan="${colCount}" class="no-data">No records found</td>`;
-                tbody.appendChild(emptyRow);
-            }
-        } else if (emptyRow) {
+        if (isEmpty && !emptyRow) {
+            const tbody = table.querySelector('tbody');
+            const colCount = table.querySelectorAll('thead th').length;
+            emptyRow = document.createElement('tr');
+            emptyRow.className = 'empty-row';
+            emptyRow.innerHTML = `<td colspan="${colCount}" class="no-data">No records found</td>`;
+            tbody.appendChild(emptyRow);
+        } else if (!isEmpty && emptyRow) {
             emptyRow.remove();
         }
-    }
-};
-
-// Auto-refresh Manager
-const AutoRefresh = {
-    init() {
-        this.startPaymentStatusRefresh();
-        this.checkForMaintenanceAlerts();
     },
     
-    startPaymentStatusRefresh() {
-        // Refresh payment status every hour
-        setInterval(async () => {
-            await TenantDashboard.loadPaymentStatus();
-        }, 3600000); // 1 hour
-    },
-    
-    checkForMaintenanceAlerts() {
-        // Check for new maintenance alerts every 5 minutes
-        setInterval(async () => {
+    async loadDocuments() {
+        // Document loading logic if needed
+        const container = document.getElementById('tenantDocumentsContainer');
+        if (container && !container.dataset.loaded) {
             try {
-                const response = await CasaConnect.APIClient.get('/api/tenant/notifications');
-                if (response.success && response.data.length > 0) {
-                    response.data.forEach(notification => {
-                        if (notification.priority === 'high') {
-                            CasaConnect.NotificationManager.warning(notification.message);
-                        }
-                    });
+                const response = await CasaConnect.APIClient.get('/api/tenant/documents');
+                if (response.success) {
+                    this.renderDocuments(response.data);
+                    container.dataset.loaded = 'true';
                 }
             } catch (error) {
-                console.error('Failed to check notifications:', error);
+                console.error('Failed to load documents:', error);
             }
-        }, 300000); // 5 minutes
+        }
+    },
+    
+    renderDocuments(documents) {
+        const container = document.getElementById('tenantDocumentsContainer');
+        if (!container) return;
+        
+        const otherDocs = documents.filter(doc => doc.type !== 'lease');
+        
+        if (otherDocs.length === 0) {
+            container.innerHTML = '<p class="no-data">No additional documents</p>';
+            return;
+        }
+        
+        container.innerHTML = otherDocs.map(doc => `
+            <div class="document-item">
+                <div class="document-icon">
+                    <i class="fas fa-file"></i>
+                </div>
+                <div class="document-info">
+                    <h5>${doc.title}</h5>
+                    <span class="document-meta">
+                        ${doc.type} • ${doc.sizeFormatted} • ${doc.uploadDate}
+                    </span>
+                </div>
+                <div class="document-actions">
+                    <button class="btn-icon" onclick="DocumentManager.viewDocument('${doc.id}')" title="View">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn-icon" onclick="DocumentManager.downloadDocument('${doc.id}')" title="Download">
+                        <i class="fas fa-download"></i>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    },
+    
+    async handleLogout() {
+        if (!confirm('Are you sure you want to logout?')) return;
+        
+        try {
+            const response = await fetch('/logout', {
+                method: 'GET',
+                credentials: 'same-origin'
+            });
+            
+            window.location.href = response.redirected ? response.url : '/login';
+        } catch (error) {
+            console.error('Logout error:', error);
+            window.location.href = '/login';
+        }
     }
 };
 
-// Initialize Payment Handlers
+// Initialize when ready
 CasaConnect.ready(() => {
-    TenantDashboard.initializePaymentHandlers = function() {
-        PaymentModal.init();
-        ServiceRequestModal.init();
-        FilterManager.init();
-        AutoRefresh.init();
-    };
-    
-    TenantDashboard.initializeServiceRequestHandlers = function() {
-        // Already handled in ServiceRequestModal.init()
-    };
-    
-    document.querySelectorAll('.progress-fill[data-progress]').forEach(bar => {
-        const progress = bar.getAttribute('data-progress');
-        bar.style.width = progress + '%';
-    });
-    
-    TenantDashboard.initializeFilters = function() {
-        FilterManager.init();
-    };
+    TenantDashboard.init();
 });
 
-// Global function exports for onclick handlers
-window.openPaymentModal = () => PaymentModal.open();
-window.closePaymentModal = () => PaymentModal.close();
-window.openServiceRequestModal = () => ServiceRequestModal.open();
-window.closeServiceRequestModal = () => ServiceRequestModal.close();
-window.toggleNotes = (requestId) => NotesManager.toggleNotes(requestId);
+// Global exports
+window.TenantDashboard = TenantDashboard;
 window.handleLogout = () => TenantDashboard.handleLogout();
-
-// Keyboard shortcuts
-document.addEventListener('keydown', (e) => {
-    // ESC to close modals
-    if (e.key === 'Escape') {
-        document.querySelectorAll('.modal.active').forEach(modal => {
-            modal.classList.remove('active');
-            document.body.style.overflow = '';
-        });
+window.toggleNotes = (requestId) => {
+    if (window.TenantServiceRequest) {
+        TenantServiceRequest.toggleNotes(requestId);
     }
-    
-    // Ctrl/Cmd + P for payment
-    if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
-        e.preventDefault();
-        const payBtn = document.querySelector('.btn-pay-now');
-        if (payBtn && !payBtn.disabled) {
-            PaymentModal.open();
-        }
-    }
-    
-    // Ctrl/Cmd + S for service request
-    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault();
-        ServiceRequestModal.open();
-    }
-});
+};

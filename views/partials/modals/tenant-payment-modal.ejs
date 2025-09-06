@@ -86,39 +86,27 @@
                 <!-- Card Payment Fields -->
                 <div id="cardFields" class="payment-fields" style="display: none;">
                     <h4>Card Information</h4>
+                    
+                    <!-- Stripe Card Element Container -->
                     <div class="form-group">
-                        <label for="cardNumber">Card Number *</label>
-                        <div class="card-input-wrapper">
-                            <input type="text" id="cardNumber" name="cardNumber" 
-                                   data-format="card" maxlength="19"
-                                   placeholder="1234 5678 9012 3456">
-                            <span class="card-type-icon"></span>
+                        <label for="stripe-card-element">Card Details *</label>
+                        <div id="stripe-card-element" class="stripe-element">
+                            <!-- Stripe will insert the card element here -->
                         </div>
+                        <div id="card-errors" class="error-message" role="alert"></div>
                     </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="expiry">Expiry Date *</label>
-                            <input type="text" id="expiry" name="expiry" 
-                                   data-format="expiry" maxlength="5"
-                                   placeholder="MM/YY">
-                        </div>
-                        <div class="form-group">
-                            <label for="cvv">CVV *</label>
-                            <input type="text" id="cvv" name="cvv" 
-                                   pattern="[0-9]{3,4}" maxlength="4"
-                                   placeholder="123">
-                        </div>
-                    </div>
+                    
                     <div class="form-group">
                         <label for="cardholderName">Cardholder Name *</label>
                         <input type="text" id="cardholderName" name="cardholderName"
-                               placeholder="As it appears on card">
+                            placeholder="As it appears on card" required>
                     </div>
+                    
                     <div class="form-group">
                         <label for="billingZip">Billing ZIP Code *</label>
                         <input type="text" id="billingZip" name="billingZip" 
-                               pattern="[0-9]{5}" maxlength="5"
-                               placeholder="12345">
+                            pattern="[0-9]{5}" maxlength="5"
+                            placeholder="12345">
                     </div>
                 </div>
 

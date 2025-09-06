@@ -4,6 +4,120 @@ const Lease = require('../../../models/Lease');
 const Notification = require('../../../models/Notification');
 const { logger } = require('../../logger');
 
+// Create payment intent for rent
+exports.createPaymentIntent = async (req, res) => {
+  try {
+    const tenantId = req.session?.userId;
+    const { amount, paymentMethod } = req.body;
+    
+    // Validate amount
+    if (!amount || amount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid payment amount'
+      });
+    }
+    
+    // Get tenant's lease for metadata
+    const lease = await Lease.findOne({
+      tenant: tenantId,
+      status: 'active'
+    }).populate('unit');
+    
+    if (!lease) {
+      return res.status(404).json({
+        success: false,
+        message: 'No active lease found'
+      });
+    }
+    
+    // Create Stripe payment intent
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(amount * 100), // Convert to cents
+      currency: 'usd',
+      metadata: {
+        tenantId: tenantId.toString(),
+        leaseId: lease._id.toString(),
+        unitNumber: lease.unit.unitNumber,
+        paymentType: 'rent',
+        month: new Date().getMonth() + 1,
+        year: new Date().getFullYear()
+      },
+      description: `Rent payment for Unit ${lease.unit.unitNumber}`
+    });
+    
+    res.json({
+      success: true,
+      clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id
+    });
+    
+  } catch (error) {
+    logger.error(`Create payment intent error: ${error}`);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create payment intent'
+    });
+  }
+};
+
+// Confirm payment
+exports.confirmPayment = async (req, res) => {
+  try {
+    const { paymentIntentId } = req.body;
+    const tenantId = req.session?.userId;
+    
+    // Retrieve payment intent from Stripe
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    
+    if (paymentIntent.status !== 'succeeded') {
+      return res.status(400).json({
+        success: false,
+        message: 'Payment not completed'
+      });
+    }
+    
+    // Create payment record
+    const payment = new Payment({
+      tenant: tenantId,
+      unit: paymentIntent.metadata.leaseId,
+      type: 'rent',
+      amount: paymentIntent.amount / 100,
+      paymentMethod: 'credit_card',
+      status: 'completed',
+      transactionId: paymentIntent.id,
+      month: parseInt(paymentIntent.metadata.month),
+      year: parseInt(paymentIntent.metadata.year),
+      paidDate: new Date()
+    });
+    
+    await payment.save();
+    
+    // Create notification
+    await Notification.create({
+      recipient: tenantId,
+      type: 'payment_received',
+      title: 'Payment Received',
+      message: `Your payment of $${payment.amount} has been processed successfully.`,
+      relatedModel: 'Payment',
+      relatedId: payment._id
+    });
+    
+    res.json({
+      success: true,
+      message: 'Payment confirmed successfully',
+      paymentId: payment._id
+    });
+    
+  } catch (error) {
+    logger.error(`Confirm payment error: ${error}`);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to confirm payment'
+    });
+  }
+};
+
 // Process Payment
 exports.processPayment = async (req, res) => {
   try {

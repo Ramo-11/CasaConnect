@@ -80,8 +80,10 @@
         <% } %>
 
         <% if (typeof user !== 'undefined' && user && user.role === 'tenant') { %>
-            <!-- <script src="/js/pages/tenant-payment.js"></script> -->
-            <!-- <script src="/js/pages/tenant-settings.js"></script> -->
+            <script src="/js/tenant/dashboard.js"></script>
+            <script src="/js/tenant/payment.js"></script>
+            <script src="/js/tenant/service-request.js"></script>
+            <script src="/js/tenant/notifications.js"></script>
         <% } %>
 
         <!-- Modal Partials - Include based on page needs -->

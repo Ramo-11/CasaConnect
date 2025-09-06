@@ -102,46 +102,22 @@
 
                 <!-- Payment Information -->
                 <div class="form-section">
-                    <h4>Payment Information - $10 Service Fee</h4>
-                    
-                    <div class="payment-methods">
-                        <div class="payment-method active" data-method="card">
-                            <input type="radio" name="servicePaymentMethod" id="serviceMethodCard" value="credit_card" checked>
-                            <label for="serviceMethodCard" class="method-card">
-                                <i class="fas fa-credit-card"></i>
-                                <span>Credit/Debit Card</span>
-                            </label>
-                        </div>
+                <h4>Payment Information - $10 Service Fee</h4>
+                
+                <div class="form-group">
+                    <label>Card Information *</label>
+                    <div id="service-card-element" class="stripe-element">
+                        <!-- Stripe card element will be mounted here -->
                     </div>
-
-                    <div class="form-group">
-                        <label for="serviceCardNumber">Card Number *</label>
-                        <input type="text" id="serviceCardNumber" name="cardNumber" 
-                               data-format="card" maxlength="19" required
-                               placeholder="1234 5678 9012 3456">
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="serviceExpiry">Expiry Date *</label>
-                            <input type="text" id="serviceExpiry" name="cardExpiry" 
-                                   data-format="expiry" maxlength="5" required
-                                   placeholder="MM/YY">
-                        </div>
-                        <div class="form-group">
-                            <label for="serviceCvv">CVV *</label>
-                            <input type="text" id="serviceCvv" name="cardCvv" 
-                                   pattern="[0-9]{3,4}" maxlength="4" required
-                                   placeholder="123">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="serviceCardName">Cardholder Name *</label>
-                        <input type="text" id="serviceCardName" name="cardholderName" required
-                               placeholder="As it appears on card">
-                    </div>
+                    <div id="service-card-errors" class="error-message" role="alert"></div>
                 </div>
+                
+                <div class="form-group">
+                    <label for="serviceCardName">Cardholder Name *</label>
+                    <input type="text" id="serviceCardName" name="cardholderName" required
+                        placeholder="As it appears on card">
+                </div>
+            </div>
 
                 <!-- Photo Upload (Optional) -->
                 <div class="form-section">
