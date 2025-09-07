@@ -20,7 +20,7 @@ exports.getSettings = async (req, res) => {
       title: 'Account Settings',
       additionalCSS: ['tenant/settings.css'],
       additionalJS: [
-        'tenant/modules/payment-methods.js',
+        'tenant/payment-methods.js',
         'tenant/settings.js'
       ],
       layout: 'layout',

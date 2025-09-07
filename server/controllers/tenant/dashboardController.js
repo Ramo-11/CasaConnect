@@ -120,7 +120,7 @@ exports.getDashboard = async (req, res) => {
       additionalJS: [
         'tenant/dashboard.js', 
         'tenant/notifications.js',
-        'tenant/payment.js',
+        'tenant/payment-processor.js',
         'tenant/service-request.js',
         'tenant/lease-details.js',
       ],

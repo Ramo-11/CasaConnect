@@ -70,15 +70,11 @@ class NotificationManager {
         const notification = document.createElement("div");
         notification.className = `notification notification-${type}`;
         notification.innerHTML = `
-      <div class="notification-content">
-        <span>${message}</span>
-        ${
-            !persistent
-                ? '<button class="notification-close">&times;</button>'
-                : ""
-        }
-      </div>
-    `;
+            <div class="notification-content">
+                <span>${message}</span>
+                <button class="notification-close">&times;</button>
+            </div>
+        `;
 
         // Add to container or create one
         let container = document.getElementById("notification-container");
@@ -93,21 +89,21 @@ class NotificationManager {
         // Animate in
         setTimeout(() => notification.classList.add("show"), 10);
 
+        // Close button
+        const closeBtn = notification.querySelector(".notification-close");
+        if (closeBtn) {
+            closeBtn.addEventListener("click", () => {
+                notification.classList.remove("show");
+                setTimeout(() => notification.remove(), 300);
+            });
+        }
+
         if (!persistent) {
             // Auto remove
             setTimeout(() => {
                 notification.classList.remove("show");
-                setTimeout(() => notification.remove(), 300);
+                setTimeout(() => notification.remove(), 2000);
             }, duration);
-
-            // Close button
-            const closeBtn = notification.querySelector(".notification-close");
-            if (closeBtn) {
-                closeBtn.addEventListener("click", () => {
-                    notification.classList.remove("show");
-                    setTimeout(() => notification.remove(), 300);
-                });
-            }
         }
 
         return notification;
@@ -117,12 +113,20 @@ class NotificationManager {
         return this.show(message, "success", duration);
     }
 
-    static error(message, duration) {
-        return this.show(message, "error", duration);
+    static error(message, durationOrPersistent) {
+        // If boolean true is passed, make it persistent
+        if (durationOrPersistent === true) {
+            return this.show(message, "error", 5000, true);
+        }
+        return this.show(message, "error", durationOrPersistent);
     }
 
-    static warning(message, duration) {
-        return this.show(message, "warning", duration);
+    static warning(message, durationOrPersistent) {
+        // If boolean true is passed, make it persistent
+        if (durationOrPersistent === true) {
+            return this.show(message, "warning", 5000, true);
+        }
+        return this.show(message, "warning", durationOrPersistent);
     }
 
     static info(message, duration) {
