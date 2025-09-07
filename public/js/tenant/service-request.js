@@ -104,8 +104,8 @@ const TenantServiceRequest = {
         submitBtn.disabled = true;
         
         try {
-            // Process payment with saved method
-            const paymentResult = await CasaConnect.APIClient.post('/api/tenant/service-fee/process', {
+            // Create payment intent for service fee (CORRECTED ENDPOINT)
+            const paymentResult = await CasaConnect.APIClient.post('/api/tenant/service-fee/create-intent', {
                 paymentMethodId: selectedMethod.value,
                 amount: 10
             });
@@ -114,9 +114,9 @@ const TenantServiceRequest = {
                 throw new Error(paymentResult.error || 'Payment failed');
             }
             
-            // Submit service request with payment confirmation
+            // Submit service request with payment confirmation (ENDPOINT IS CORRECT)
             const formData = new FormData(form);
-            formData.append('paymentIntentId', paymentResult.paymentIntentId);
+            formData.append('paymentIntentId', paymentResult.paymentIntentId || paymentResult.data.paymentIntentId);
             
             const response = await CasaConnect.APIClient.post('/api/tenant/service-request', formData);
             
@@ -181,7 +181,7 @@ const TenantServiceRequest = {
             <div class="payment-methods-list">
                 ${methods.map((method, index) => `
                     <label class="payment-method-option">
-                        <input type="radio" name="servicePaymentMethodId" value="${method._id}" 
+                        <input type="radio" name="servicePaymentMethodId" value="${method.stripePaymentMethodId}"
                             ${index === 0 || method.isDefault ? 'checked' : ''}>
                         <div class="method-card">
                             <i class="fas fa-${method.type === 'card' ? 'credit-card' : 'university'}"></i>

@@ -133,7 +133,6 @@ tenantWeb.get("/lease/:leaseId", tenantDashboard.getLeaseDetails);
 
 // Tenant: Web actions
 tenantWeb.post("/payment", tenantPayment.processPayment);
-tenantWeb.post("/service-request", tenantServiceRequest.submitServiceRequest);
 tenantWeb.post("/change-password", tenantAccount.changePassword);
 
 // Tenant: API - Payments
@@ -145,8 +144,6 @@ tenantAPI.post("/payment/process", tenantPayment.processPaymentWithSavedMethod);
 
 // Tenant: API - Payment Methods (single, non-duplicated set)
 tenantAPI.get("/payment-methods", tenantPaymentMethod.getPaymentMethods);
-// tenantAPI.post("/payment-methods", tenantPaymentMethod.savePaymentMethod);
-// tenantAPI.post("/payment-method", tenantPaymentMethod.savePaymentMethod);
 tenantAPI.delete("/payment-method/:methodId", tenantPaymentMethod.deletePaymentMethod);
 tenantAPI.put("/payment-method/:methodId/default", tenantPaymentMethod.setDefaultPaymentMethod);
 tenantAPI.post("/payment-methods/setup-intent", tenantPaymentMethod.createSetupIntent);
@@ -160,6 +157,7 @@ tenantAPI.post("/notifications/mark-all-read", tenantNotifications.markAllRead);
 // Tenant: API - Documents & Service Requests
 tenantAPI.get("/documents", tenantDashboard.getTenantDocuments);
 tenantAPI.get("/service-requests", tenantServiceRequest.getServiceRequests);
+tenantAPI.post("/service-request", upload.array('photos', 3), tenantServiceRequest.submitServiceRequest);
 tenantAPI.post("/service-fee/create-intent", tenantServiceRequest.createServiceFeeIntent);
 
 // Mount Tenant routers

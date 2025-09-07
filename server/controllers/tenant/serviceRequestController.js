@@ -4,11 +4,26 @@ const User = require('../../../models/User');
 const Lease = require('../../../models/Lease');
 const Notification = require('../../../models/Notification');
 const stripe = require('../../config/stripe');
+const { ensureCustomer } = require('../../stripeCustomer'); 
 const emailService = require('../../services/emailService');
 const { logger } = require('../../logger');
 
+const multer = require('multer');
+const upload = multer({ 
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB per file
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('image/')) {
+            cb(null, true);
+        } else {
+            cb(null, false); // Skip non-image files silently
+        }
+    }
+});
+
 // Submit Service Request
 exports.submitServiceRequest = async (req, res) => {
+  logger.debug(`Submit service request body: ${JSON.stringify(req.body)}`);
   try {
     const tenantId = req.session?.userId;
     const { 
@@ -23,6 +38,7 @@ exports.submitServiceRequest = async (req, res) => {
     // Verify payment was successful
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
     if (paymentIntent.status !== 'succeeded') {
+      logger.error(`Service fee payment not completed: ${paymentIntent.id}`);
       return res.status(400).json({
         success: false,
         error: 'Service fee payment not completed'
@@ -164,13 +180,27 @@ exports.createServiceFeeIntent = async (req, res) => {
     const { amount, description } = req.body;
     
     const tenant = await User.findById(tenantId);
+    const customerId = await ensureCustomer(tenant);
+
+    try {
+      await stripe.paymentMethods.attach(req.body.paymentMethodId, {
+        customer: customerId
+      });
+    } catch (e) {
+      if (e.code !== 'resource_already_exists') throw e;
+    }
     
     // Create Stripe payment intent for service fee
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: 1000, // $10 service fee in cents
+      amount: 1000, // $10
       currency: 'usd',
+      payment_method: req.body.paymentMethodId,
+      customer: customerId,
+      confirm: true,
+      off_session: true, // important for saved methods
       automatic_payment_methods: {
         enabled: true,
+        allow_redirects: 'never'
       },
       metadata: {
         tenantId: tenantId.toString(),
@@ -181,12 +211,15 @@ exports.createServiceFeeIntent = async (req, res) => {
       description: `Service request fee - ${tenant.firstName} ${tenant.lastName}`,
       receipt_email: tenant.email
     });
-    
+
+
     res.json({
       success: true,
       clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id
     });
+
+    logger.info(`Service fee payment intent created: ${paymentIntent.id} for tenant ${tenantId}`);
     
   } catch (error) {
     logger.error(`Create service fee intent error: ${error.message}`);
