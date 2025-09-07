@@ -95,11 +95,11 @@ const TenantDashboard = {
             const requestId = card.getAttribute('data-request-id');
             const photosData = card.getAttribute('data-request-photos');
             if (requestId && photosData) {
-            try {
-                this.serviceRequestPhotos[requestId] = JSON.parse(photosData);
-            } catch (e) {
-                console.error('Failed to parse photos data:', e);
-            }
+                try {
+                    this.serviceRequestPhotos[requestId] = JSON.parse(photosData);
+                } catch (e) {
+                    console.error('Failed to parse photos data:', e);
+                }
             }
         });
     },
@@ -229,34 +229,90 @@ const TenantDashboard = {
             CasaConnect.NotificationManager.info('No photos available for this request');
             return;
         }
-        if (!photos || photos.length === 0) {
-            CasaConnect.NotificationManager.info('No photos available for this request');
-            return;
-        }
         
         const modalHtml = `
             <div class="modal active" id="photoViewerModal">
-            <div class="modal-content">
-                <div class="modal-header">
-                <h2>Service Request Photos</h2>
-                <button class="modal-close" onclick="document.getElementById('photoViewerModal').remove()">&times;</button>
-                </div>
-                <div class="modal-body" style="max-height:70vh;overflow-y:auto;">
-                ${photos.map((photo, i) => `
-                    <div style="margin-bottom:15px;">
-                    <img src="${photo.url}" alt="${photo.originalName || `Photo ${i+1}`}"
-                        style="max-width:100%;height:auto;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
-                    <p style="text-align:center;color:#6b7280;font-size:14px;margin-top:8px;">
-                        ${photo.originalName || `Photo ${i+1}`}
-                    </p>
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Service Request Photos</h2>
+                        <button class="modal-close" onclick="document.getElementById('photoViewerModal').remove()">&times;</button>
                     </div>
-                `).join('')}
+                    <div class="modal-body" style="max-height:70vh;overflow-y:auto;">
+                        ${photos.map((photo, i) => `
+                            <div style="margin-bottom:15px;">
+                                <img src="${photo.url}" alt="${photo.originalName || `Photo ${i+1}`}"
+                                    style="max-width:100%;height:auto;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                                <p style="text-align:center;color:#6b7280;font-size:14px;margin-top:8px;">
+                                    ${photo.originalName || `Photo ${i+1}`}
+                                </p>
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
             </div>
-            </div>
-            `;
+        `;
         
         document.body.insertAdjacentHTML('beforeend', modalHtml);
+    },
+
+    /**
+     * NEW: Filter service requests by status and optionally render a combined "all" view.
+     * Mirrors the requested behavior but adheres to this module's structure.
+     */
+    filterServiceRequests(filter) {
+        const containers = document.querySelectorAll('.requests-list[data-status]');
+        containers.forEach(container => {
+            container.style.display = container.dataset.status === filter ? 'block' : 'none';
+        });
+
+        if (filter === 'all') {
+            const allContainer = document.querySelector('.requests-list[data-status="all"]');
+            if (!allContainer) return;
+
+            const active = document.querySelector('.requests-list[data-status="active"]');
+            const completed = document.querySelector('.requests-list[data-status="completed"]');
+            const cancelled = document.querySelector('.requests-list[data-status="cancelled"]');
+
+            const activeContent = active ? active.innerHTML : '';
+            const completedContent = completed ? completed.innerHTML : '';
+            const cancelledContent = cancelled ? cancelled.innerHTML : '';
+
+            allContainer.innerHTML = `
+                <h4 style="margin-bottom: 16px;">Active Requests</h4>
+                ${activeContent || '<p class="no-data">No active requests</p>'}
+                <h4 style="margin-top: 24px; margin-bottom: 16px;">Completed Requests</h4>
+                ${completedContent || '<p class="no-data">No completed requests</p>'}
+                <h4 style="margin-top: 24px; margin-bottom: 16px;">Cancelled Requests</h4>
+                ${cancelledContent || '<p class="no-data">No cancelled requests</p>'}
+            `;
+
+            // Ensure the "all" container is visible
+            allContainer.style.display = 'block';
+        }
+    },
+
+    /**
+     * NEW: Cancel a service request with confirmation and notifications.
+     */
+    async cancelServiceRequest(requestId) {
+        if (!requestId) return;
+        if (!confirm('Are you sure you want to cancel this service request? This action cannot be undone.')) {
+            return;
+        }
+
+        try {
+            const response = await CasaConnect.APIClient.delete(`/api/tenant/service-request/${requestId}`);
+
+            if (response?.success) {
+                CasaConnect.NotificationManager.success('Service request cancelled successfully');
+                // Small delay to let the toast be seen
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                throw new Error(response?.message || 'Failed to cancel request');
+            }
+        } catch (error) {
+            CasaConnect.NotificationManager.error(error?.message || 'Failed to cancel service request');
+        }
     },
     
     async loadDocuments() {
@@ -361,6 +417,10 @@ CasaConnect.ready(() => {
 window.TenantDashboard = TenantDashboard;
 window.handleLogout = () => TenantDashboard.handleLogout();
 window.viewServicePhotos = (requestId) => TenantDashboard.viewServicePhotos(requestId);
+window.filterServiceRequests = (filter) => TenantDashboard.filterServiceRequests(filter);
+window.cancelServiceRequest = (requestId) => TenantDashboard.cancelServiceRequest(requestId);
+
+// Keep compatibility for existing service request helpers
 window.toggleNotes = (requestId) => {
     if (window.TenantServiceRequest) {
         TenantServiceRequest.toggleNotes(requestId);

@@ -177,6 +177,60 @@ exports.submitServiceRequest = async (req, res) => {
   }
 };
 
+// Cancel service request
+exports.cancelServiceRequest = async (req, res) => {
+  try {
+    const tenantId = req.session?.userId;
+    const { requestId } = req.params;
+    
+    const serviceRequest = await ServiceRequest.findOne({
+      _id: requestId,
+      tenant: tenantId,
+      status: { $in: ['pending', 'assigned'] }
+    });
+    
+    if (!serviceRequest) {
+      return res.status(404).json({
+        success: false,
+        message: 'Service request not found or cannot be cancelled'
+      });
+    }
+    
+    serviceRequest.status = 'cancelled';
+    serviceRequest.notes.push({
+      author: tenantId,
+      content: 'Request cancelled by tenant',
+      createdAt: new Date()
+    });
+    await serviceRequest.save();
+    logger.info(`Service request cancelled: ${requestId} by tenant ${tenantId}`);
+    
+    // Create notification for management
+    const managers = await User.find({ role: { $in: ['manager', 'supervisor'] } });
+    await Promise.all(managers.map(m =>
+      Notification.create({
+        recipient: m._id,
+        type: 'service_request_updated',
+        title: 'Service Request Cancelled',
+        message: `Tenant cancelled service request: ${serviceRequest.title}`,
+        relatedModel: 'ServiceRequest',
+        relatedId: serviceRequest._id
+      })
+    ));
+    
+    res.json({
+      success: true,
+      message: 'Service request cancelled successfully'
+    });
+    
+  } catch (error) {
+    logger.error(`Cancel service request error: ${error}`);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to cancel service request'
+    });
+  }
+};
 
 // Get service requests for tenant
 exports.getServiceRequests = async (req, res) => {

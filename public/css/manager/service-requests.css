@@ -279,6 +279,34 @@
   font-size: var(--font-size-sm);
 }
 
+/* Status Select Dropdown */
+.status-select {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border: 1px solid #d1d5db;
+    border-radius: var(--border-radius-md);
+    font-size: var(--font-size-sm);
+    background: var(--white);
+    cursor: pointer;
+    min-width: 120px;
+}
+
+.status-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(208, 167, 100, 0.1);
+}
+
+/* Request Actions in Card */
+.request-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg);
+    background: #f9fafb;
+    border-left: 1px solid #e5e7eb;
+    min-width: 150px;
+}
+
 /* Priority Badges */
 .badge.priority-low {
   background: #d1fae5;

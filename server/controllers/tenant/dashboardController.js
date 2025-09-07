@@ -88,46 +88,76 @@ exports.getDashboard = async (req, res) => {
       .limit(10)
       .lean();
 
+      const cancelledServiceRequestsRaw = await ServiceRequest.find({
+        tenant: tenantId,
+        status: 'cancelled'
+      })
+      .sort('-createdAt')
+      .limit(10)
+      .lean();
+      
     // Sign photo URLs at render-time (private bucket)
     const signPhotos = async (photos = []) =>
       Promise.all(
-        photos.map(async p => ({
-          ...p,
-          url: await storageService.getServicePhotoSignedUrl(p.fileName, 3600) // 1h
-        }))
+        photos.map(async p => {
+          try {
+            const url = await storageService.getServicePhotoSignedUrl(p.fileName, 3600);
+            return { ...p, url };
+          } catch (error) {
+            logger.warn(`Failed to sign photo URL for ${p.fileName}: ${error.message}`);
+            // Return photo without signed URL if it fails
+            return { ...p, url: p.url || null };
+          }
+        })
       );
 
     const activeServiceRequests = await Promise.all(
-      activeServiceRequestsRaw.map(async sr => ({
-        id: sr._id,
-        title: sr.title,
-        description: sr.description,
-        category: sr.category.replace('_', ' '),
-        priority: sr.priority,
-        status: sr.status.replace('_', ' '),
-        date: formatDate(sr.createdAt),
-        assignedTo: sr.assignedTo ? `${sr.assignedTo.firstName} ${sr.assignedTo.lastName}` : null,
-        notes: sr.notes || [],
-        photos: await signPhotos(sr.photos || [])
-      }))
+      activeServiceRequestsRaw.map(async sr => {
+        const signedPhotos = await signPhotos(sr.photos || []);
+        return {
+          id: sr._id,
+          title: sr.title,
+          description: sr.description,
+          category: sr.category.replace('_', ' '),
+          priority: sr.priority,
+          status: sr.status.replace('_', ' '),
+          date: formatDate(sr.createdAt),
+          assignedTo: sr.assignedTo ? `${sr.assignedTo.firstName} ${sr.assignedTo.lastName}` : null,
+          notes: sr.notes || [],
+          photos: signedPhotos.filter(p => p.url !== null) // Filter out photos without URLs
+        };
+      })
     );
 
     const serviceRequestHistory = await Promise.all(
-      serviceRequestHistoryRaw.map(async sr => ({
-        id: sr._id,
-        title: sr.title,
-        category: sr.category.replace('_', ' '),
-        completedDate: formatDate(sr.completedAt),
-        resolutionTime:
-          Math.ceil((sr.completedAt - sr.createdAt) / (1000 * 60 * 60 * 24)) + ' days',
-        photos: await signPhotos(sr.photos || [])
-      }))
+      serviceRequestHistoryRaw.map(async sr => {
+        const signedPhotos = await signPhotos(sr.photos || []);
+        return {
+          id: sr._id,
+          title: sr.title,
+          category: sr.category.replace('_', ' '),
+          completedDate: formatDate(sr.completedAt),
+          resolutionTime:
+            Math.ceil((sr.completedAt - sr.createdAt) / (1000 * 60 * 60 * 24)) + ' days',
+          photos: signedPhotos.filter(p => p.url !== null) // Filter out photos without URLs
+        };
+      })
     );
 
-    logger.debug(
-      `photos for requests: ${JSON.stringify(
-        activeServiceRequests.map(r => ({ id: r.id, photos: r.photos }))
-      )}`
+    const cancelledServiceRequests = await Promise.all(
+      cancelledServiceRequestsRaw.map(async sr => {
+        const signedPhotos = await signPhotos(sr.photos || []);
+        return {
+          id: sr._id,
+          title: sr.title,
+          description: sr.description,
+          category: sr.category.replace('_', ' '),
+          status: 'cancelled',
+          date: formatDate(sr.createdAt),
+          notes: sr.notes || [],
+          photos: signedPhotos.filter(p => p.url !== null)
+        };
+      })
     );
 
     // Payment history
@@ -220,6 +250,7 @@ exports.getDashboard = async (req, res) => {
       completedRequests: serviceRequestHistory.length,
       activeServiceRequests,
       serviceRequestHistory,
+      cancelledServiceRequests,
 
       // Payment History
       paymentHistory,

@@ -11,6 +11,7 @@ exports.getServiceRequests = async (req, res) => {
             .populate("assignedTo", "firstName lastName")
             .sort("-createdAt");
 
+        logger.debug(`requests: ${JSON.stringify(requests)}`);
         res.render("manager/service-requests", {
             title: "Service Requests",
             additionalCSS: ["manager/service-requests.css"],
@@ -154,6 +155,45 @@ exports.updateRequestStatus = async (req, res) => {
         res.status(500).json({
             success: false,
             message: "Failed to update status",
+        });
+    }
+};
+
+// Delete Request (API)
+exports.deleteRequest = async (req, res) => {
+    try {
+        const { requestId } = req.params;
+        
+        const request = await ServiceRequest.findById(requestId);
+        if (!request) {
+            return res.status(404).json({
+                success: false,
+                message: "Service request not found",
+            });
+        }
+        
+        // Delete any associated photos if they exist
+        if (request.photos && request.photos.length > 0) {
+            const storageService = require('../../services/storageService');
+            const photoFileNames = request.photos.map(p => p.fileName).filter(Boolean);
+            if (photoFileNames.length > 0) {
+                await storageService.deleteServicePhotos(photoFileNames).catch(err => {
+                    logger.warn(`Failed to delete photos for request ${requestId}: ${err.message}`);
+                });
+            }
+        }
+        
+        await request.deleteOne();
+        
+        res.json({
+            success: true,
+            message: "Request deleted successfully",
+        });
+    } catch (error) {
+        logger.error(`Delete request error: ${error}`);
+        res.status(500).json({
+            success: false,
+            message: "Failed to delete request",
         });
     }
 };

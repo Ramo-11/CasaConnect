@@ -172,6 +172,11 @@
                 <i class="fas fa-times"></i>
               </button>
             <% } %>
+            <% if (request.status !== 'completed') { %>
+              <button class="btn-icon danger" onclick="deleteServiceRequest('<%= request._id %>')" title="Delete">
+                <i class="fas fa-trash"></i>
+              </button>
+            <% } %>
           </div>
         </div>
       <% }) %>

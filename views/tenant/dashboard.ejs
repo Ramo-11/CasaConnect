@@ -215,50 +215,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Service Requests Summary Card -->
-        <div class="card">
-            <div class="card-header">
-                <h3>Service Requests</h3>
-                <button class="btn btn-primary btn-small" onclick="openServiceRequestModal()">
-                    <i class="fas fa-plus"></i> New Request
-                </button>
-            </div>
-            <div class="card-body">
-                <div class="stats-grid">
-                    <div class="stat">
-                        <span class="stat-value"><%= activeRequests %></span>
-                        <span class="stat-label">Active</span>
-                    </div>
-                    <div class="stat">
-                        <span class="stat-value"><%= completedRequests %></span>
-                        <span class="stat-label">Completed</span>
-                    </div>
-                </div>
-                
-                <% if (activeServiceRequests && activeServiceRequests.length > 0) { %>
-                <div class="recent-requests mt-3">
-                    <h5>Recent Requests:</h5>
-                    <% activeServiceRequests.slice(0, 3).forEach(request => { %>
-                    <div class="request-item">
-                        <span class="request-title"><%= request.title %></span>
-                        <span class="request-status status-<%= request.status.replace(' ', '_') %>">
-                            <%= request.status %>
-                        </span>
-                    </div>
-                    <% }) %>
-                </div>
-                <% } else { %>
-                <p class="no-data">No active service requests</p>
-                <% } %>
-                
-                <div class="mt-3">
-                    <small class="text-muted">
-                        <i class="fas fa-info-circle"></i> $10 fee per service request
-                    </small>
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- Tab Navigation -->
@@ -352,97 +308,151 @@
         <div id="service" class="tab-pane">
             <div class="card">
                 <div class="card-header">
-                    <h3>Active Service Requests</h3>
-                    <button class="btn btn-primary btn-small" onclick="openServiceRequestModal()">
-                        <i class="fas fa-plus"></i> New Request
-                    </button>
+                    <h3>Service Requests</h3>
+                    <div class="header-actions" style="display: flex; gap: 12px; align-items: center;">
+                        <select id="service-filter" class="filter-select" onchange="filterServiceRequests(this.value)">
+                            <option value="active">Active Requests</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                            <option value="all">All Requests</option>
+                        </select>
+                        <button class="btn btn-primary btn-small" onclick="openServiceRequestModal()">
+                            <i class="fas fa-plus"></i> New Request
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body">
-                    <% if (activeServiceRequests && activeServiceRequests.length > 0) { %>
-                    <div class="requests-list">
-                        <% activeServiceRequests.forEach(request => { %>
-                        <div class="request-card" data-request-id="<%= request.id %>" data-request-photos='<%- JSON.stringify(request.photos || []) %>'>
-
-                            <div class="request-header">
-                                <h4><%= request.title %></h4>
-                                <span class="status-badge status-<%= request.status.replace(' ', '_') %>">
-                                    <%= request.status %>
-                                </span>
-                            </div>
-                            <div class="request-meta">
-                                <span class="meta-item">
-                                    <i class="fas fa-tag"></i> <%= request.category %>
-                                </span>
-                                <span class="meta-item">
-                                    <i class="fas fa-calendar"></i> <%= request.date %>
-                                </span>
-                                <span class="meta-item priority-<%= request.priority %>">
-                                    <i class="fas fa-flag"></i> <%= request.priority %>
-                                </span>
-                            </div>
-                            <p class="request-description"><%= request.description %></p>
-                            <% if (request.assignedTo) { %>
-                            <div class="assigned-info">
-                                <i class="fas fa-user"></i> Assigned to: <%= request.assignedTo %>
-                            </div>
-                            <% } %>
-                            <% if (request.photos && request.photos.length > 0) { %>
-                                <div class="request-photos">
-                                    <button class="btn-link" onclick="viewServicePhotos('<%= request.id %>')">
-                                    <i class="fas fa-image"></i> View Photos (<%= request.photos.length %>)
-                                    </button>
-                                </div>
-                            <% } %>
-                            <% if (request.notes && request.notes.length > 0) { %>
-                                <button class="btn-link" onclick="toggleNotes('<%= request.id %>')">
-                                    View Updates (<%= request.notes.length %>)
-                                </button>
-                                <div id="notes-<%= request.id %>" class="notes-list" style="display: none;">
-                                    <% request.notes.forEach(note => { %>
-                                    <div class="note-item">
-                                        <p><%= note.content %></p>
+                    <div id="serviceRequestsContainer">
+                        <!-- Active Requests -->
+                        <div class="requests-list" data-status="active">
+                            <% const allRequests = [...activeServiceRequests, ...serviceRequestHistory]; %>
+                            <% const activeReqs = activeServiceRequests.filter(r => !['completed', 'cancelled'].includes(r.status)); %>
+                            <% if (activeReqs.length > 0) { %>
+                                <% activeReqs.forEach(request => { %>
+                                <div class="request-card" data-request-id="<%= request.id %>" data-request-photos='<%- JSON.stringify(request.photos || []) %>'>
+                                    <div class="request-header">
+                                        <h4><%= request.title %></h4>
+                                        <span class="status-badge status-<%= request.status.replace(' ', '_') %>">
+                                            <%= request.status %>
+                                        </span>
                                     </div>
-                                    <% }) %>
+                                    <div class="request-meta">
+                                        <span class="meta-item">
+                                            <i class="fas fa-tag"></i> <%= request.category %>
+                                        </span>
+                                        <span class="meta-item">
+                                            <i class="fas fa-calendar"></i> <%= request.date %>
+                                        </span>
+                                        <span class="meta-item priority-<%= request.priority %>">
+                                            <i class="fas fa-flag"></i> <%= request.priority %>
+                                        </span>
+                                    </div>
+                                    <p class="request-description"><%= request.description %></p>
+                                    <% if (request.assignedTo) { %>
+                                    <div class="assigned-info">
+                                        <i class="fas fa-user"></i> Assigned to: <%= request.assignedTo %>
+                                    </div>
+                                    <% } %>
+                                    <div class="request-actions" style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
+                                        <div style="display: flex; gap: 8px;">
+                                            <% if (request.photos && request.photos.length > 0) { %>
+                                            <button class="btn-link" onclick="viewServicePhotos('<%= request.id %>')">
+                                                <i class="fas fa-image"></i> View Photos (<%= request.photos.length %>)
+                                            </button>
+                                            <% } %>
+                                            <% if (request.notes && request.notes.length > 0) { %>
+                                            <button class="btn-link" onclick="toggleNotes('<%= request.id %>')">
+                                                View Updates (<%= request.notes.length %>)
+                                            </button>
+                                            <% } %>
+                                        </div>
+                                        <% if (['pending', 'assigned'].includes(request.status.replace(' ', '_'))) { %>
+                                        <button class="btn btn-danger btn-small" onclick="cancelServiceRequest('<%= request.id %>')">
+                                            <i class="fas fa-times-circle"></i> Cancel Request
+                                        </button>
+                                        <% } %>
+                                    </div>
+                                    <% if (request.notes && request.notes.length > 0) { %>
+                                    <div id="notes-<%= request.id %>" class="notes-list" style="display: none;">
+                                        <% request.notes.forEach(note => { %>
+                                        <div class="note-item">
+                                            <p><%= note.content %></p>
+                                        </div>
+                                        <% }) %>
+                                    </div>
+                                    <% } %>
                                 </div>
+                                <% }) %>
+                            <% } else { %>
+                                <p class="no-data">No active service requests</p>
                             <% } %>
                         </div>
-                        <% }) %>
-                    </div>
-                    <% } else { %>
-                    <p class="no-data">No active service requests</p>
-                    <% } %>
-                </div>
-            </div>
 
-            <% if (serviceRequestHistory && serviceRequestHistory.length > 0) { %>
-            <div class="card mt-3">
-                <div class="card-header">
-                    <h3>Completed Requests</h3>
-                </div>
-                <div class="card-body">
-                    <div class="requests-list">
-                        <% serviceRequestHistory.forEach(request => { %>
-                        <div class="request-card completed">
-                            <div class="request-header">
-                                <h4><%= request.title %></h4>
-                                <span class="completion-date">
-                                    Completed: <%= request.completedDate %>
-                                </span>
-                            </div>
-                            <div class="request-meta">
-                                <span class="meta-item">
-                                    <i class="fas fa-tag"></i> <%= request.category %>
-                                </span>
-                                <span class="meta-item">
-                                    <i class="fas fa-clock"></i> Resolved in <%= request.resolutionTime %>
-                                </span>
-                            </div>
+                        <!-- Completed Requests (initially hidden) -->
+                        <div class="requests-list" data-status="completed" style="display: none;">
+                            <% if (serviceRequestHistory.length > 0) { %>
+                                <% serviceRequestHistory.forEach(request => { %>
+                                <div class="request-card completed">
+                                    <div class="request-header">
+                                        <h4><%= request.title %></h4>
+                                        <span class="completion-date">
+                                            Completed: <%= request.completedDate %>
+                                        </span>
+                                    </div>
+                                    <div class="request-meta">
+                                        <span class="meta-item">
+                                            <i class="fas fa-tag"></i> <%= request.category %>
+                                        </span>
+                                        <span class="meta-item">
+                                            <i class="fas fa-clock"></i> Resolved in <%= request.resolutionTime %>
+                                        </span>
+                                    </div>
+                                </div>
+                                <% }) %>
+                            <% } else { %>
+                                <p class="no-data">No completed requests</p>
+                            <% } %>
                         </div>
-                        <% }) %>
+
+                        <!-- Cancelled Requests (initially hidden) -->
+                        <div class="requests-list" data-status="cancelled" style="display: none;">
+                            <% if (typeof cancelledServiceRequests !== 'undefined' && cancelledServiceRequests.length > 0) { %>
+                                <% cancelledServiceRequests.forEach(request => { %>
+                                <div class="request-card cancelled">
+                                    <div class="request-header">
+                                        <h4><%= request.title %></h4>
+                                        <span class="status-badge status-cancelled">
+                                            Cancelled
+                                        </span>
+                                    </div>
+                                    <div class="request-meta">
+                                        <span class="meta-item">
+                                            <i class="fas fa-tag"></i> <%= request.category %>
+                                        </span>
+                                        <span class="meta-item">
+                                            <i class="fas fa-calendar"></i> <%= request.date %>
+                                        </span>
+                                    </div>
+                                    <p class="request-description"><%= request.description %></p>
+                                    <% if (request.photos && request.photos.length > 0) { %>
+                                    <button class="btn-link" onclick="viewServicePhotos('<%= request.id %>')">
+                                        <i class="fas fa-image"></i> View Photos (<%= request.photos.length %>)
+                                    </button>
+                                    <% } %>
+                                </div>
+                                <% }) %>
+                            <% } else { %>
+                                <p class="no-data">No cancelled requests</p>
+                            <% } %>
+                        </div>
+
+                        <!-- All Requests (initially hidden) -->
+                        <div class="requests-list" data-status="all" style="display: none;">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
                     </div>
                 </div>
             </div>
-            <% } %>
         </div>
 
         <!-- Documents Tab -->

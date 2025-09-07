@@ -110,8 +110,9 @@ managerWeb.get("/service-requests", serviceRequestManagement.getServiceRequests)
 managerAPI.post("/service-requests/assign", serviceRequestManagement.assignTechnician);
 managerAPI.post("/service-requests/note", serviceRequestManagement.addRequestNote);
 managerAPI.put("/service-requests/:requestId/status", serviceRequestManagement.updateRequestStatus);
-managerAPI.put("/service-requests/:requestId/cancel", serviceRequestManagement.cancelRequest);
 managerAPI.get("/service-requests/updates", serviceRequestManagement.checkRequestUpdates);
+managerAPI.put("/service-requests/:requestId/cancel", serviceRequestManagement.cancelRequest);
+managerAPI.delete("/service-requests/:requestId", serviceRequestManagement.deleteRequest);
 
 // Mount Manager routers
 router.use("/manager", managerWeb);
@@ -160,6 +161,7 @@ tenantAPI.get("/documents", tenantDashboard.getTenantDocuments);
 tenantAPI.get("/service-requests", tenantServiceRequest.getServiceRequests);
 tenantAPI.post("/service-request", tenantServiceRequest.upload.array('photos', 3), handleMulterError, tenantServiceRequest.submitServiceRequest);
 tenantAPI.post("/service-fee/create-intent", tenantServiceRequest.createServiceFeeIntent);
+tenantAPI.delete("/service-request/:requestId", tenantServiceRequest.cancelServiceRequest);
 
 // Mount Tenant routers
 router.use("/tenant", tenantWeb);
