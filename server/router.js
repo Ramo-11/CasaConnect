@@ -145,10 +145,12 @@ tenantAPI.post("/payment/process", tenantPayment.processPaymentWithSavedMethod);
 
 // Tenant: API - Payment Methods (single, non-duplicated set)
 tenantAPI.get("/payment-methods", tenantPaymentMethod.getPaymentMethods);
-tenantAPI.post("/payment-methods", tenantPaymentMethod.savePaymentMethod);
-tenantAPI.post("/payment-method", tenantPaymentMethod.savePaymentMethod);
+// tenantAPI.post("/payment-methods", tenantPaymentMethod.savePaymentMethod);
+// tenantAPI.post("/payment-method", tenantPaymentMethod.savePaymentMethod);
 tenantAPI.delete("/payment-method/:methodId", tenantPaymentMethod.deletePaymentMethod);
 tenantAPI.put("/payment-method/:methodId/default", tenantPaymentMethod.setDefaultPaymentMethod);
+tenantAPI.post("/payment-methods/setup-intent", tenantPaymentMethod.createSetupIntent);
+tenantAPI.post("/payment-methods", tenantPaymentMethod.saveFromPaymentMethod);
 
 // Tenant: API - Notifications
 tenantAPI.get("/notifications", tenantNotifications.getNotifications);

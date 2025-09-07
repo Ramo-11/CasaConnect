@@ -3,15 +3,27 @@ const User = require("../../../models/User");
 const stripe = require("../../config/stripe");
 const { logger } = require("../../logger");
 
-// Get all payment methods for tenant
+// helper: ensure Stripe customer
+async function ensureCustomer(tenant) {
+    if (!tenant.stripeCustomerId) {
+        const c = await stripe.customers.create({
+            email: tenant.email,
+            name: `${tenant.firstName} ${tenant.lastName}`,
+            metadata: { tenantId: String(tenant._id) },
+        });
+        tenant.stripeCustomerId = c.id;
+        await tenant.save();
+    }
+    return tenant.stripeCustomerId;
+}
+
+// GET /api/tenant/payment-methods
 exports.getPaymentMethods = async (req, res) => {
     try {
         const tenantId = req.session?.userId;
-
         const methods = await PaymentMethod.find({ user: tenantId }).sort(
             "-isDefault -createdAt"
         );
-
         res.json({ success: true, data: methods });
     } catch (error) {
         logger.error(`Get payment methods error: ${error}`);
@@ -19,163 +31,161 @@ exports.getPaymentMethods = async (req, res) => {
     }
 };
 
-exports.savePaymentMethod = async (req, res) => {
+// POST /api/tenant/payment-methods/setup-intent { type: "card" | "ach" }
+exports.createSetupIntent = async (req, res) => {
     try {
         const tenantId = req.session?.userId;
-        const {
-            type,
-            token,
-            accountHolder,
-            routingNumber,
-            accountNumber,
-            accountType,
-            cardholderName,
-        } = req.body;
+        const { type } = req.body;
         const tenant = await User.findById(tenantId);
+        const customerId = await ensureCustomer(tenant);
 
-        // ensure customer
-        if (!tenant.stripeCustomerId) {
-            const c = await stripe.customers.create({
-                email: tenant.email,
-                name: `${tenant.firstName} ${tenant.lastName}`,
-                metadata: { tenantId: tenantId.toString() },
-            });
-            tenant.stripeCustomerId = c.id;
-            await tenant.save();
-        }
-        const customerId = tenant.stripeCustomerId;
+        const payment_method_types =
+            type === "ach" ? ["us_bank_account"] : ["card"];
 
-        let source,
-            paymentMethodData = { user: tenantId, type, isDefault: false };
-
-        if (type === "card") {
-            // get fingerprint from token, then reuse existing card if present
-            const tok = await stripe.tokens.retrieve(token);
-            const fp = tok.card.fingerprint;
-
-            const { data: cards } = await stripe.customers.listSources(
-                customerId,
-                { object: "card", limit: 100 }
-            );
-            const existing = cards.find((c) => c.fingerprint === fp);
-
-            source =
-                existing ||
-                (await stripe.customers.createSource(customerId, {
-                    source: token,
-                }));
-
-            paymentMethodData = {
-                ...paymentMethodData,
-                stripePaymentMethodId: source.id,
-                last4: source.last4,
-                brand: source.brand,
-                expMonth: source.exp_month,
-                expYear: source.exp_year,
-                verified: true,
-            };
-        } else if (type === "ach") {
-            const bankToken = await stripe.tokens.create({
-                bank_account: {
-                    country: "US",
-                    currency: "usd",
-                    account_holder_name: accountHolder,
-                    account_holder_type: "individual",
-                    routing_number: routingNumber,
-                    account_number: accountNumber,
+        const si = await stripe.setupIntents.create({
+            customer: customerId,
+            payment_method_types:
+                type === "ach" ? ["us_bank_account"] : ["card"],
+            usage: "off_session",
+            ...(type === "ach" && {
+                payment_method_options: {
+                    us_bank_account: { verification_method: "microdeposits" },
                 },
-            });
-
-            const tok = await stripe.tokens.retrieve(bankToken.id);
-            const bfp = tok.bank_account.fingerprint;
-
-            const { data: banks } = await stripe.customers.listSources(
-                customerId,
-                { object: "bank_account", limit: 100 }
-            );
-            const existing = banks.find((b) => b.fingerprint === bfp);
-
-            source =
-                existing ||
-                (await stripe.customers.createSource(customerId, {
-                    source: bankToken.id,
-                }));
-
-            if (!existing) {
-                await stripe.customers.verifySource(customerId, source.id, {
-                    amounts: [32, 45],
-                });
-            }
-
-            paymentMethodData = {
-                ...paymentMethodData,
-                stripePaymentMethodId: source.id,
-                last4: String(accountNumber).slice(-4),
-                bankName: source.bank_name || "Bank Account",
-                accountType: accountType || "checking",
-                verified: !!existing && source.status === "verified",
-            };
-        }
-
-        const existingMethods = await PaymentMethod.find({ user: tenantId });
-        if (existingMethods.length === 0 && type === "card")
-            paymentMethodData.isDefault = true;
-
-        const pm = await PaymentMethod.create(paymentMethodData);
-
-        res.json({
-            success: true,
-            data: pm,
-            message:
-                type === "ach"
-                    ? "Bank account added. Two micro-deposits sent for verification."
-                    : "Payment method saved successfully",
-            requiresVerification: type === "ach" && !paymentMethodData.verified,
+            }),
         });
-    } catch (err) {
-        // if duplicate error slips through, just return existing source
-        if (err && err.code === "duplicate_card") {
-            return res
-                .status(200)
-                .json({
-                    success: true,
-                    message: "Card already exists on Stripe for this customer.",
-                });
-        }
+        res.json({ success: true, clientSecret: si.client_secret });
+    } catch (e) {
+        logger.error(`Create SetupIntent error: ${e.message}`);
         res.status(500).json({
             success: false,
-            message: err.message || "Failed to save payment method",
+            message: e.message || "Failed to create setup intent",
         });
     }
 };
 
+// POST /api/tenant/payment-methods  { type, paymentMethodId }
+// Persists an already-attached pm_ to our DB (deduping), supports cards and us_bank_account
+exports.saveFromPaymentMethod = async (req, res) => {
+    try {
+        const tenantId = req.session?.userId;
+        const { type, paymentMethodId } = req.body;
+        const tenant = await User.findById(tenantId);
+        const customerId = await ensureCustomer(tenant);
+
+        // Retrieve PM and attach if not attached to this customer
+        let pm = await stripe.paymentMethods.retrieve(paymentMethodId);
+        if (!pm) throw new Error("Payment method not found at Stripe");
+
+        if (!pm.customer) {
+            pm = await stripe.paymentMethods.attach(pm.id, {
+                customer: customerId,
+            });
+        } else if (pm.customer !== customerId) {
+            // Optional: detach from other customer then attach; usually shouldn't happen in tenant flow
+            await stripe.paymentMethods.detach(pm.id);
+            pm = await stripe.paymentMethods.attach(pm.id, {
+                customer: customerId,
+            });
+        }
+
+        // DB dedupe
+        const existingDoc = await PaymentMethod.findOne({
+            user: tenantId,
+            stripePaymentMethodId: pm.id,
+        });
+        if (existingDoc) {
+            return res.json({
+                success: true,
+                data: existingDoc,
+                message: "Already saved",
+            });
+        }
+
+        // Map Stripe PM -> local fields
+        const data = {
+            user: tenantId,
+            isDefault: false,
+            stripePaymentMethodId: pm.id,
+        };
+
+        if (pm.type === "card") {
+            data.type = "card";
+            data.last4 = pm.card?.last4;
+            data.brand = pm.card?.brand;
+            data.expMonth = pm.card?.exp_month;
+            data.expYear = pm.card?.exp_year;
+            data.verified = true;
+        } else if (pm.type === "us_bank_account") {
+            data.type = "ach"; // keep your UI label
+            data.last4 = pm.us_bank_account?.last4;
+            data.bankName = pm.us_bank_account?.bank_name || "Bank Account";
+            data.accountType = pm.us_bank_account?.account_type || "checking";
+            const v = pm.us_bank_account?.verification_status; // "unverified" | "pending" | "verified"
+            data.verified = v === "verified";
+        } else {
+            throw new Error(`Unsupported payment method type: ${pm.type}`);
+        }
+
+        // default if first method (prefer card)
+        const count = await PaymentMethod.countDocuments({ user: tenantId });
+        if (count === 0 && data.type === "card") data.isDefault = true;
+
+        const saved = await PaymentMethod.create(data);
+        res.json({
+            success: true,
+            data: saved,
+            requiresVerification: data.type === "ach" && !data.verified,
+        });
+    } catch (e) {
+        logger.error(`saveFromPaymentMethod error: ${e.message}`);
+        res.status(500).json({
+            success: false,
+            message: e.message || "Failed to save payment method",
+        });
+    }
+};
+
+// DELETE /api/tenant/payment-method/:methodId
 exports.deletePaymentMethod = async (req, res) => {
     try {
         const tenantId = req.session?.userId;
         const { methodId } = req.params;
 
-        const pm = await PaymentMethod.findOne({
+        const pmDoc = await PaymentMethod.findOne({
             _id: methodId,
             user: tenantId,
         });
-        if (!pm)
+        if (!pmDoc)
             return res
                 .status(404)
                 .json({ success: false, message: "Payment method not found" });
 
         const tenant = await User.findById(tenantId);
-        if (tenant?.stripeCustomerId && pm.stripePaymentMethodId) {
-            await stripe.customers.deleteSource(
-                tenant.stripeCustomerId,
-                pm.stripePaymentMethodId
+        const isStripePM = pmDoc.stripePaymentMethodId?.startsWith("pm_");
+
+        try {
+            if (isStripePM) {
+                await stripe.paymentMethods.detach(pmDoc.stripePaymentMethodId);
+            } else if (
+                tenant?.stripeCustomerId &&
+                pmDoc.stripePaymentMethodId
+            ) {
+                await stripe.customers.deleteSource(
+                    tenant.stripeCustomerId,
+                    pmDoc.stripePaymentMethodId
+                );
+            }
+        } catch (stripeErr) {
+            logger.warn(
+                `Stripe detach/deleteSource warning: ${stripeErr.message}`
             );
         }
 
         // reassign default if needed
-        if (pm.isDefault) {
+        if (pmDoc.isDefault) {
             const other = await PaymentMethod.findOne({
                 user: tenantId,
-                _id: { $ne: pm._id },
+                _id: { $ne: pmDoc._id },
             }).sort({ createdAt: 1 });
             if (other) {
                 other.isDefault = true;
@@ -183,7 +193,7 @@ exports.deletePaymentMethod = async (req, res) => {
             }
         }
 
-        await pm.deleteOne();
+        await pmDoc.deleteOne();
         res.json({ success: true, message: "Payment method removed" });
     } catch (e) {
         res.status(500).json({
@@ -193,73 +203,73 @@ exports.deletePaymentMethod = async (req, res) => {
     }
 };
 
-// Set default payment method
+// PUT /api/tenant/payment-method/:methodId/default
 exports.setDefaultPaymentMethod = async (req, res) => {
     try {
         const tenantId = req.session?.userId;
         const { methodId } = req.params;
 
-        // Get the payment method
-        const paymentMethod = await PaymentMethod.findOne({
+        const pmDoc = await PaymentMethod.findOne({
             _id: methodId,
             user: tenantId,
         });
+        if (!pmDoc)
+            return res
+                .status(404)
+                .json({ success: false, message: "Payment method not found" });
 
-        if (!paymentMethod) {
-            return res.status(404).json({
-                success: false,
-                message: "Payment method not found",
-            });
-        }
-
-        // Check if it's an ACH that needs verification
-        if (paymentMethod.type === "ach") {
-            const tenant = await User.findById(tenantId);
-
-            // Check verification status with Stripe
+        // If ACH via PaymentMethods, ensure verified
+        if (pmDoc.type === "ach") {
             try {
-                const source = await stripe.customers.retrieveSource(
-                    tenant.stripeCustomerId,
-                    paymentMethod.stripePaymentMethodId
-                );
-
-                if (source.status !== "verified") {
-                    return res.status(400).json({
-                        success: false,
-                        message:
-                            "Bank account must be verified before setting as default. Micro-deposits will arrive in 1-2 business days.",
-                    });
+                if (pmDoc.stripePaymentMethodId?.startsWith("pm_")) {
+                    const pm = await stripe.paymentMethods.retrieve(
+                        pmDoc.stripePaymentMethodId
+                    );
+                    const v = pm.us_bank_account?.verification_status;
+                    if (v !== "verified") {
+                        return res
+                            .status(400)
+                            .json({
+                                success: false,
+                                message:
+                                    "Bank account must be verified before setting as default.",
+                            });
+                    }
+                } else {
+                    // legacy source
+                    const tenant = await User.findById(tenantId);
+                    const source = await stripe.customers.retrieveSource(
+                        tenant.stripeCustomerId,
+                        pmDoc.stripePaymentMethodId
+                    );
+                    if (source.status !== "verified") {
+                        return res
+                            .status(400)
+                            .json({
+                                success: false,
+                                message:
+                                    "Bank account must be verified before setting as default.",
+                            });
+                    }
                 }
-            } catch (stripeError) {
-                logger.error(
-                    `Stripe verification check error: ${stripeError.message}`
-                );
+            } catch (e) {
+                logger.error(`ACH verification check error: ${e.message}`);
             }
         }
 
-        // Remove current default
         await PaymentMethod.updateMany(
             { user: tenantId },
             { isDefault: false }
         );
+        pmDoc.isDefault = true;
+        await pmDoc.save();
 
-        // Set new default
-        paymentMethod.isDefault = true;
-        await paymentMethod.save();
-
-        logger.info(
-            `Default payment method set to ${methodId} for tenant ${tenantId}`
-        );
         res.json({ success: true, message: "Default payment method updated" });
     } catch (error) {
         logger.error(`Set default payment method error: ${error.message}`);
         res.status(500).json({
             success: false,
-            message:
-                error.message ===
-                "Only verified bank accounts can be used as a `payment_method`."
-                    ? "Bank account must be verified first. Please wait for micro-deposits (1-2 business days)."
-                    : "Failed to update default payment method",
+            message: "Failed to update default payment method",
         });
     }
 };

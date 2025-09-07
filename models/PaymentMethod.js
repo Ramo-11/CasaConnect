@@ -42,4 +42,6 @@ const paymentMethodSchema = new mongoose.Schema({
   }
 });
 
+paymentMethodSchema.index({ user: 1, stripePaymentMethodId: 1 }, { unique: true });
+
 module.exports = mongoose.model('PaymentMethod', paymentMethodSchema);

@@ -6,48 +6,27 @@ const PaymentMethodManager = {
     cardElement: null,
 
     init() {
-        console.log("Initializing PaymentMethodManager");
-
-        // Initialize Stripe if available
         if (window.Stripe && window.STRIPE_CONFIG?.publicKey) {
             this.stripe = Stripe(window.STRIPE_CONFIG.publicKey);
             const elements = this.stripe.elements();
-
-            // Create card element for adding new payment methods
             this.cardElement = elements.create("card", {
-                style: {
-                    base: {
-                        fontSize: "16px",
-                        color: "#32325d",
-                        "::placeholder": {
-                            color: "#aab7c4",
-                        },
-                    },
-                },
+                style: { base: { fontSize: "16px" } },
             });
-            console.log("Stripe initialized");
-        } else {
-            console.warn("Stripe not available");
         }
-
         this.setupPaymentTypeToggle();
         this.loadPaymentMethods();
     },
 
     setupPaymentTypeToggle() {
-        const paymentTypeRadios = document.querySelectorAll(
+        const radios = document.querySelectorAll(
             'input[name="newPaymentType"]'
         );
-        paymentTypeRadios.forEach((radio) => {
-            radio.addEventListener("change", (e) => {
+        radios.forEach((r) =>
+            r.addEventListener("change", (e) => {
                 const cardFields = document.getElementById("newCardFields");
                 const achFields = document.getElementById("newAchFields");
-
-                // Card field elements
                 const cardholderName =
                     document.getElementById("cardholderName");
-
-                // ACH field elements
                 const accountHolder = document.querySelector(
                     'input[name="accountHolder"]'
                 );
@@ -61,131 +40,139 @@ const PaymentMethodManager = {
                 if (e.target.value === "card") {
                     cardFields.style.display = "block";
                     achFields.style.display = "none";
-
-                    // Set required for card fields
                     if (cardholderName) cardholderName.required = true;
-
-                    // Remove required from ACH fields
                     if (accountHolder) accountHolder.required = false;
                     if (routingNumber) routingNumber.required = false;
                     if (accountNumber) accountNumber.required = false;
-
-                    // Mount card element if not already mounted
-                    if (this.cardElement && !this.cardElement._parent) {
+                    if (this.cardElement && !this.cardElement._parent)
                         this.cardElement.mount("#card-element-new");
-                    }
                 } else {
                     cardFields.style.display = "none";
                     achFields.style.display = "block";
-
-                    // Remove required from card fields
                     if (cardholderName) cardholderName.required = false;
-
-                    // Set required for ACH fields
                     if (accountHolder) accountHolder.required = true;
                     if (routingNumber) routingNumber.required = true;
                     if (accountNumber) accountNumber.required = true;
                 }
-            });
-        });
+            })
+        );
     },
 
     setupAddPaymentForm() {
         const form = document.getElementById("addPaymentMethodForm");
-        console.log("Setting up payment form, form found:", !!form);
-
-        if (!form) {
-            console.error("Payment method form not found");
-            return;
-        }
-
-        // Remove any existing listeners
+        if (!form) return;
         form.removeEventListener("submit", this.handleFormSubmit);
-
-        // Create bound handler
         this.handleFormSubmit = async (e) => {
             e.preventDefault();
-            console.log("Form submitted");
             await this.savePaymentMethod(e.target);
         };
-
-        // Add event listener
         form.addEventListener("submit", this.handleFormSubmit);
-        console.log("Form submit listener attached");
     },
 
     async savePaymentMethod(form) {
         const submitBtn = form.querySelector('button[type="submit"]');
         const originalText = submitBtn.innerHTML;
-
-        // Show loading
         submitBtn.innerHTML = '<span class="spinner"></span> Saving...';
         submitBtn.disabled = true;
 
         try {
-            const paymentType = form.querySelector(
+            const type = form.querySelector(
                 'input[name="newPaymentType"]:checked'
-            ).value;
-            let paymentData = { type: paymentType };
+            ).value; // "card" | "ach"
 
-            if (paymentType === "card") {
-                // Validate card fields
+            // 1) Server creates a SetupIntent for the chosen type
+            const siResp = await CasaConnect.APIClient.post(
+                "/api/tenant/payment-methods/setup-intent",
+                { type }
+            );
+            if (!siResp?.success)
+                throw new Error(
+                    siResp?.message || "Failed to create setup intent"
+                );
+            const clientSecret =
+                siResp?.clientSecret ??
+                siResp?.data?.clientSecret ??
+                siResp?.client_secret ??
+                siResp?.data?.client_secret;
+
+            if (
+                typeof clientSecret !== "string" ||
+                !clientSecret.includes("_secret_")
+            ) {
+                throw new Error(
+                    "Bad SetupIntent response (missing client_secret)."
+                );
+            }
+
+            // 2) Confirm on client with Stripe.js
+            let confirmResult;
+            if (type === "card") {
                 const cardholderName =
-                    document.getElementById("cardholderName").value;
-                if (!cardholderName) {
-                    throw new Error("Cardholder name is required");
-                }
+                    document.getElementById("cardholderName")?.value ||
+                    undefined;
+                if (!this.cardElement)
+                    throw new Error("Stripe card element not ready");
 
-                // Create token with Stripe
-                const { token, error } = await this.stripe.createToken(
-                    this.cardElement,
+                confirmResult = await this.stripe.confirmCardSetup(
+                    clientSecret,
                     {
-                        name: cardholderName,
+                        payment_method: {
+                            card: this.cardElement,
+                            billing_details: { name: cardholderName },
+                        },
                     }
                 );
-
-                if (error) {
-                    throw new Error(error.message);
-                }
-
-                paymentData.token = token.id;
-                paymentData.cardholderName = cardholderName;
             } else {
-                // ACH fields
-                const formData = new FormData(form);
-                const accountHolder = formData.get("accountHolder");
-                const routingNumber = formData.get("routingNumber");
-                const accountNumber = formData.get("accountNumber");
+                const fd = new FormData(form);
+                const accountHolder = fd.get("accountHolder");
+                const routingNumber = fd.get("routingNumber");
+                const accountNumber = fd.get("accountNumber");
+                const accountType = fd.get("accountType") || "checking";
+                if (!accountHolder || !routingNumber || !accountNumber)
+                    throw new Error("All bank fields are required");
 
-                if (!accountHolder || !routingNumber || !accountNumber) {
-                    throw new Error("All bank account fields are required");
-                }
-
-                paymentData.accountHolder = accountHolder;
-                paymentData.routingNumber = routingNumber;
-                paymentData.accountNumber = accountNumber;
-                paymentData.accountType =
-                    formData.get("accountType") || "checking";
+                confirmResult = await stripe.confirmUsBankAccountSetup(clientSecret, 
+                    {
+                        payment_method: {
+                            billing_details: { name: accountHolder },
+                            us_bank_account: {
+                                account_number: accountNumber,
+                                routing_number: routingNumber,
+                                account_holder_type: "individual",
+                                account_type: accountType,
+                            },
+                        },
+                    }
+                );
             }
 
-            // Send to server
-            const response = await CasaConnect.APIClient.post(
+            if (confirmResult.error)
+                throw new Error(confirmResult.error.message);
+
+            const setupIntent = confirmResult.setupIntent;
+            const paymentMethodId = setupIntent.payment_method;
+
+            // 3) Tell server to persist the attached pm_ and mirror to DB
+            const saveResp = await CasaConnect.APIClient.post(
                 "/api/tenant/payment-methods",
-                paymentData
+                {
+                    type,
+                    paymentMethodId,
+                }
             );
 
-            if (response.success) {
-                CasaConnect.NotificationManager.success(
-                    "Payment method saved successfully"
-                );
-                this.closeModal();
-                this.loadPaymentMethods();
-            } else {
-                console.error("Save payment method failed:", response);
+            if (!saveResp?.success)
                 throw new Error(
-                    response.error || "Failed to save payment method"
+                    saveResp?.message || "Failed to save payment method"
                 );
-            }
+
+            CasaConnect.NotificationManager.success(
+                type === "ach"
+                    ? "Bank added. Watch for micro‑deposits."
+                    : "Payment method saved."
+            );
+            this.closeModal();
+            this.loadPaymentMethods();
         } catch (error) {
             CasaConnect.NotificationManager.error(
                 `Error saving payment method: ${error.message}`
@@ -201,7 +188,6 @@ const PaymentMethodManager = {
             const response = await CasaConnect.APIClient.get(
                 "/api/tenant/payment-methods"
             );
-            console.log("Payment methods response:", response);
 
             if (response.success) {
                 // Handle different response structures
@@ -332,34 +318,18 @@ const PaymentMethodManager = {
     },
 
     openModal() {
-        console.log("Opening payment method modal");
         CasaConnect.ModalManager.openModal("addPaymentMethodModal");
-
-        // Re-setup form when modal opens
         setTimeout(() => {
             this.setupAddPaymentForm();
-
-            // Mount Stripe element when modal opens
-            if (this.cardElement && !this.cardElement._parent) {
-                const cardContainer =
-                    document.getElementById("card-element-new");
-                if (cardContainer) {
-                    this.cardElement.mount("#card-element-new");
-                    console.log("Stripe card element mounted");
-                }
-            }
+            if (this.cardElement && !this.cardElement._parent)
+                this.cardElement.mount("#card-element-new");
         }, 100);
     },
-
     closeModal() {
         CasaConnect.ModalManager.closeModal("addPaymentMethodModal");
         const form = document.getElementById("addPaymentMethodForm");
         if (form) form.reset();
-
-        // Clear Stripe element
-        if (this.cardElement) {
-            this.cardElement.clear();
-        }
+        if (this.cardElement) this.cardElement.clear();
     },
 };
 
