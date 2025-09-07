@@ -12,9 +12,10 @@ const TenantNotifications = {
     },
     
     setupNotificationBell() {
-        const bell = document.querySelector('.notification-bell');
+        const bell = document.getElementById('notificationBellBtn');
         if (bell) {
-            bell.addEventListener('click', () => {
+            bell.addEventListener('click', (e) => {
+                e.stopPropagation();
                 this.toggleNotificationPanel();
             });
         }
@@ -22,9 +23,11 @@ const TenantNotifications = {
         // Close panel when clicking outside
         document.addEventListener('click', (e) => {
             const panel = document.getElementById('notificationsPanel');
-            const bell = document.querySelector('.notification-bell');
+            const bell = document.getElementById('notificationBellBtn');
             
-            if (panel && !panel.contains(e.target) && !bell.contains(e.target)) {
+            if (panel && panel.style.display !== 'none' && 
+                !panel.contains(e.target) && 
+                !bell.contains(e.target)) {
                 panel.style.display = 'none';
             }
         });
@@ -47,7 +50,7 @@ const TenantNotifications = {
     
     async loadNotifications() {
         try {
-            const response = await CasaConnect.APIClient.get('/api/tenant/notifications?unreadOnly=false');
+            const response = await CasaConnect.APIClient.get('/api/tenant/notifications?unreadOnly=true');
             if (response.success) {
                 this.updateNotificationDisplay(response.data.data || response.data);
             }
@@ -140,12 +143,13 @@ const TenantNotifications = {
             const response = await CasaConnect.APIClient.post('/api/tenant/notifications/mark-all-read');
             
             if (response.success) {
-                // Update all items
-                document.querySelectorAll('.notification-item').forEach(item => {
-                    item.classList.add('read');
-                });
+                // Clear the notification panel
+                const listContainer = document.querySelector('.notifications-list');
+                if (listContainer) {
+                    listContainer.innerHTML = '<p class="no-notifications">No new notifications</p>';
+                }
                 
-                // Reset count
+                // Reset count and badge
                 this.unreadCount = 0;
                 this.updateBadge();
                 

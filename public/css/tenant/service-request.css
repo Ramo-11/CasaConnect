@@ -1,54 +1,74 @@
-/* tenant-service-request.css */
+/* Service Request - Clean Professional Design */
 
-/* Request Items */
+/* Request Summary Cards */
 .request-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: var(--spacing-md) 0;
-    border-bottom: 1px solid #f3f4f6;
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius-md);
+    background: #f9fafb;
+    margin-bottom: var(--spacing-sm);
+    transition: all var(--transition-fast);
 }
-.request-item:last-child {
-    border-bottom: none;
+
+.request-item:hover {
+    background: #f3f4f6;
+    transform: translateX(4px);
 }
+
 .request-title {
     font-weight: var(--font-weight-medium);
     color: var(--text-dark);
-}
-.request-status {
-    font-size: var(--font-size-xs);
-    padding: var(--spacing-xs) var(--spacing-sm);
-    border-radius: var(--border-radius-md);
-    font-weight: var(--font-weight-semibold);
-    text-transform: uppercase;
+    font-size: var(--font-size-base);
 }
 
-/* Request Cards */
+.request-status {
+    font-size: var(--font-size-xs);
+    padding: 4px 12px;
+    border-radius: var(--border-radius-full);
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Main Request Cards */
 .request-card {
+    background: var(--white);
     border: 1px solid #e5e7eb;
     border-radius: var(--border-radius-lg);
     padding: var(--spacing-lg);
-    margin-bottom: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
     transition: all var(--transition-normal);
 }
+
 .request-card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
+
 .request-card.completed {
-    background: #f9fafb;
+    background: #fafafa;
+    border-color: #d1d5db;
 }
+
+/* Simplified Header */
 .request-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid #f3f4f6;
 }
+
 .request-header h4 {
     margin: 0;
     font-size: var(--font-size-lg);
     font-weight: var(--font-weight-semibold);
     color: var(--text-dark);
 }
+
+/* Clean Meta Information */
 .request-meta {
     display: flex;
     gap: var(--spacing-lg);
@@ -56,40 +76,131 @@
     font-size: var(--font-size-sm);
     color: #6b7280;
 }
+
 .meta-item {
     display: flex;
     align-items: center;
     gap: var(--spacing-xs);
 }
+
 .meta-item i {
-    font-size: var(--font-size-sm);
+    font-size: 12px;
+    opacity: 0.7;
 }
-.priority-high {
-    color: #dc2626;
-}
-.priority-emergency {
+
+/* Priority Indicators - Subtle */
+.priority-low { color: #6b7280; }
+.priority-medium { color: #3b82f6; }
+.priority-high { color: #f59e0b; }
+.priority-emergency { 
     color: #dc2626;
     font-weight: var(--font-weight-semibold);
 }
+
+/* Clean Description */
 .request-description {
     color: #4b5563;
     line-height: 1.6;
     margin-bottom: var(--spacing-md);
+    font-size: var(--font-size-base);
 }
 
-/* Eviction Warning */
-.eviction-warning {
-    background: #fee2e2;
-    color: #991b1b;
-    padding: var(--spacing-md);
+/* Assigned Info - Minimal */
+.assigned-info {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: #f0f9ff;
     border-radius: var(--border-radius-md);
     font-size: var(--font-size-sm);
+    color: #0369a1;
+}
+
+/* Notes/Updates Section - Collapsible */
+.btn-link {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    padding: 0;
+    margin-top: var(--spacing-sm);
+}
+
+.btn-link:hover {
+    text-decoration: underline;
+}
+
+.notes-list {
     margin-top: var(--spacing-md);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid #f3f4f6;
+}
+
+.note-item {
+    padding: var(--spacing-sm);
+    background: #f9fafb;
+    border-radius: var(--border-radius-md);
+    margin-bottom: var(--spacing-sm);
+}
+
+.note-item p {
+    margin: 0;
+    color: #4b5563;
+    font-size: var(--font-size-sm);
+}
+
+.note-item small {
+    color: #9ca3af;
+    font-size: var(--font-size-xs);
+}
+
+/* Completed Request Card */
+.request-card.completed .request-header {
+    border-bottom-color: #e5e7eb;
+}
+
+.completion-date {
+    font-size: var(--font-size-sm);
+    color: #6b7280;
+}
+
+/* Status Badges - Clean Design */
+.status-pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-assigned,
+.status-in_progress {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.status-completed {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+/* Empty State */
+.no-data {
+    text-align: center;
+    padding: var(--spacing-2xl);
+    color: #9ca3af;
+    font-size: var(--font-size-base);
 }
 
 /* Responsive */
 @media (max-width: 768px) {
     .request-meta {
         flex-wrap: wrap;
+        gap: var(--spacing-md);
+    }
+    
+    .request-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-sm);
     }
 }

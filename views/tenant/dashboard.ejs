@@ -32,7 +32,7 @@
     <!-- Add after the page-header include -->
     <div class="dashboard-top-bar">
         <div class="notifications-dropdown">
-            <button class="notification-bell" onclick="toggleNotifications()">
+           <button class="notification-bell" id="notificationBellBtn">
                 <i class="fas fa-bell"></i>
                 <% if (unreadCount > 0) { %>
                 <span class="notification-badge"><%= unreadCount %></span>
@@ -551,62 +551,13 @@
     </div>
 </div>
 
-<script>
-// Load tenant documents when documents tab is shown
-document.addEventListener('DOMContentLoaded', function() {
-    const documentsTab = document.querySelector('[data-tab="documents"]');
-    if (documentsTab) {
-        documentsTab.addEventListener('click', function() {
-            loadTenantDocuments();
-        });
-    }
-});
-
-async function loadTenantDocuments() {
-    try {
-        const response = await CasaConnect.APIClient.get('/api/tenant/documents');
-        if (response.success) {
-            renderTenantDocuments(response.data);
-        }
-    } catch (error) {
-        console.error('Failed to load documents:', error);
-    }
-}
-
-function renderTenantDocuments(documents) {
-    const container = document.getElementById('tenantDocumentsContainer');
-    
-    // Filter out lease documents as they're shown separately
-    const otherDocs = documents.filter(doc => doc.type !== 'lease');
-    
-    if (otherDocs.length === 0) {
-        container.innerHTML = '<p class="no-data">No additional documents</p>';
-        return;
-    }
-    
-    container.innerHTML = otherDocs.map(doc => `
-        <div class="document-item">
-            <div class="document-icon">
-                <i class="fas ${DocumentManager.getDocumentIcon(doc.type)}"></i>
-            </div>
-            <div class="document-info">
-                <h5>${doc.title}</h5>
-                <span class="document-meta">
-                    ${doc.type} • ${DocumentManager.formatFileSize(doc.size)} • ${new Date(doc.createdAt).toLocaleDateString()}
-                </span>
-            </div>
-            <div class="document-actions">
-                <button class="btn-icon" onclick="DocumentManager.viewDocument('${doc._id}')" title="View">
-                    <i class="fas fa-eye"></i>
-                </button>
-                <button class="btn-icon" onclick="DocumentManager.downloadDocument('${doc._id}')" title="Download">
-                    <i class="fas fa-download"></i>
-                </button>
-            </div>
+<div id="paymentModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Make Payment</h2>
+            <button class="modal-close" onclick="closePaymentModal()">&times;</button>
         </div>
-    `).join('');
-}
-</script>
-
-<%- include('../partials/modals/tenant/payment-modal') %>
+        <%- include('../partials/modals/tenant/payment-modal') %>
+    </div>
+</div>
 <%- include('../partials/modals/tenant/service-request-modal') %>

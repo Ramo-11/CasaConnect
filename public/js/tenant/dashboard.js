@@ -214,7 +214,7 @@ const TenantDashboard = {
             }
         }
     },
-    
+
     renderDocuments(documents) {
         const container = document.getElementById('tenantDocumentsContainer');
         if (!container) return;
@@ -229,24 +229,41 @@ const TenantDashboard = {
         container.innerHTML = otherDocs.map(doc => `
             <div class="document-item">
                 <div class="document-icon">
-                    <i class="fas fa-file"></i>
+                    <i class="fas ${this.getDocumentIcon(doc.type)}"></i>
                 </div>
                 <div class="document-info">
                     <h5>${doc.title}</h5>
                     <span class="document-meta">
-                        ${doc.type} • ${doc.sizeFormatted} • ${doc.uploadDate}
+                        ${doc.type} • ${this.formatFileSize(doc.size)} • ${new Date(doc.createdAt).toLocaleDateString()}
                     </span>
                 </div>
                 <div class="document-actions">
-                    <button class="btn-icon" onclick="DocumentManager.viewDocument('${doc.id}')" title="View">
+                    <button class="btn-icon" onclick="DocumentManager.viewDocument('${doc._id}')" title="View">
                         <i class="fas fa-eye"></i>
                     </button>
-                    <button class="btn-icon" onclick="DocumentManager.downloadDocument('${doc.id}')" title="Download">
+                    <button class="btn-icon" onclick="DocumentManager.downloadDocument('${doc._id}')" title="Download">
                         <i class="fas fa-download"></i>
                     </button>
                 </div>
             </div>
         `).join('');
+    },
+
+    getDocumentIcon(type) {
+        const icons = {
+            lease: 'fa-file-contract',
+            contract: 'fa-file-signature',
+            notice: 'fa-file-alt',
+            invoice: 'fa-file-invoice',
+            other: 'fa-file'
+        };
+        return icons[type] || 'fa-file';
+    },
+
+    formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
     },
     
     async handleLogout() {
