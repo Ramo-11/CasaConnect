@@ -73,74 +73,78 @@ const TenantServiceRequest = {
     },
     
     async submitRequest(form) {
-        if (this.processing) return;
-        this.processing = true;
-        
-        const submitBtn = form.querySelector('button[type="submit"]');
-        const btnText = submitBtn.querySelector('.btn-text');
-        const btnLoading = submitBtn.querySelector('.btn-loading');
-        
-        // Validate required fields
-        const requiredFields = ['requestCategory', 'requestTitle', 'requestDescription'];
-        const missingFields = requiredFields.filter(id => !document.getElementById(id)?.value);
-        
-        if (missingFields.length > 0) {
-            CasaConnect.NotificationManager.error('Please fill in all required fields');
-            this.processing = false;
-            return;
+    if (this.processing) return;
+    this.processing = true;
+
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const btnText = submitBtn.querySelector('.btn-text');
+    const btnLoading = submitBtn.querySelector('.btn-loading');
+
+    // Validate required fields
+    const required = ['requestCategory', 'requestTitle', 'requestDescription'];
+    const missing = required.filter(id => !document.getElementById(id)?.value);
+    if (missing.length > 0) {
+        CasaConnect.NotificationManager.error('Please fill in all required fields');
+        this.processing = false; return;
+    }
+
+    // Get selected payment method (must be pm_...)
+    const selectedMethod = form.querySelector('input[name="servicePaymentMethodId"]:checked');
+    if (!selectedMethod) {
+        CasaConnect.NotificationManager.error('Please select a payment method');
+        this.processing = false; return;
+    }
+
+    // Optional client-side size guard: 3 files max, 5MB each, 15MB total
+    const photosInput = form.querySelector('input[name="photos"]');
+    if (photosInput?.files?.length) {
+        if (photosInput.files.length > 3) {
+        CasaConnect.NotificationManager.error('Max 3 photos allowed'); 
+        this.processing = false; return;
         }
-        
-        // Get selected payment method
-        const selectedMethod = form.querySelector('input[name="servicePaymentMethodId"]:checked');
-        if (!selectedMethod) {
-            CasaConnect.NotificationManager.error('Please select a payment method');
-            this.processing = false;
-            return;
+        const tooBig = [...photosInput.files].some(f => f.size > 5 * 1024 * 1024);
+        const total = [...photosInput.files].reduce((s,f)=>s+f.size,0);
+        if (tooBig) {
+        CasaConnect.NotificationManager.error('Each photo must be under 5MB.');
+        this.processing = false; return;
         }
-        
-        // Show loading
-        btnText.style.display = 'none';
-        btnLoading.style.display = 'inline-flex';
-        submitBtn.disabled = true;
-        
-        try {
-            // Create payment intent for service fee (CORRECTED ENDPOINT)
-            const paymentResult = await CasaConnect.APIClient.post('/api/tenant/service-fee/create-intent', {
-                paymentMethodId: selectedMethod.value,
-                amount: 10
-            });
-            
-            if (!paymentResult.success) {
-                throw new Error(paymentResult.error || 'Payment failed');
-            }
-            
-            // Submit service request with payment confirmation (ENDPOINT IS CORRECT)
-            const formData = new FormData(form);
-            formData.append('paymentIntentId', paymentResult.paymentIntentId || paymentResult.data.paymentIntentId);
-            
-            const response = await CasaConnect.APIClient.post('/api/tenant/service-request', formData);
-            
-            if (response.success) {
-                CasaConnect.NotificationManager.success('Service request submitted successfully!');
-                this.closeServiceRequestModal();
-                
-                // Refresh the requests list
-                setTimeout(() => {
-                    this.refreshRequests();
-                    location.reload();
-                }, 1500);
-            } else {
-                throw new Error(response.error || 'Submission failed');
-            }
-            
-        } catch (error) {
-            CasaConnect.NotificationManager.error(error.message);
-        } finally {
-            this.processing = false;
-            btnText.style.display = 'inline-flex';
-            btnLoading.style.display = 'none';
-            submitBtn.disabled = false;
+        if (total > 15 * 1024 * 1024) {
+        CasaConnect.NotificationManager.error('Total photo size exceeds 15MB.');
+        this.processing = false; return;
         }
+    }
+
+    // Show loading
+    btnText.style.display = 'none';
+    btnLoading.style.display = 'inline-flex';
+    submitBtn.disabled = true;
+
+    try {
+        // Build form data and include Stripe PM id
+        const formData = new FormData(form);
+        formData.append('paymentMethodId', selectedMethod.value); // <-- pm_...
+
+        const response = await CasaConnect.APIClient.post('/api/tenant/service-request', formData);
+
+        if (response.success) {
+        CasaConnect.NotificationManager.success('Service request submitted successfully!');
+        this.closeServiceRequestModal();
+        setTimeout(() => {
+            this.refreshRequests();
+            location.reload();
+        }, 1200);
+        } else {
+        throw new Error(response.error || 'Submission failed');
+        }
+    } catch (error) {
+        // Show Multer-friendly messages or generic errors
+        CasaConnect.NotificationManager.error(error.message || 'Failed to submit request');
+    } finally {
+        this.processing = false;
+        btnText.style.display = 'inline-flex';
+        btnLoading.style.display = 'none';
+        submitBtn.disabled = false;
+    }
     },
     
     async openServiceRequestModal() {

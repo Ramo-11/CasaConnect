@@ -361,7 +361,8 @@
                     <% if (activeServiceRequests && activeServiceRequests.length > 0) { %>
                     <div class="requests-list">
                         <% activeServiceRequests.forEach(request => { %>
-                        <div class="request-card">
+                        <div class="request-card" data-request-id="<%= request.id %>" data-request-photos='<%- JSON.stringify(request.photos || []) %>'>
+
                             <div class="request-header">
                                 <h4><%= request.title %></h4>
                                 <span class="status-badge status-<%= request.status.replace(' ', '_') %>">
@@ -385,17 +386,24 @@
                                 <i class="fas fa-user"></i> Assigned to: <%= request.assignedTo %>
                             </div>
                             <% } %>
-                            <% if (request.notes && request.notes.length > 0) { %>
-                            <button class="btn-link" onclick="toggleNotes('<%= request.id %>')">
-                                View Updates (<%= request.notes.length %>)
-                            </button>
-                            <div id="notes-<%= request.id %>" class="notes-list" style="display: none;">
-                                <% request.notes.forEach(note => { %>
-                                <div class="note-item">
-                                    <p><%= note.content %></p>
+                            <% if (request.photos && request.photos.length > 0) { %>
+                                <div class="request-photos">
+                                    <button class="btn-link" onclick="viewServicePhotos('<%= request.id %>')">
+                                    <i class="fas fa-image"></i> View Photos (<%= request.photos.length %>)
+                                    </button>
                                 </div>
-                                <% }) %>
-                            </div>
+                            <% } %>
+                            <% if (request.notes && request.notes.length > 0) { %>
+                                <button class="btn-link" onclick="toggleNotes('<%= request.id %>')">
+                                    View Updates (<%= request.notes.length %>)
+                                </button>
+                                <div id="notes-<%= request.id %>" class="notes-list" style="display: none;">
+                                    <% request.notes.forEach(note => { %>
+                                    <div class="note-item">
+                                        <p><%= note.content %></p>
+                                    </div>
+                                    <% }) %>
+                                </div>
                             <% } %>
                         </div>
                         <% }) %>

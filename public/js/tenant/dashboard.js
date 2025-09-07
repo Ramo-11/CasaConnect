@@ -4,6 +4,7 @@
 const TenantDashboard = {
     currentTab: 'payments',
     initialized: false,
+    serviceRequestPhotos: {}, // Store photos data for requests
     
     init() {
         if (this.initialized) return;
@@ -83,6 +84,24 @@ const TenantDashboard = {
                 bar.style.width = progress + '%';
             }, 100);
         });
+        
+        // Store initial service request photos if available
+        this.storeServiceRequestPhotos();
+    },
+    
+    storeServiceRequestPhotos() {
+        const cards = document.querySelectorAll('.request-card[data-request-photos]');
+        cards.forEach(card => {
+            const requestId = card.getAttribute('data-request-id');
+            const photosData = card.getAttribute('data-request-photos');
+            if (requestId && photosData) {
+            try {
+                this.serviceRequestPhotos[requestId] = JSON.parse(photosData);
+            } catch (e) {
+                console.error('Failed to parse photos data:', e);
+            }
+            }
+        });
     },
     
     async loadPaymentStatus() {
@@ -157,7 +176,10 @@ const TenantDashboard = {
         document.addEventListener('keydown', (e) => {
             // ESC to close modals
             if (e.key === 'Escape') {
-                CasaConnect.ModalManager.closeAll();
+                CasaConnect.ModalManager.closeAllModals();
+                // Also close photo viewer if open
+                const photoViewer = document.getElementById('photoViewerModal');
+                if (photoViewer) photoViewer.remove();
             }
             
             // Ctrl/Cmd + P for payment
@@ -199,22 +221,62 @@ const TenantDashboard = {
         }
     },
     
+    viewServicePhotos(requestId, photosOverride) {
+        console.log('Viewing photos for request:', requestId);
+        const photos = photosOverride || this.serviceRequestPhotos[requestId];
+        if (!photos || photos.length === 0) {
+            console.log('No photos available for this request');
+            CasaConnect.NotificationManager.info('No photos available for this request');
+            return;
+        }
+        if (!photos || photos.length === 0) {
+            CasaConnect.NotificationManager.info('No photos available for this request');
+            return;
+        }
+        
+        const modalHtml = `
+            <div class="modal active" id="photoViewerModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                <h2>Service Request Photos</h2>
+                <button class="modal-close" onclick="document.getElementById('photoViewerModal').remove()">&times;</button>
+                </div>
+                <div class="modal-body" style="max-height:70vh;overflow-y:auto;">
+                ${photos.map((photo, i) => `
+                    <div style="margin-bottom:15px;">
+                    <img src="${photo.url}" alt="${photo.originalName || `Photo ${i+1}`}"
+                        style="max-width:100%;height:auto;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                    <p style="text-align:center;color:#6b7280;font-size:14px;margin-top:8px;">
+                        ${photo.originalName || `Photo ${i+1}`}
+                    </p>
+                    </div>
+                `).join('')}
+                </div>
+            </div>
+            </div>
+            `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    },
+    
     async loadDocuments() {
-        // Document loading logic if needed
         const container = document.getElementById('tenantDocumentsContainer');
-        if (container && !container.dataset.loaded) {
-            try {
-                const response = await CasaConnect.APIClient.get('/api/tenant/documents');
-                if (response.success) {
-                    this.renderDocuments(response.data);
-                    container.dataset.loaded = 'true';
-                }
-            } catch (error) {
-                console.error('Failed to load documents:', error);
+        if (!container || container.dataset.loaded === 'true') return;
+        
+        try {
+            const response = await CasaConnect.APIClient.get('/api/tenant/documents');
+            if (response.success) {
+                this.renderDocuments(response.data);
+                container.dataset.loaded = 'true';
+            }
+        } catch (error) {
+            console.error('Failed to load documents:', error);
+            if (container) {
+                container.innerHTML = '<p class="no-data">Failed to load documents</p>';
             }
         }
     },
-
+    
     renderDocuments(documents) {
         const container = document.getElementById('tenantDocumentsContainer');
         if (!container) return;
@@ -248,7 +310,13 @@ const TenantDashboard = {
             </div>
         `).join('');
     },
-
+    
+    updateServiceRequestPhotos(requestId, photos) {
+        if (photos && photos.length > 0) {
+            this.serviceRequestPhotos[requestId] = photos;
+        }
+    },
+    
     getDocumentIcon(type) {
         const icons = {
             lease: 'fa-file-contract',
@@ -259,8 +327,9 @@ const TenantDashboard = {
         };
         return icons[type] || 'fa-file';
     },
-
+    
     formatFileSize(bytes) {
+        if (!bytes || bytes === 0) return '0 B';
         if (bytes < 1024) return bytes + ' B';
         if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
         return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
@@ -291,6 +360,7 @@ CasaConnect.ready(() => {
 // Global exports
 window.TenantDashboard = TenantDashboard;
 window.handleLogout = () => TenantDashboard.handleLogout();
+window.viewServicePhotos = (requestId) => TenantDashboard.viewServicePhotos(requestId);
 window.toggleNotes = (requestId) => {
     if (window.TenantServiceRequest) {
         TenantServiceRequest.toggleNotes(requestId);

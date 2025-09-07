@@ -7,18 +7,20 @@ const stripe = require('../../config/stripe');
 const { ensureCustomer } = require('../../stripeCustomer'); 
 const emailService = require('../../services/emailService');
 const { logger } = require('../../logger');
-
 const multer = require('multer');
-const upload = multer({ 
-    storage: multer.memoryStorage(),
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB per file
-    fileFilter: (req, file, cb) => {
-        if (file.mimetype.startsWith('image/')) {
-            cb(null, true);
-        } else {
-            cb(null, false); // Skip non-image files silently
-        }
+const storageService = require('../../services/storageService');
+
+// Configure multer
+const uploadServiceRequest = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB per file
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(null, false);
     }
+  }
 });
 
 // Submit Service Request
@@ -31,38 +33,107 @@ exports.submitServiceRequest = async (req, res) => {
       priority, 
       title, 
       description, 
+      location,
       accessInstructions,
-      paymentIntentId
+      preferredDate,
+      preferredTime,
+      paymentMethodId // pm_...
     } = req.body;
-    
-    // Verify payment was successful
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-    if (paymentIntent.status !== 'succeeded') {
-      logger.error(`Service fee payment not completed: ${paymentIntent.id}`);
-      return res.status(400).json({
-        success: false,
-        error: 'Service fee payment not completed'
-      });
+
+    // Basic validation
+    if (!paymentMethodId) {
+      return res.status(400).json({ success: false, error: 'Missing payment method.' });
     }
-    
-    // Get tenant and lease
+
+    // Get tenant & active lease
     const tenant = await User.findById(tenantId);
     const lease = await Lease.findOne({
-      $or: [
-        { tenant: tenantId },
-        { additionalTenants: tenantId }
-      ],
+      $or: [{ tenant: tenantId }, { additionalTenants: tenantId }],
       status: 'active'
     });
-    
     if (!lease) {
-      return res.status(404).json({
-        success: false,
-        error: 'No active lease found'
-      });
+      return res.status(404).json({ success: false, error: 'No active lease found' });
     }
-    
-    // Create service fee payment record
+
+    // Ensure Stripe customer
+    const customerId = await ensureCustomer(tenant);
+
+    // Optional: total upload size guard (multer already enforces per-file)
+    const totalBytes = (req.files || []).reduce((s, f) => s + (f.size || 0), 0);
+    if (totalBytes > 15 * 1024 * 1024) {
+      return res.status(400).json({ success: false, error: 'Total photo size exceeds 15MB.' });
+    }
+
+    // Attach PM if needed (idempotent-ish)
+    try {
+      await stripe.paymentMethods.attach(paymentMethodId, { customer: customerId });
+    } catch (e) {
+      if (e.code !== 'resource_already_exists') throw e;
+    }
+
+    // Charge service fee FIRST (avoid uploading if payment fails)
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: 1000, // $10
+      currency: 'usd',
+      payment_method: paymentMethodId,
+      customer: customerId,
+      confirm: true,
+      off_session: true,
+      automatic_payment_methods: { enabled: true, allow_redirects: 'never' },
+      metadata: {
+        tenantId: String(tenantId),
+        tenantName: `${tenant.firstName} ${tenant.lastName}`,
+        paymentType: 'service_fee',
+        description: 'Service Request Fee'
+      },
+      description: `Service request fee - ${tenant.firstName} ${tenant.lastName}`,
+      receipt_email: tenant.email
+    });
+
+    if (paymentIntent.status !== 'succeeded') {
+      logger.error(`Service fee payment not completed: ${paymentIntent.id}`);
+      return res.status(400).json({ success: false, error: 'Service fee payment not completed' });
+    }
+
+    // Create the service request (need ID for photo path)
+    const serviceRequest = new ServiceRequest({
+      tenant: tenantId,
+      unit: lease.unit,
+      category,
+      priority,
+      title,
+      description,
+      location,
+      preferredDate,
+      preferredTime,
+      fee: 10,
+      isPaid: true,
+      paymentDate: new Date(),
+      photos: [],
+      notes: accessInstructions ? [{
+        author: tenantId,
+        content: `Access Instructions: ${accessInstructions}`,
+        createdAt: new Date()
+      }] : []
+    });
+    await serviceRequest.save();
+
+    // Upload photos (path: service-requests/<requestId>/...)
+    if (req.files && req.files.length > 0) {
+      try {
+        const uploadedPhotos = await Promise.all(
+          req.files.map(file => storageService.uploadServicePhoto(file, serviceRequest._id))
+        );
+        serviceRequest.photos = uploadedPhotos;
+        await serviceRequest.save();
+        logger.info(`Uploaded ${uploadedPhotos.length} photos for request ${serviceRequest._id}`);
+      } catch (photoError) {
+        logger.error(`Photo upload error for request ${serviceRequest._id}: ${photoError.message}`);
+        // continue without blocking the request
+      }
+    }
+
+    // Record payment
     const serviceFeePayment = new Payment({
       tenant: tenantId,
       unit: lease.unit,
@@ -71,68 +142,41 @@ exports.submitServiceRequest = async (req, res) => {
       paymentMethod: 'credit_card',
       status: 'completed',
       paidDate: new Date(),
-      transactionId: paymentIntent.id
+      transactionId: paymentIntent.id,
+      serviceRequest: serviceRequest._id
     });
-    
     await serviceFeePayment.save();
-    
-    // Create service request
-    const serviceRequest = new ServiceRequest({
-      tenant: tenantId,
-      unit: lease.unit,
-      category,
-      priority,
-      title,
-      description,
-      fee: 10,
-      isPaid: true,
-      paymentDate: new Date(),
-      notes: accessInstructions ? [{
-        author: tenantId,
-        content: `Access Instructions: ${accessInstructions}`,
-        createdAt: new Date()
-      }] : []
-    });
-    
-    await serviceRequest.save();
-    
-    // Link payment to service request
-    serviceFeePayment.serviceRequest = serviceRequest._id;
-    await serviceFeePayment.save();
-    
-    // Send email confirmation to tenant
+
+    // Email + notify management
     await emailService.sendServiceRequestConfirmation(tenant, serviceRequest, serviceFeePayment);
-    
-    // Notify management
     const managers = await User.find({ role: { $in: ['manager', 'supervisor'] } });
-    for (const manager of managers) {
-      await Notification.create({
-        recipient: manager._id,
+    await Promise.all(managers.map(m =>
+      Notification.create({
+        recipient: m._id,
         type: 'service_request_new',
         title: 'New Service Request',
         message: `Tenant submitted a ${category} request: ${title}`,
         relatedModel: 'ServiceRequest',
         relatedId: serviceRequest._id,
         priority: priority === 'emergency' ? 'high' : 'normal'
-      });
-    }
-    
+      })
+    ));
+
     logger.info(`Service request created: ${serviceRequest._id} by tenant ${tenantId}`);
-    
-    res.json({ 
-      success: true, 
+
+    res.json({
+      success: true,
       message: 'Service request submitted successfully',
-      requestId: serviceRequest._id 
+      requestId: serviceRequest._id,
+      photosUploaded: serviceRequest.photos?.length || 0
     });
-    
+
   } catch (error) {
     logger.error(`Service request error: ${error.message}`);
-    res.json({ 
-      success: false, 
-      error: 'Failed to submit service request' 
-    });
+    res.status(500).json({ success: false, error: 'Failed to submit service request' });
   }
 };
+
 
 // Get service requests for tenant
 exports.getServiceRequests = async (req, res) => {
@@ -155,9 +199,11 @@ exports.getServiceRequests = async (req, res) => {
         category: sr.category.replace('_', ' '),
         priority: sr.priority,
         status: sr.status.replace('_', ' '),
+        location: sr.location,
         date: new Date(sr.createdAt).toLocaleDateString(),
         assignedTo: sr.assignedTo ? `${sr.assignedTo.firstName} ${sr.assignedTo.lastName}` : null,
         notes: sr.notes || [],
+        photos: sr.photos || [], // Include photos
         completedDate: sr.completedAt ? new Date(sr.completedAt).toLocaleDateString() : null,
         resolutionTime: sr.completedAt ? 
           Math.ceil((sr.completedAt - sr.createdAt) / (1000 * 60 * 60 * 24)) + ' days' : null
@@ -230,4 +276,9 @@ exports.createServiceFeeIntent = async (req, res) => {
   }
 };
 
-module.exports = exports;
+module.exports = {
+  ...exports,
+  upload: {
+    array: uploadServiceRequest.array.bind(uploadServiceRequest)
+  }
+};

@@ -30,6 +30,7 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
 });
+const { handleMulterError } = require('./services/storageService');
 
 // Auth middlewares
 const { isAuthenticated, isManager, isTenant, attachUserToLocals } = authController;
@@ -157,7 +158,7 @@ tenantAPI.post("/notifications/mark-all-read", tenantNotifications.markAllRead);
 // Tenant: API - Documents & Service Requests
 tenantAPI.get("/documents", tenantDashboard.getTenantDocuments);
 tenantAPI.get("/service-requests", tenantServiceRequest.getServiceRequests);
-tenantAPI.post("/service-request", upload.array('photos', 3), tenantServiceRequest.submitServiceRequest);
+tenantAPI.post("/service-request", tenantServiceRequest.upload.array('photos', 3), handleMulterError, tenantServiceRequest.submitServiceRequest);
 tenantAPI.post("/service-fee/create-intent", tenantServiceRequest.createServiceFeeIntent);
 
 // Mount Tenant routers

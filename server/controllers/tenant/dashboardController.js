@@ -22,25 +22,20 @@ const formatDate = (date) => {
 // Get Dashboard
 exports.getDashboard = async (req, res) => {
   try {
+    const storageService = require('../../services/storageService'); // ensure available
     const tenantId = req.session?.userId;
     const tenant = await User.findById(tenantId);
 
     if (!tenant || tenant.role !== 'tenant') {
-      return res.status(403).render('error', { 
-        message: 'Access denied',
-        title: 'Error' 
-      });
+      return res.status(403).render('error', { message: 'Access denied', title: 'Error' });
     }
-    
+
     const lease = await Lease.findOne({
-      $or: [
-        { tenant: tenantId },
-        { additionalTenants: tenantId }
-      ],
+      $or: [{ tenant: tenantId }, { additionalTenants: tenantId }],
       status: 'active'
     })
-    .populate('unit')
-    .populate('document');
+      .populate('unit')
+      .populate('document');
 
     if (!lease) {
       return res.render('tenant/no-lease', {
@@ -50,64 +45,111 @@ exports.getDashboard = async (req, res) => {
         additionalCSS: ['tenant/no-lease.css']
       });
     }
-    
+
     const unit = lease.unit;
-    
-    // Get all documents shared with this tenant
+
+    // Documents
     const Document = require('../../../models/Document');
     const tenantDocuments = await Document.find({
-      $or: [
-        { 'relatedTo.model': 'User', 'relatedTo.id': tenantId },
-        { sharedWith: tenantId }
-      ]
+      $or: [{ 'relatedTo.model': 'User', 'relatedTo.id': tenantId }, { sharedWith: tenantId }]
     }).sort('-createdAt');
-    
-    // Separate lease documents from other documents
+
     const leaseDocuments = tenantDocuments.filter(doc => doc.type === 'lease');
     const otherDocuments = tenantDocuments.filter(doc => doc.type !== 'lease' && doc.type !== 'lease_archived');
 
-    // Get unread notifications
+    // Notifications
     const notifications = await Notification.find({
       recipient: tenantId,
       isRead: false
     })
-    .sort('-createdAt')
-    .limit(5)
-    .lean();
-    
-    // Get payment status
+      .sort('-createdAt')
+      .limit(5)
+      .lean();
+
+    // Payment status
     const paymentInfo = await calculatePaymentStatus(lease);
     const monthlyRent = lease.monthlyRent;
-    const amountDue = paymentInfo.paymentDue ? 
-      monthlyRent + paymentInfo.lateFee : 0;
-    
-    // Get service requests
-    const activeServiceRequests = await ServiceRequest.find({
+    const amountDue = paymentInfo.paymentDue ? monthlyRent + paymentInfo.lateFee : 0;
+
+    // Service requests
+    const activeServiceRequestsRaw = await ServiceRequest.find({
       tenant: tenantId,
       status: { $in: ['pending', 'assigned', 'in_progress'] }
     })
-    .populate('assignedTo', 'firstName lastName')
-    .sort('-createdAt')
-    .lean();
-    
-    const serviceRequestHistory = await ServiceRequest.find({
+      .populate('assignedTo', 'firstName lastName')
+      .sort('-createdAt')
+      .lean();
+
+    const serviceRequestHistoryRaw = await ServiceRequest.find({
       tenant: tenantId,
       status: 'completed'
     })
-    .sort('-completedAt')
-    .limit(10)
-    .lean();
-    
-    // Get payment history
-    const paymentHistory = await Payment.find({
+      .sort('-completedAt')
+      .limit(10)
+      .lean();
+
+    // Sign photo URLs at render-time (private bucket)
+    const signPhotos = async (photos = []) =>
+      Promise.all(
+        photos.map(async p => ({
+          ...p,
+          url: await storageService.getServicePhotoSignedUrl(p.fileName, 3600) // 1h
+        }))
+      );
+
+    const activeServiceRequests = await Promise.all(
+      activeServiceRequestsRaw.map(async sr => ({
+        id: sr._id,
+        title: sr.title,
+        description: sr.description,
+        category: sr.category.replace('_', ' '),
+        priority: sr.priority,
+        status: sr.status.replace('_', ' '),
+        date: formatDate(sr.createdAt),
+        assignedTo: sr.assignedTo ? `${sr.assignedTo.firstName} ${sr.assignedTo.lastName}` : null,
+        notes: sr.notes || [],
+        photos: await signPhotos(sr.photos || [])
+      }))
+    );
+
+    const serviceRequestHistory = await Promise.all(
+      serviceRequestHistoryRaw.map(async sr => ({
+        id: sr._id,
+        title: sr.title,
+        category: sr.category.replace('_', ' '),
+        completedDate: formatDate(sr.completedAt),
+        resolutionTime:
+          Math.ceil((sr.completedAt - sr.createdAt) / (1000 * 60 * 60 * 24)) + ' days',
+        photos: await signPhotos(sr.photos || [])
+      }))
+    );
+
+    logger.debug(
+      `photos for requests: ${JSON.stringify(
+        activeServiceRequests.map(r => ({ id: r.id, photos: r.photos }))
+      )}`
+    );
+
+    // Payment history
+    const paymentHistoryRaw = await Payment.find({
       tenant: tenantId,
       status: { $in: ['completed', 'processing', 'failed'] }
     })
-    .sort('-createdAt')
-    .limit(20)
-    .lean();
-    
-    // Format data for view
+      .sort('-createdAt')
+      .limit(20)
+      .lean();
+
+    const paymentHistory = paymentHistoryRaw.map(p => ({
+      id: p._id,
+      date: formatDate(p.paidDate || p.createdAt),
+      type: p.type,
+      typeLabel: p.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      amount: p.amount,
+      method: p.paymentMethod.replace('_', ' ').toUpperCase(),
+      status: p.status
+    }));
+
+    // View model
     const viewData = {
       title: 'Tenant Dashboard',
       additionalCSS: [
@@ -118,20 +160,20 @@ exports.getDashboard = async (req, res) => {
         'tenant/documents.css'
       ],
       additionalJS: [
-        'tenant/dashboard.js', 
+        'tenant/dashboard.js',
         'tenant/notifications.js',
         'tenant/payment-processor.js',
         'tenant/service-request.js',
-        'tenant/lease-details.js',
+        'tenant/lease-details.js'
       ],
       layout: 'layout',
       stripePublicKey: process.env.STRIPE_PUBLIC_KEY,
-      
+
       // User & Unit
       user: tenant,
       unit,
-      
-      // Documents - now properly populated
+
+      // Documents
       leaseDocument: lease.document || null,
       leaseDocuments: leaseDocuments.map(doc => ({
         id: doc._id,
@@ -148,7 +190,7 @@ exports.getDashboard = async (req, res) => {
         type: doc.type,
         icon: getDocumentIcon(doc.type)
       })),
-      
+
       // Notifications
       notifications: notifications.map(n => ({
         id: n._id,
@@ -160,7 +202,7 @@ exports.getDashboard = async (req, res) => {
         timeAgo: getTimeAgo(n.createdAt)
       })),
       unreadCount: notifications.length,
-      
+
       // Payment Info
       paymentDue: paymentInfo.paymentDue,
       paymentStatus: paymentInfo.status,
@@ -169,60 +211,34 @@ exports.getDashboard = async (req, res) => {
       lateFee: paymentInfo.lateFee,
       amountDue,
       monthlyRent,
-      nextPaymentDate: formatDate(new Date(new Date().getFullYear(), new Date().getMonth() + 1, lease.rentDueDay)),
-      
+      nextPaymentDate: formatDate(
+        new Date(new Date().getFullYear(), new Date().getMonth() + 1, lease.rentDueDay)
+      ),
+
       // Service Requests
       activeRequests: activeServiceRequests.length,
       completedRequests: serviceRequestHistory.length,
-      activeServiceRequests: activeServiceRequests.map(sr => ({
-        id: sr._id,
-        title: sr.title,
-        description: sr.description,
-        category: sr.category.replace('_', ' '),
-        priority: sr.priority,
-        status: sr.status.replace('_', ' '),
-        date: formatDate(sr.createdAt),
-        assignedTo: sr.assignedTo ? `${sr.assignedTo.firstName} ${sr.assignedTo.lastName}` : null,
-        notes: sr.notes || []
-      })),
-      serviceRequestHistory: serviceRequestHistory.map(sr => ({
-        id: sr._id,
-        title: sr.title,
-        category: sr.category.replace('_', ' '),
-        completedDate: formatDate(sr.completedAt),
-        resolutionTime: Math.ceil((sr.completedAt - sr.createdAt) / (1000 * 60 * 60 * 24)) + ' days'
-      })),
-      
+      activeServiceRequests,
+      serviceRequestHistory,
+
       // Payment History
-      paymentHistory: paymentHistory.map(p => ({
-        id: p._id,
-        date: formatDate(p.paidDate || p.createdAt),
-        type: p.type,
-        typeLabel: p.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
-        amount: p.amount,
-        method: p.paymentMethod.replace('_', ' ').toUpperCase(),
-        status: p.status
-      })),
-      
+      paymentHistory,
+
       // Lease Info
       leaseId: lease._id,
       leaseStart: formatDate(lease.startDate),
       leaseEnd: formatDate(lease.endDate),
       leaseRemaining: calculateTimeRemaining(lease.endDate),
       leaseProgress: calculateLeaseProgress(lease.startDate, lease.endDate),
-      
+
       // Documents
-      documents: [] // Will be populated by document controller
+      documents: []
     };
-    
+
     res.render('tenant/dashboard', viewData);
-    
   } catch (error) {
     logger.error(`Dashboard error: ${error}`);
-    res.status(500).render('error', { 
-      message: 'Failed to load dashboard',
-      title: 'Error' 
-    });
+    res.status(500).render('error', { message: 'Failed to load dashboard', title: 'Error' });
   }
 };
 

@@ -58,6 +58,23 @@ const serviceRequestSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
+  photos: [{
+    url: String,
+    fileName: String,
+    originalName: String,
+    size: Number,
+    mimeType: String,
+    uploadedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+  location: {
+    type: String,
+    enum: ['kitchen', 'living_room', 'bedroom_master', 'bedroom_other', 'bathroom_master', 'bathroom_other', 'laundry', 'garage', 'exterior', 'other']
+  },
+  preferredDate: Date,
+  preferredTime: String,
   notes: [{
     author: {
       type: mongoose.Schema.Types.ObjectId,
