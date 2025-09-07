@@ -15,6 +15,10 @@ const paymentMethodSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  verified: {
+    type: Boolean,
+    default: false
+  },
   // Stripe payment method ID
   stripePaymentMethodId: {
     type: String,

@@ -19,10 +19,14 @@ exports.getSettings = async (req, res) => {
     res.render('tenant/settings', {
       title: 'Account Settings',
       additionalCSS: ['tenant/settings.css'],
-      additionalJS: ['tenant/settings.js'],
+      additionalJS: [
+        'tenant/modules/payment-methods.js',
+        'tenant/settings.js'
+      ],
       layout: 'layout',
       user: tenant,
-      requirePasswordChange: tenant.requirePasswordChange
+      requirePasswordChange: tenant.requirePasswordChange,
+      stripePublicKey: process.env.STRIPE_PUBLIC_KEY
     });
   } catch (error) {
     logger.error(`Settings page error: ${error}`);

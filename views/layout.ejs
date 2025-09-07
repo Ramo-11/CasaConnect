@@ -79,6 +79,20 @@
             <script src="/js/modals/manager-lease-modal.js"></script>
         <% } %>
 
+        <% if (typeof user !== 'undefined' && user && user.role === 'tenant') { %>
+            <!-- Include tenant-specific modals based on page -->
+            <% const currentPath = typeof path !== 'undefined' ? path : ''; %>
+            
+            <% if (currentPath.includes('dashboard')) { %>
+                <%- include('partials/modals/tenant-payment-modal') %>
+                <%- include('partials/modals/tenant-service-modal') %>
+            <% } %>
+            
+            <% if (currentPath.includes('settings')) { %>
+                <%- include('partials/modals/payment-method-modal') %>
+            <% } %>
+        <% } %>
+
         <!-- Modal Partials - Include based on page needs -->
         <% if (typeof user !== 'undefined' && user && user.role === 'manager') { %>
             <% 

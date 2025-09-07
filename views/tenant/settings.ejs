@@ -114,3 +114,12 @@
 </div>
 
 <%- include('../partials/modals/payment-method-modal') %>
+
+<script src="/js/tenant/payment-methods.js"></script>
+<script>
+    CasaConnect.ready(() => {
+        if (window.PaymentMethodManager) {
+            PaymentMethodManager.init();
+        }
+    });
+</script>

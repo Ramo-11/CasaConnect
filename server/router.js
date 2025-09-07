@@ -145,6 +145,7 @@ tenantAPI.post("/payment/process", tenantPayment.processPaymentWithSavedMethod);
 
 // Tenant: API - Payment Methods (single, non-duplicated set)
 tenantAPI.get("/payment-methods", tenantPaymentMethod.getPaymentMethods);
+tenantAPI.post("/payment-methods", tenantPaymentMethod.savePaymentMethod);
 tenantAPI.post("/payment-method", tenantPaymentMethod.savePaymentMethod);
 tenantAPI.delete("/payment-method/:methodId", tenantPaymentMethod.deletePaymentMethod);
 tenantAPI.put("/payment-method/:methodId/default", tenantPaymentMethod.setDefaultPaymentMethod);
