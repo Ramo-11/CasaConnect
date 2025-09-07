@@ -32,8 +32,11 @@ const TenantNotifications = {
     
     toggleNotificationPanel() {
         const panel = document.getElementById('notificationsPanel');
-        if (!panel) return;
-        
+        if (!panel) {
+            console.error('Notifications panel not found');
+            return;
+        }
+
         const isHidden = panel.style.display === 'none';
         panel.style.display = isHidden ? 'block' : 'none';
         

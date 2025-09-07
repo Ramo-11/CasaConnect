@@ -106,6 +106,57 @@ a:hover {
   padding: var(--spacing-lg);
 }
 
+/* Empty State Card */
+.empty-state-card {
+    text-align: center;
+    padding: var(--spacing-2xl);
+    background: #f9fafb;
+    border-radius: var(--border-radius-lg);
+    border: 2px dashed #e5e7eb;
+}
+
+.empty-state-card h4 {
+    margin: var(--spacing-md) 0;
+    color: var(--text-dark);
+}
+
+.empty-state-card p {
+    margin-bottom: var(--spacing-lg);
+}
+
+/* Payment Method Option */
+.payment-method-option {
+    display: block;
+    margin-bottom: var(--spacing-sm);
+    cursor: pointer;
+}
+
+.payment-method-option input {
+    display: none;
+}
+
+.payment-method-option .method-card {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    border: 2px solid #e5e7eb;
+    border-radius: var(--border-radius-md);
+    transition: all var(--transition-fast);
+}
+
+.payment-method-option input:checked + .method-card {
+    border-color: var(--primary-color);
+    background: rgba(208, 167, 100, 0.05);
+}
+
+.payment-method-option .method-info {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
 /* Common Button Styles */
 .btn {
   padding: var(--spacing-sm) var(--spacing-lg);

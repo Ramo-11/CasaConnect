@@ -1,0 +1,38 @@
+<div class="modal-body">
+    <div class="payment-summary">
+        <h3>Payment Amount</h3>
+        <div class="amount-display">
+            <span class="currency">$</span>
+            <span class="amount-value" id="paymentAmount">0.00</span>
+        </div>
+    </div>
+
+    <div id="paymentMethodsAvailable">
+        <form id="confirmPaymentForm">
+            <div class="form-group">
+                <label>Select Payment Method</label>
+                <div id="savedPaymentMethods">
+                    <!-- Will be populated with saved methods -->
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block" id="confirmPaymentBtn">
+                <span class="btn-text">
+                    <i class="fas fa-lock"></i> Confirm Payment
+                </span>
+                <span class="btn-loading" style="display: none;">
+                    <span class="spinner"></span> Processing...
+                </span>
+            </button>
+        </form>
+    </div>
+
+    <div id="noPaymentMethodsAvailable" class="empty-state-card" style="display: none;">
+        <i class="fas fa-credit-card" style="font-size: 48px; color: #d1d5db; margin-bottom: 16px;"></i>
+        <h4>No Payment Methods Saved</h4>
+        <p style="color: #6b7280; margin: 12px 0;">Add a payment method to make rent payments.</p>
+        <a href="/tenant/settings" class="btn btn-primary btn-block">
+            <i class="fas fa-cog"></i> Go to Settings
+        </a>
+    </div>
+</div>

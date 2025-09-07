@@ -102,22 +102,21 @@
 
                 <!-- Payment Information -->
                 <div class="form-section">
-                <h4>Payment Information - $10 Service Fee</h4>
-                
-                <div class="form-group">
-                    <label>Card Information *</label>
-                    <div id="service-card-element" class="stripe-element">
-                        <!-- Stripe card element will be mounted here -->
+                    <h4>Payment Method - $10 Service Fee</h4>
+                    
+                    <div id="servicePaymentMethods">
+                        <!-- Will be populated by JavaScript -->
                     </div>
-                    <div id="service-card-errors" class="error-message" role="alert"></div>
+                    
+                    <div id="noServicePaymentMethods" class="empty-state-card" style="display: none;">
+                        <i class="fas fa-credit-card" style="font-size: 48px; color: #d1d5db; margin-bottom: 16px;"></i>
+                        <h4>No Payment Method Available</h4>
+                        <p style="color: #6b7280; margin: 12px 0;">You need to add a payment method before submitting a service request.</p>
+                        <a href="/tenant/settings" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Add Payment Method
+                        </a>
+                    </div>
                 </div>
-                
-                <div class="form-group">
-                    <label for="serviceCardName">Cardholder Name *</label>
-                    <input type="text" id="serviceCardName" name="cardholderName" required
-                        placeholder="As it appears on card">
-                </div>
-            </div>
 
                 <!-- Photo Upload (Optional) -->
                 <div class="form-section">

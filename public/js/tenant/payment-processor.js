@@ -115,17 +115,25 @@ const TenantPayment = {
         // First check if user has payment methods
         const response = await CasaConnect.APIClient.get('/api/tenant/payment-methods');
         
-        if (!response.success || response.data.length === 0) {
-            CasaConnect.NotificationManager.warning('Please add a payment method in Settings first');
-            window.location.href = '/tenant/settings';
-            return;
-        }
+        const availableDiv = document.getElementById('paymentMethodsAvailable');
+        const noMethodsDiv = document.getElementById('noPaymentMethodsAvailable');
         
-        // Set the payment amount
+        // Set the payment amount first
         const amountElement = document.querySelector('.amount-due .amount');
         if (amountElement) {
             document.getElementById('paymentAmount').textContent = amountElement.textContent.replace('$', '');
         }
+        
+        // Check if there are payment methods
+        if (!response.success || !response.data.data || response.data.data.length === 0) {
+            availableDiv.style.display = 'none';
+            noMethodsDiv.style.display = 'block';
+            CasaConnect.ModalManager.openModal('paymentModal');
+            return;
+        }
+        
+        availableDiv.style.display = 'block';
+        noMethodsDiv.style.display = 'none';
         
         // Display saved methods
         this.displaySavedMethodsForPayment(response.data.data);

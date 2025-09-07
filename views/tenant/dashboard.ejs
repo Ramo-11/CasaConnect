@@ -187,7 +187,6 @@
         <div class="card">
             <div class="card-header">
                 <h3>Lease Information</h3>
-                <a href="/tenant/documents" class="btn-link">View Documents</a>
             </div>
             <div class="card-body">
                 <div class="lease-info">
@@ -609,8 +608,5 @@ function renderTenantDocuments(documents) {
 }
 </script>
 
-<!-- Payment Modal -->
-<%- include('../partials/modals/tenant-payment-modal') %>
-
-<!-- Service Request Modal -->
-<%- include('../partials/modals/tenant-service-modal') %>
+<%- include('../partials/modals/tenant/payment-modal') %>
+<%- include('../partials/modals/tenant/service-request-modal') %>

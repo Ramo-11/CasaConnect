@@ -2,35 +2,11 @@
 // Service request management module
 
 const TenantServiceRequest = {
-    stripe: null,
-    cardElement: null,
     processing: false,
     
     init() {
-        // Initialize Stripe for service fee payment
-        if (window.Stripe && window.STRIPE_CONFIG?.publicKey) {
-            this.stripe = Stripe(window.STRIPE_CONFIG.publicKey);
-            this.setupServicePayment();
-        }
-        
         this.initializeFormHandlers();
         this.loadRequestHistory();
-    },
-    
-    setupServicePayment() {
-        const elements = this.stripe.elements();
-        
-        const style = {
-            base: {
-                fontSize: '16px',
-                color: '#32325d',
-                '::placeholder': {
-                    color: '#aab7c4'
-                }
-            }
-        };
-        
-        this.cardElement = elements.create('card', { style });
     },
     
     initializeFormHandlers() {
@@ -114,20 +90,31 @@ const TenantServiceRequest = {
             return;
         }
         
+        // Get selected payment method
+        const selectedMethod = form.querySelector('input[name="servicePaymentMethodId"]:checked');
+        if (!selectedMethod) {
+            CasaConnect.NotificationManager.error('Please select a payment method');
+            this.processing = false;
+            return;
+        }
+        
         // Show loading
         btnText.style.display = 'none';
         btnLoading.style.display = 'inline-flex';
         submitBtn.disabled = true;
         
         try {
-            // Step 1: Process $10 service fee payment
-            const paymentResult = await this.processServiceFee();
+            // Process payment with saved method
+            const paymentResult = await CasaConnect.APIClient.post('/api/tenant/service-fee/process', {
+                paymentMethodId: selectedMethod.value,
+                amount: 10
+            });
             
             if (!paymentResult.success) {
                 throw new Error(paymentResult.error || 'Payment failed');
             }
             
-            // Step 2: Submit service request with payment confirmation
+            // Submit service request with payment confirmation
             const formData = new FormData(form);
             formData.append('paymentIntentId', paymentResult.paymentIntentId);
             
@@ -156,65 +143,59 @@ const TenantServiceRequest = {
         }
     },
     
-    async processServiceFee() {
-        try {
-            // Mount card element
-            const cardContainer = document.getElementById('service-card-element');
-            if (cardContainer && this.cardElement) {
-                this.cardElement.mount('#service-card-element');
-            }
-            
-            // Create payment intent for $10 service fee
-            const intentResponse = await CasaConnect.APIClient.post('/api/tenant/service-fee/create-intent', {
-                amount: 10,
-                description: 'Service Request Fee'
-            });
-            
-            if (!intentResponse.success) {
-                throw new Error(intentResponse.message || 'Failed to create payment');
-            }
-            
-            // Confirm payment with Stripe
-            const { error, paymentIntent } = await this.stripe.confirmCardPayment(
-                intentResponse.clientSecret,
-                {
-                    payment_method: {
-                        card: this.cardElement,
-                        billing_details: {
-                            name: document.getElementById('serviceCardName')?.value || ''
-                        }
-                    }
-                }
-            );
-            
-            if (error) {
-                throw new Error(error.message);
-            }
-            
-            return {
-                success: true,
-                paymentIntentId: paymentIntent.id
-            };
-            
-        } catch (error) {
-            console.error('Service fee payment error:', error);
-            return {
-                success: false,
-                error: error.message
-            };
-        }
-    },
-    
-    openServiceRequestModal() {
+    async openServiceRequestModal() {
+        // First check for payment methods
+        const response = await CasaConnect.APIClient.get('/api/tenant/payment-methods');
+        
         CasaConnect.ModalManager.openModal('serviceRequestModal');
         
-        // Mount Stripe element
-        setTimeout(() => {
-            const cardContainer = document.getElementById('service-card-element');
-            if (cardContainer && this.cardElement) {
-                this.cardElement.mount('#service-card-element');
-            }
-        }, 100);
+        if (!response.success || !response.data.data || response.data.data.length === 0) {
+            // Show no payment methods UI
+            document.getElementById('noServicePaymentMethods').style.display = 'block';
+            document.getElementById('servicePaymentMethods').style.display = 'none';
+            document.querySelector('#serviceRequestForm button[type="submit"]').disabled = true;
+            return;
+        }
+        
+        // Display payment methods for selection
+        this.displayServicePaymentMethods(response.data.data);
+    },
+    
+    displayServicePaymentMethods(methods) {
+        const container = document.getElementById('servicePaymentMethods');
+        const noMethodsDiv = document.getElementById('noServicePaymentMethods');
+        const submitBtn = document.querySelector('#serviceRequestForm button[type="submit"]');
+        
+        if (!methods || methods.length === 0) {
+            container.style.display = 'none';
+            noMethodsDiv.style.display = 'block';
+            if (submitBtn) submitBtn.disabled = true;
+            return;
+        }
+        
+        container.style.display = 'block';
+        noMethodsDiv.style.display = 'none';
+        if (submitBtn) submitBtn.disabled = false;
+        
+        container.innerHTML = `
+            <div class="payment-methods-list">
+                ${methods.map((method, index) => `
+                    <label class="payment-method-option">
+                        <input type="radio" name="servicePaymentMethodId" value="${method._id}" 
+                            ${index === 0 || method.isDefault ? 'checked' : ''}>
+                        <div class="method-card">
+                            <i class="fas fa-${method.type === 'card' ? 'credit-card' : 'university'}"></i>
+                            <div class="method-info">
+                                <span class="method-name">${method.type === 'card' 
+                                    ? `${method.brand || 'Card'} •••• ${method.last4}` 
+                                    : `Bank •••• ${method.last4}`}</span>
+                                ${method.isDefault ? '<span class="badge badge-primary">Default</span>' : ''}
+                            </div>
+                        </div>
+                    </label>
+                `).join('')}
+            </div>
+        `;
     },
     
     closeServiceRequestModal() {
@@ -223,11 +204,6 @@ const TenantServiceRequest = {
         // Clear form
         const form = document.getElementById('serviceRequestForm');
         if (form) form.reset();
-        
-        // Clear Stripe element
-        if (this.cardElement) {
-            this.cardElement.clear();
-        }
     },
     
     toggleNotes(requestId) {

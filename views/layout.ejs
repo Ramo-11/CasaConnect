@@ -84,12 +84,12 @@
             <% const currentPath = typeof path !== 'undefined' ? path : ''; %>
             
             <% if (currentPath.includes('dashboard')) { %>
-                <%- include('partials/modals/tenant-payment-modal') %>
-                <%- include('partials/modals/tenant-service-modal') %>
+                <%- include('partials/modals/tenant/payment-modal') %>
+                <%- include('partials/modals/tenant/service-request-modal') %>
             <% } %>
             
             <% if (currentPath.includes('settings')) { %>
-                <%- include('partials/modals/payment-method-modal') %>
+                <%- include('partials/modals/tenant/payment-method-modal') %>
             <% } %>
         <% } %>
 
@@ -106,15 +106,15 @@
             <%- include('partials/modals/shared-modals') %>
 
             <% if (includeTenantModals) { %>
-                <%- include('partials/modals/tenant-modals') %>
+                <%- include('partials/modals/tenant-management-modals') %>
             <% } %>
             
             <% if (includeUnitModals) { %>
-                <%- include('partials/modals/unit-modals') %>
+                <%- include('partials/modals/manager/unit-management-modals') %>
             <% } %>
             
             <% if (includeLeaseModals) { %>
-                <%- include('partials/modals/lease-modals') %>
+                <%- include('partials/modals/manager/lease-management-modals') %>
             <% } %>
         <% } %>
         
