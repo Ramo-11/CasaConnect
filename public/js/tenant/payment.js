@@ -317,7 +317,7 @@ const TenantPayment = {
         try {
             const response = await CasaConnect.APIClient.get('/api/tenant/payment-methods');
             if (response.success && response.data.length > 0) {
-                this.displaySavedMethods(response.data);
+                this.displaySavedMethods(response.data.data);
             }
         } catch (error) {
             console.error('Failed to load payment methods:', error);
@@ -327,6 +327,11 @@ const TenantPayment = {
     displaySavedMethods(methods) {
         const container = document.getElementById('savedPaymentMethods');
         if (!container) return;
+
+        if (methods.length === 0) {
+            container.style.display = 'none';
+            return;
+        }
         
         container.innerHTML = methods.map(method => `
             <div class="saved-method" data-method-id="${method.id}">
@@ -359,7 +364,7 @@ const TenantPayment = {
         }
         
         // Display saved methods
-        this.displaySavedMethodsForPayment(response.data);
+        this.displaySavedMethodsForPayment(response.data.data);
         
         CasaConnect.ModalManager.openModal('paymentModal');
     },

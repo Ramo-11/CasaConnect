@@ -6,12 +6,12 @@ const { logger } = require("../../logger");
 // helper: ensure Stripe customer
 async function ensureCustomer(tenant) {
     if (!tenant.stripeCustomerId) {
-        const c = await stripe.customers.create({
+        const customer = await stripe.customers.create({
             email: tenant.email,
             name: `${tenant.firstName} ${tenant.lastName}`,
             metadata: { tenantId: String(tenant._id) },
         });
-        tenant.stripeCustomerId = c.id;
+        tenant.stripeCustomerId = customer.id;
         await tenant.save();
     }
     return tenant.stripeCustomerId;
@@ -39,10 +39,7 @@ exports.createSetupIntent = async (req, res) => {
         const tenant = await User.findById(tenantId);
         const customerId = await ensureCustomer(tenant);
 
-        const payment_method_types =
-            type === "ach" ? ["us_bank_account"] : ["card"];
-
-        const si = await stripe.setupIntents.create({
+        const setupIntent = await stripe.setupIntents.create({
             customer: customerId,
             payment_method_types:
                 type === "ach" ? ["us_bank_account"] : ["card"],
@@ -53,7 +50,7 @@ exports.createSetupIntent = async (req, res) => {
                 },
             }),
         });
-        res.json({ success: true, clientSecret: si.client_secret });
+        res.json({ success: true, clientSecret: setupIntent.client_secret });
     } catch (e) {
         logger.error(`Create SetupIntent error: ${e.message}`);
         res.status(500).json({
@@ -73,25 +70,25 @@ exports.saveFromPaymentMethod = async (req, res) => {
         const customerId = await ensureCustomer(tenant);
 
         // Retrieve PM and attach if not attached to this customer
-        let pm = await stripe.paymentMethods.retrieve(paymentMethodId);
-        if (!pm) throw new Error("Payment method not found at Stripe");
+        let paymentMethod = await stripe.paymentMethods.retrieve(paymentMethodId);
+        if (!paymentMethod) throw new Error("Payment method not found at Stripe");
 
-        if (!pm.customer) {
-            pm = await stripe.paymentMethods.attach(pm.id, {
+        if (!paymentMethod.customer && paymentMethod.type === "card") {
+            paymentMethod = await stripe.paymentMethods.attach(paymentMethod.id, {
                 customer: customerId,
             });
-        } else if (pm.customer !== customerId) {
-            // Optional: detach from other customer then attach; usually shouldn't happen in tenant flow
-            await stripe.paymentMethods.detach(pm.id);
-            pm = await stripe.paymentMethods.attach(pm.id, {
-                customer: customerId,
-            });
+        } else if (paymentMethod.customer && paymentMethod.customer !== customerId) {
+            // This shouldn't happen in normal flow
+            logger.warn(
+                `Payment method ${paymentMethod.id} belongs to different customer`
+            );
+            throw new Error("Payment method belongs to another customer");
         }
 
         // DB dedupe
         const existingDoc = await PaymentMethod.findOne({
             user: tenantId,
-            stripePaymentMethodId: pm.id,
+            stripePaymentMethodId: paymentMethod.id,
         });
         if (existingDoc) {
             return res.json({
@@ -105,25 +102,25 @@ exports.saveFromPaymentMethod = async (req, res) => {
         const data = {
             user: tenantId,
             isDefault: false,
-            stripePaymentMethodId: pm.id,
+            stripePaymentMethodId: paymentMethod.id,
         };
 
-        if (pm.type === "card") {
+        if (paymentMethod.type === "card") {
             data.type = "card";
-            data.last4 = pm.card?.last4;
-            data.brand = pm.card?.brand;
-            data.expMonth = pm.card?.exp_month;
-            data.expYear = pm.card?.exp_year;
+            data.last4 = paymentMethod.card?.last4;
+            data.brand = paymentMethod.card?.brand;
+            data.expMonth = paymentMethod.card?.exp_month;
+            data.expYear = paymentMethod.card?.exp_year;
             data.verified = true;
-        } else if (pm.type === "us_bank_account") {
+        } else if (paymentMethod.type === "us_bank_account") {
             data.type = "ach"; // keep your UI label
-            data.last4 = pm.us_bank_account?.last4;
-            data.bankName = pm.us_bank_account?.bank_name || "Bank Account";
-            data.accountType = pm.us_bank_account?.account_type || "checking";
-            const v = pm.us_bank_account?.verification_status; // "unverified" | "pending" | "verified"
+            data.last4 = paymentMethod.us_bank_account?.last4;
+            data.bankName = paymentMethod.us_bank_account?.bank_name || "Bank Account";
+            data.accountType = paymentMethod.us_bank_account?.account_type || "checking";
+            const v = paymentMethod.us_bank_account?.verification_status; // "unverified" | "pending" | "verified"
             data.verified = v === "verified";
         } else {
-            throw new Error(`Unsupported payment method type: ${pm.type}`);
+            throw new Error(`Unsupported payment method type: ${paymentMethod.type}`);
         }
 
         // default if first method (prefer card)
@@ -222,18 +219,16 @@ exports.setDefaultPaymentMethod = async (req, res) => {
         if (pmDoc.type === "ach") {
             try {
                 if (pmDoc.stripePaymentMethodId?.startsWith("pm_")) {
-                    const pm = await stripe.paymentMethods.retrieve(
+                    const paymentMethod = await stripe.paymentMethods.retrieve(
                         pmDoc.stripePaymentMethodId
                     );
-                    const v = pm.us_bank_account?.verification_status;
+                    const v = paymentMethod.us_bank_account?.verification_status;
                     if (v !== "verified") {
-                        return res
-                            .status(400)
-                            .json({
-                                success: false,
-                                message:
-                                    "Bank account must be verified before setting as default.",
-                            });
+                        return res.status(400).json({
+                            success: false,
+                            message:
+                                "Bank account must be verified before setting as default.",
+                        });
                     }
                 } else {
                     // legacy source
@@ -243,13 +238,11 @@ exports.setDefaultPaymentMethod = async (req, res) => {
                         pmDoc.stripePaymentMethodId
                     );
                     if (source.status !== "verified") {
-                        return res
-                            .status(400)
-                            .json({
-                                success: false,
-                                message:
-                                    "Bank account must be verified before setting as default.",
-                            });
+                        return res.status(400).json({
+                            success: false,
+                            message:
+                                "Bank account must be verified before setting as default.",
+                        });
                     }
                 }
             } catch (e) {

@@ -164,6 +164,11 @@
     display: flex;
     align-items: center;
     gap: var(--spacing-md);
+    flex: 1;
+}
+
+.method-info .badge {
+    margin-left: var(--spacing-sm);
 }
 
 .method-info i {
@@ -174,6 +179,7 @@
 .method-actions {
     display: flex;
     gap: var(--spacing-md);
+    flex-shrink: 0;
 }
 
 .empty-state-small {

@@ -131,7 +131,8 @@ const PaymentMethodManager = {
                 if (!accountHolder || !routingNumber || !accountNumber)
                     throw new Error("All bank fields are required");
 
-                confirmResult = await stripe.confirmUsBankAccountSetup(clientSecret, 
+                confirmResult = await this.stripe.confirmUsBankAccountSetup(
+                    clientSecret,
                     {
                         payment_method: {
                             billing_details: { name: accountHolder },
@@ -221,54 +222,60 @@ const PaymentMethodManager = {
 
         if (!methods || methods.length === 0) {
             container.innerHTML = `
-            <div class="empty-state-small">
-                <i class="fas fa-credit-card" style="font-size: 32px; color: #d1d5db;"></i>
-                <p style="margin-top: 12px; color: #6b7280;">No payment methods saved</p>
-                <p class="text-muted" style="font-size: 14px;">Add a payment method to make payments easier</p>
-            </div>
-        `;
+                <div class="empty-state-small">
+                    <i class="fas fa-credit-card" style="font-size: 32px; color: #d1d5db;"></i>
+                    <p style="margin-top: 12px; color: #6b7280;">No payment methods saved</p>
+                    <p class="text-muted" style="font-size: 14px;">Add a payment method to make payments easier</p>
+                </div>
+            `;
             return;
         }
 
         container.innerHTML = methods
             .map(
                 (method) => `
-        <div class="payment-method-item">
-            <div class="method-info">
-                <i class="fas fa-${
-                    method.type === "card" ? "credit-card" : "university"
-                }"></i>
-                <span>
+            <div class="payment-method-item">
+                <div class="method-info">
+                    <i class="fas fa-${
+                        method.type === "card" ? "credit-card" : "university"
+                    }"></i>
+                    <div style="flex: 1;">
+                        <div>
+                            ${
+                                method.type === "card"
+                                    ? `${method.brand || "Card"} •••• ${
+                                          method.last4
+                                      }`
+                                    : `Bank Account •••• ${method.last4}`
+                            }
+                        </div>
+                        <div style="display: flex; gap: 8px; margin-top: 4px;">
+                            ${
+                                method.isDefault
+                                    ? '<span class="badge badge-primary">Default</span>'
+                                    : ""
+                            }
+                            ${
+                                method.type === "ach" && !method.verified
+                                    ? '<span class="badge badge-warning">Pending Verification</span>'
+                                    : ""
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="method-actions">
                     ${
-                        method.type === "card"
-                            ? `${method.brand || "Card"} •••• ${method.last4}`
-                            : `Bank Account •••• ${method.last4}`
+                        !method.isDefault &&
+                        (method.type === "card" || method.verified)
+                            ? `<button onclick="PaymentMethodManager.setDefaultPaymentMethod('${method._id}')" class="btn-link">Set Default</button>`
+                            : ""
                     }
-                </span>
-                ${
-                    method.isDefault
-                        ? '<span class="badge badge-primary">Default</span>'
-                        : ""
-                }
-                ${
-                    method.type === "ach" && !method.verified
-                        ? '<span class="badge badge-warning">Pending Verification</span>'
-                        : ""
-                }
+                    <button onclick="PaymentMethodManager.removePaymentMethod('${
+                        method._id
+                    }')" class="btn-link text-danger">Remove</button>
+                </div>
             </div>
-            <div class="method-actions">
-                ${
-                    !method.isDefault &&
-                    (method.type === "card" || method.verified)
-                        ? `<button onclick="PaymentMethodManager.setDefaultPaymentMethod('${method._id}')" class="btn-link">Set Default</button>`
-                        : ""
-                }
-                <button onclick="PaymentMethodManager.removePaymentMethod('${
-                    method._id
-                }')" class="btn-link text-danger">Remove</button>
-            </div>
-        </div>
-    `
+        `
             )
             .join("");
     },
