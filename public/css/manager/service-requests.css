@@ -279,6 +279,84 @@
   font-size: var(--font-size-sm);
 }
 
+/* Action Buttons Styling */
+.request-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg);
+    background: #f9fafb;
+    border-left: 1px solid #e5e7eb;
+    min-width: 180px;
+}
+
+.request-actions .btn-icon {
+    width: 100%;
+    height: 36px;
+    border: 1px solid #e5e7eb;
+    background: var(--white);
+    border-radius: var(--border-radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    color: #6b7280;
+    font-size: var(--font-size-sm);
+    padding: 0 var(--spacing-md);
+    font-weight: var(--font-weight-medium);
+}
+
+.request-actions .btn-icon:hover {
+    background: var(--primary-color);
+    color: var(--white);
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.request-actions .btn-icon.danger {
+    color: #ef4444;
+    border-color: #fee2e2;
+}
+
+.request-actions .btn-icon.danger:hover {
+    background: #ef4444;
+    color: var(--white);
+    border-color: #ef4444;
+}
+
+/* Icon spacing inside buttons */
+.request-actions .btn-icon i {
+    margin-right: 4px;
+    font-size: 14px;
+}
+
+/* Status select in actions area */
+.request-actions .status-select {
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid #d1d5db;
+    border-radius: var(--border-radius-md);
+    font-size: var(--font-size-sm);
+    background: var(--white);
+    cursor: pointer;
+}
+
+.request-actions .status-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(208, 167, 100, 0.1);
+}
+
+/* Divider for action groups */
+.request-actions .action-divider {
+    height: 1px;
+    background: #e5e7eb;
+    margin: var(--spacing-sm) 0;
+}
+
 /* Status Select Dropdown */
 .status-select {
     padding: var(--spacing-xs) var(--spacing-sm);
@@ -294,6 +372,52 @@
     outline: none;
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px rgba(208, 167, 100, 0.1);
+}
+
+/* Details Modal Styles */
+.modal-large {
+    max-width: 900px;
+}
+
+.detail-section {
+    margin-bottom: var(--spacing-xl);
+    padding-bottom: var(--spacing-lg);
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.detail-section:last-child {
+    border-bottom: none;
+}
+
+.badges-row {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+}
+
+.photos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-md);
+}
+
+.photo-item img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    transition: transform var(--transition-fast);
+}
+
+.photo-item img:hover {
+    transform: scale(1.05);
+}
+
+.search-box input {
+    outline: none;
+    border: 0px solid #d1d5db;
 }
 
 /* Request Actions in Card */
@@ -356,9 +480,24 @@
   
   .request-actions {
     flex-direction: row;
+    flex-wrap: wrap;
     border-left: none;
     border-top: 1px solid #e5e7eb;
-    justify-content: space-around;
+    justify-content: space-between;
+    min-width: auto;
+    gap: var(--spacing-sm);
+  }
+  
+  .request-actions .btn-icon {
+    flex: 1;
+    min-width: 100px;
+    font-size: var(--font-size-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+  
+  .request-actions .status-select {
+    width: 100%;
+    margin-bottom: var(--spacing-sm);
   }
   
   .request-info {

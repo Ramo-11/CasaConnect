@@ -1,6 +1,11 @@
 <!-- Service Requests Management -->
 <div class="service-requests-container">
   <!-- Page Header -->
+    <%- include('../partials/page-header', {
+        headerTitle: 'Service Requests',
+        headerSubtitle: 'Manage and assign maintenance requests',
+        backUrl: '/manager/dashboard'
+    }) %>
   <div class="page-header">
     <div class="header-content">
       <h1>Service Requests</h1>
@@ -66,7 +71,7 @@
         <option value="other">Other</option>
       </select>
       
-      <div class="search-box">
+      <div class="search-box filter-select">
         <input type="text" id="requestSearch" placeholder="Search requests..." onkeyup="applyFilters()">
         <i class="fas fa-search"></i>
       </div>
@@ -81,8 +86,9 @@
              data-request-id="<%= request._id %>"
              data-status="<%= request.status %>"
              data-priority="<%= request.priority %>"
-             data-category="<%= request.category %>">
-          
+             data-category="<%= request.category %>"
+             data-photos='<%= JSON.stringify(request.photos || []) %>'>
+
           <!-- Priority Indicator -->
           <div class="priority-indicator priority-<%= request.priority %>"></div>
           
@@ -144,37 +150,43 @@
           
           <!-- Request Actions -->
           <div class="request-actions">
-            <% if (request.status === 'pending') { %>
-              <button class="btn btn-primary btn-small" onclick="openAssignModal('<%= request._id %>')">
-                <i class="fas fa-user-plus"></i> Assign
-              </button>
+            <% if (request.status !== 'completed' && request.status !== 'cancelled') { %>
+              <select class="status-select" 
+                      onchange="updateStatus('<%= request._id %>', this.value)" 
+                      data-original-value="<%= request.status %>">
+                <option value="<%= request.status %>" selected>Status: <%= request.status.replace('_', ' ') %></option>
+                <option value="pending">→ Pending</option>
+                <option value="assigned">→ Assigned</option>
+                <option value="in_progress">→ In Progress</option>
+                <option value="completed">→ Completed</option>
+              </select>
+              
+              <div class="action-divider"></div>
             <% } %>
-            
-            <% if (request.status === 'assigned' || request.status === 'in_progress') { %>
-              <button class="btn btn-secondary btn-small" onclick="updateStatus('<%= request._id %>', 'in_progress')">
-                <i class="fas fa-play"></i> Start Work
-              </button>
-              <button class="btn btn-success btn-small" onclick="updateStatus('<%= request._id %>', 'completed')">
-                <i class="fas fa-check"></i> Complete
-              </button>
-            <% } %>
-            
-            <button class="btn-icon" onclick="addNote('<%= request._id %>')" title="Add Note">
-              <i class="fas fa-comment-plus"></i>
-            </button>
             
             <button class="btn-icon" onclick="viewDetails('<%= request._id %>')" title="View Details">
               <i class="fas fa-eye"></i>
+              View Details
+            </button>
+            
+            <button class="btn-icon" onclick="addNote('<%= request._id %>')" title="Add Note">
+              <i class="fas fa-comment-plus"></i>
+              Add Note
             </button>
             
             <% if (request.status === 'pending' || request.status === 'assigned') { %>
+              <div class="action-divider"></div>
+              
               <button class="btn-icon danger" onclick="cancelRequest('<%= request._id %>')" title="Cancel">
                 <i class="fas fa-times"></i>
+                Cancel
               </button>
             <% } %>
+            
             <% if (request.status !== 'completed') { %>
               <button class="btn-icon danger" onclick="deleteServiceRequest('<%= request._id %>')" title="Delete">
                 <i class="fas fa-trash"></i>
+                Delete
               </button>
             <% } %>
           </div>

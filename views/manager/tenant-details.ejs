@@ -348,13 +348,9 @@
                             </p>
                         </div>
                         <div class="request-actions">
-                            <button
-                                class="btn-icon"
-                                onclick="viewRequest('<%= request._id %>')"
-                                title="View"
-                            >
-                                <i class="fas fa-eye"></i>
-                            </button>
+                            <a href="/manager/service-requests" class="btn btn-primary btn-small">
+                                <i class="fas fa-external-link-alt"></i> Manage in Service Requests
+                            </a>
                         </div>
                     </div>
                     <% }) %>

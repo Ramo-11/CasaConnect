@@ -11,7 +11,6 @@ exports.getServiceRequests = async (req, res) => {
             .populate("assignedTo", "firstName lastName")
             .sort("-createdAt");
 
-        logger.debug(`requests: ${JSON.stringify(requests)}`);
         res.render("manager/service-requests", {
             title: "Service Requests",
             additionalCSS: ["manager/service-requests.css"],
@@ -184,6 +183,7 @@ exports.deleteRequest = async (req, res) => {
         }
         
         await request.deleteOne();
+        logger.info(`Service request ${requestId} deleted by user ${req.session.userId}`);
         
         res.json({
             success: true,

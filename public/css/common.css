@@ -172,6 +172,35 @@ a:hover {
   text-decoration: none;
 }
 
+/* Filter Dropdown Styling */
+.filter-select {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid #d1d5db;
+    border-radius: var(--border-radius-md);
+    font-size: var(--font-size-sm);
+    background: var(--white);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.filter-select:hover {
+    border-color: var(--primary-color);
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(208, 167, 100, 0.1);
+}
+
+.requests-list h4 {
+    color: var(--text-dark);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 2px solid #e5e7eb;
+}
+
 .btn-icon {
     border: none;
     background: transparent;
