@@ -145,6 +145,110 @@
     color: #4b5563;
 }
 
+/* Saved Payment Methods */
+.saved-method {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+    border: 1px solid #e5e7eb;
+    border-radius: var(--border-radius-md);
+    transition: all var(--transition-fast);
+    cursor: pointer;
+}
+
+.saved-method:hover {
+    background: #f9fafb;
+    border-color: var(--primary-color);
+}
+
+.saved-method input[type="radio"] {
+    margin: 0;
+    cursor: pointer;
+}
+
+.saved-method label {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    cursor: pointer;
+    margin: 0;
+    padding: var(--spacing-xs) 0;
+}
+
+.saved-method label i {
+    color: var(--primary-color);
+    font-size: var(--font-size-lg);
+}
+
+.saved-method label span {
+    font-weight: var(--font-weight-medium);
+    color: var(--text-dark);
+}
+
+.saved-method label small {
+    margin-left: auto;
+    color: #6b7280;
+    font-size: var(--font-size-sm);
+}
+
+.method-display {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    justify-content: space-between;
+}
+
+.method-display i,
+.method-display span {
+    flex: 1;
+    white-space: nowrap;
+}
+
+/* When selected */
+.saved-method:has(input:checked) {
+    background: rgba(208, 167, 100, 0.05);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(208, 167, 100, 0.1);
+}
+
+/* Payment Summary */
+.payment-summary {
+    text-align: center;
+    padding: var(--spacing-lg);
+    background: #f9fafb;
+    border-radius: var(--border-radius-lg);
+    margin-bottom: var(--spacing-xl);
+}
+
+.payment-summary h3 {
+    margin-bottom: var(--spacing-md);
+    color: #6b7280;
+    font-size: var(--font-size-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.amount-display {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: var(--spacing-xs);
+}
+
+.amount-display .currency {
+    font-size: var(--font-size-xl);
+    color: #6b7280;
+}
+
+.amount-display .amount-value {
+    font-size: var(--font-size-4xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--primary-color);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .payment-methods {

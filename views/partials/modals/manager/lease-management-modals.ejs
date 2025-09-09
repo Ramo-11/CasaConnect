@@ -55,11 +55,11 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="leaseMonthlyRent">Monthly Rent ($) *</label>
-                            <input type="number" id="leaseMonthlyRent" name="monthlyRent" required min="0" step="50" placeholder="Will auto-fill from unit selection">
+                            <input type="number" id="leaseMonthlyRent" name="monthlyRent" required min="0" step="0.01" placeholder="Will auto-fill from unit selection">
                         </div>
                         <div class="form-group">
                             <label for="leaseSecurityDeposit">Security Deposit ($) *</label>
-                            <input type="number" id="leaseSecurityDeposit" name="securityDeposit" required min="0" step="50" placeholder="Typically equals monthly rent">
+                            <input type="number" id="leaseSecurityDeposit" name="securityDeposit" required min="0" step="0.01" placeholder="Typically equals monthly rent">
                         </div>
                     </div>
                 </div>
@@ -87,7 +87,7 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="lateFeeAmount">Late Fee Amount ($)</label>
-                            <input type="number" id="lateFeeAmount" name="lateFeeAmount" min="0" step="5" value="50">
+                            <input type="number" id="lateFeeAmount" name="lateFeeAmount" min="0" step="0.01" value="50">
                         </div>
                         <div class="form-group">
                             <label for="leaseStatus">Initial Status *</label>

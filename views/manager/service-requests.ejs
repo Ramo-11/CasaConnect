@@ -1,31 +1,15 @@
 <!-- Service Requests Management -->
 <div class="service-requests-container">
-  <!-- Page Header -->
-    <%- include('../partials/page-header', {
-        headerTitle: 'Service Requests',
-        headerSubtitle: 'Manage and assign maintenance requests',
-        backUrl: '/manager/dashboard'
-    }) %>
-  <div class="page-header">
-    <div class="header-content">
-      <h1>Service Requests</h1>
-      <p>Manage and assign maintenance requests</p>
-    </div>
-    <div class="header-stats">
-      <div class="stat-badge">
-        <span class="stat-number"><%= requests.filter(r => r.status === 'pending').length %></span>
-        <span class="stat-label">Pending</span>
-      </div>
-      <div class="stat-badge">
-        <span class="stat-number"><%= requests.filter(r => r.status === 'in_progress').length %></span>
-        <span class="stat-label">In Progress</span>
-      </div>
-      <div class="stat-badge">
-        <span class="stat-number"><%= requests.filter(r => r.status === 'completed' && new Date(r.completedAt) > new Date(Date.now() - 7*24*60*60*1000)).length %></span>
-        <span class="stat-label">Completed (7d)</span>
-      </div>
-    </div>
-  </div>
+ <%- include('../partials/page-header', {
+    headerTitle: 'Service Requests',
+    headerSubtitle: 'Manage and assign maintenance requests',
+    backUrl: '/manager/dashboard',
+    headerStats: [
+      { number: requests.filter(r => r.status === 'pending').length, label: 'Pending' },
+      { number: requests.filter(r => r.status === 'in_progress').length, label: 'In Progress' },
+      { number: requests.filter(r => r.status === 'completed' && new Date(r.completedAt) > new Date(Date.now() - 7*24*60*60*1000)).length, label: 'Completed (7d)' }
+    ]
+  }) %>
 
   <!-- Filters and Search -->
   <div class="requests-filters">
@@ -87,7 +71,7 @@
              data-status="<%= request.status %>"
              data-priority="<%= request.priority %>"
              data-category="<%= request.category %>"
-             data-photos='<%= JSON.stringify(request.photos || []) %>'>
+             data-photos='<%- JSON.stringify(request.photos || []) %>'>
 
           <!-- Priority Indicator -->
           <div class="priority-indicator priority-<%= request.priority %>"></div>

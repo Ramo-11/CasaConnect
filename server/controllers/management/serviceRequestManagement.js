@@ -5,11 +5,48 @@ const { logger } = require("../../logger");
 // Get Service Requests
 exports.getServiceRequests = async (req, res) => {
     try {
-        const requests = await ServiceRequest.find()
+        const storageService = require('../../services/storageService');
+        
+        const requestsRaw = await ServiceRequest.find()
             .populate("tenant", "firstName lastName")
             .populate("unit", "unitNumber")
             .populate("assignedTo", "firstName lastName")
-            .sort("-createdAt");
+            .sort("-createdAt")
+            .lean();
+
+        // Sign photo URLs for each request
+        const requests = await Promise.all(
+            requestsRaw.map(async (request) => {
+                // Sign photos if they exist
+                if (request.photos && request.photos.length > 0) {
+                    const signedPhotos = await Promise.all(
+                        request.photos.map(async (photo) => {
+                            try {
+                                const signedUrl = await storageService.getServicePhotoSignedUrl(
+                                    photo.fileName,
+                                    3600 // 1 hour expiry
+                                );
+                                return {
+                                    ...photo,
+                                    url: signedUrl
+                                };
+                            } catch (error) {
+                                logger.warn(`Failed to sign photo URL for ${photo.fileName}: ${error.message}`);
+                                return {
+                                    ...photo,
+                                    url: null // Will filter out later
+                                };
+                            }
+                        })
+                    );
+                    
+                    // Filter out photos that failed to get signed URLs
+                    request.photos = signedPhotos.filter(p => p.url !== null);
+                }
+                
+                return request;
+            })
+        );
 
         res.render("manager/service-requests", {
             title: "Service Requests",

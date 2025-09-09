@@ -19,6 +19,8 @@ const TenantServiceRequest = {
             prioritySelect.addEventListener('change', (e) => {
                 if (e.target.value === 'emergency') {
                     this.showEmergencyWarning();
+                } else {
+                    this.hideEmergencyWarning();
                 }
             });
         }
@@ -53,6 +55,14 @@ const TenantServiceRequest = {
         if (!existingWarning) {
             priorityField.appendChild(warningDiv);
             setTimeout(() => warningDiv.remove(), 10000);
+        }
+    },
+
+    hideEmergencyWarning() {
+        const priorityField = document.getElementById('requestPriority').closest('.form-group');
+        const existingWarning = priorityField.querySelector('.alert-warning');
+        if (existingWarning) {
+            existingWarning.remove();
         }
     },
     
@@ -192,8 +202,7 @@ const TenantServiceRequest = {
                             <div class="method-info">
                                 <span class="method-name">${method.type === 'card' 
                                     ? `${method.brand || 'Card'} •••• ${method.last4}` 
-                                    : `Bank •••• ${method.last4}`}</span>
-                                ${method.isDefault ? '<span class="badge badge-primary">Default</span>' : ''}
+                                    : `Bank •••• ${method.last4}`}</span>}
                             </div>
                         </div>
                     </label>

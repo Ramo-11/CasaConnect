@@ -146,13 +146,13 @@ const TenantPayment = {
         
         container.innerHTML = methods.map((method, index) => `
             <label class="saved-method-option">
-                <input type="radio" name="paymentMethodId" value="${method._id}" 
-                    ${index === 0 || method.isDefault ? 'checked' : ''}>
                 <div class="method-display">
                     <i class="fas fa-${method.type === 'card' ? 'credit-card' : 'university'}"></i>
                     <span>${method.type === 'card' 
                         ? `${method.brand} •••• ${method.last4}` 
                         : `Bank •••• ${method.last4}`}</span>
+                    <input type="radio" name="paymentMethodId" value="${method._id}" 
+                    ${index === 0 || method.isDefault ? 'checked' : ''}>
                 </div>
             </label>
         `).join('');

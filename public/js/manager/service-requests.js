@@ -249,14 +249,25 @@ async function viewDetails(requestId) {
         const status = requestCard.dataset.status;
         const priority = requestCard.dataset.priority;
         const category = requestCard.dataset.category;
-        const description = requestCard.querySelector('.request-description p').textContent;
-        const tenant = requestCard.querySelector('.info-group .fa-user')?.nextSibling?.textContent?.trim();
-        const unit = requestCard.querySelector('.info-group .fa-home')?.nextSibling?.textContent?.trim();
-        const date = requestCard.querySelector('.info-group .fa-calendar')?.nextSibling?.textContent?.trim();
-        const assignedTo = requestCard.querySelector('.info-group .fa-wrench')?.nextSibling?.textContent?.trim();
+        const description = requestCard.querySelector('.request-description p')?.textContent || requestCard.querySelector('.request-description')?.textContent || '';
+        const tenant = requestCard.querySelector('.info-group .fa-user')?.parentElement?.textContent?.replace('Tenant:', '').trim();
+        const unit = requestCard.querySelector('.info-group .fa-home')?.parentElement?.textContent?.replace('Unit:', '').trim();
+        const date = requestCard.querySelector('.info-group .fa-calendar')?.parentElement?.textContent?.trim();
+        const assignedTo = requestCard.querySelector('.info-group .fa-wrench')?.parentElement?.textContent?.replace('Assigned to:', '').trim();
         
-        // Get photos if any (you'll need to store this data)
-        const photos = requestCard.dataset.photos ? JSON.parse(requestCard.dataset.photos) : [];
+        // Get photos - parse the JSON data
+        let photos = [];
+        try {
+            const photosData = requestCard.dataset.photos;
+            if (photosData && photosData !== 'undefined') {
+                photos = JSON.parse(photosData);
+            }
+        } catch (e) {
+            console.error('Failed to parse photos data:', e);
+        }
+        
+        // Get notes content
+        const notesContent = requestCard.querySelector(`#notes-${requestId}`)?.innerHTML || '';
         
         // Create modal HTML
         const modalHtml = `
@@ -303,15 +314,19 @@ async function viewDetails(requestId) {
                             <p>${description}</p>
                         </div>
                         
-                        ${photos.length > 0 ? `
+                        ${photos && photos.length > 0 ? `
                             <div class="detail-section">
                                 <h4>Photos (${photos.length})</h4>
                                 <div class="photos-grid">
-                                    ${photos.map(photo => `
+                                    ${photos.map((photo, index) => `
                                         <div class="photo-item">
-                                            <img src="${photo.url}" alt="${photo.originalName || 'Service photo'}" 
-                                                 onclick="openPhotoViewer('${photo.url}')"
+                                            <img src="${photo.url}" 
+                                                 alt="${photo.originalName || 'Service photo ' + (index + 1)}" 
+                                                 onclick="openPhotoViewer('${photo.url}', '${photo.originalName || 'Service photo'}')"
                                                  style="width: 200px; height: 150px; object-fit: cover; border-radius: 8px; cursor: pointer;">
+                                            <p style="text-align: center; font-size: 12px; color: #6b7280; margin-top: 4px;">
+                                                ${photo.originalName || 'Photo ' + (index + 1)}
+                                            </p>
                                         </div>
                                     `).join('')}
                                 </div>
@@ -321,15 +336,19 @@ async function viewDetails(requestId) {
                         <div class="detail-section">
                             <h4>Notes</h4>
                             <div id="detailNotes-${requestId}">
-                                ${requestCard.querySelector(`#notes-${requestId}`)?.innerHTML || '<p class="no-data">No notes available</p>'}
+                                ${notesContent || '<p class="no-data">No notes available</p>'}
                             </div>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button class="btn btn-secondary" onclick="closeDetailsModal()">Close</button>
-                        ${status !== 'completed' ? `
-                            <button class="btn btn-primary" onclick="closeDetailsModal(); openAssignModal('${requestId}')">Assign</button>
-                            <button class="btn btn-primary" onclick="closeDetailsModal(); addNote('${requestId}')">Add Note</button>
+                        ${status !== 'completed' && status !== 'cancelled' ? `
+                            <button class="btn btn-primary" onclick="closeDetailsModal(); openAssignModal('${requestId}')">
+                                <i class="fas fa-user-plus"></i> Assign Technician
+                            </button>
+                            <button class="btn btn-primary" onclick="closeDetailsModal(); addNote('${requestId}')">
+                                <i class="fas fa-comment-plus"></i> Add Note
+                            </button>
                         ` : ''}
                     </div>
                 </div>
@@ -342,6 +361,23 @@ async function viewDetails(requestId) {
         console.error('Error viewing details:', error);
         CasaConnect.NotificationManager.error('Failed to load request details');
     }
+}
+
+function openPhotoViewer(url, title = 'Photo') {
+    const viewerHtml = `
+        <div class="modal active" id="photoViewer" style="z-index: 10000;">
+            <div class="modal-content" style="max-width: 90%; max-height: 90%;">
+                <div class="modal-header">
+                    <h2>${title}</h2>
+                    <button class="modal-close" onclick="document.getElementById('photoViewer').remove()">&times;</button>
+                </div>
+                <div class="modal-body" style="text-align: center; padding: 20px;">
+                    <img src="${url}" style="max-width: 100%; max-height: 70vh; object-fit: contain;">
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', viewerHtml);
 }
 
 function closeDetailsModal() {
