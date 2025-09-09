@@ -141,7 +141,7 @@
             try {
                 const formData = CasaConnect.FormUtils.serializeForm(form);
                 const response = await CasaConnect.APIClient.post(
-                    "/manager/tenants",
+                    "/api/manager/tenants",
                     formData
                 );
 

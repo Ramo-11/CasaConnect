@@ -31,9 +31,59 @@ const TenantsPageManager = {
         if (view === 'grid') {
             display.className = 'tenants-grid-view';
             toggleBtns[0]?.classList.add('active');
+            
+            // Clean up any list-specific modifications
+            document.querySelectorAll('.payment-status-column').forEach(col => col.remove());
+            document.querySelectorAll('.no-unit-placeholder').forEach(ph => ph.remove());
+            document.querySelectorAll('.payment-status').forEach(ps => ps.style.display = '');
         } else {
             display.className = 'tenants-list-view';
             toggleBtns[1]?.classList.add('active');
+            
+            // Reorganize content for list view
+            document.querySelectorAll('.tenant-card-full').forEach(card => {
+                const body = card.querySelector('.tenant-card-body');
+                if (body) {
+                    // Check if already reorganized
+                    if (body.querySelector('.payment-status-column')) return;
+                    
+                    const unitBox = body.querySelector('.unit-info-box');
+                    const lastLogin = body.querySelector('.last-login');
+                    
+                    // Create payment/status column
+                    const paymentColumn = document.createElement('div');
+                    paymentColumn.className = 'payment-status-column';
+                    
+                    if (unitBox) {
+                        const paymentStatus = unitBox.querySelector('.payment-status');
+                        if (paymentStatus) {
+                            paymentColumn.appendChild(paymentStatus.cloneNode(true));
+                            paymentStatus.style.display = 'none';
+                        }
+                    }
+                    
+                    if (lastLogin) {
+                        paymentColumn.appendChild(lastLogin.cloneNode(true));
+                    }
+                    
+                    body.appendChild(paymentColumn);
+                    
+                    // Create no unit placeholder if needed
+                    if (!unitBox) {
+                        const infoGrid = body.querySelector('.tenant-info-grid');
+                        const noUnitItem = infoGrid?.querySelector('.no-unit');
+                        
+                        if (noUnitItem) {
+                            const placeholder = document.createElement('div');
+                            placeholder.className = 'no-unit-placeholder';
+                            placeholder.innerHTML = '<i class="fas fa-exclamation-triangle"></i> No Active Lease';
+                            
+                            // Insert before payment column
+                            body.insertBefore(placeholder, paymentColumn);
+                        }
+                    }
+                }
+            });
         }
         
         CasaConnect.StorageHelper.set('tenantsViewPreference', view);

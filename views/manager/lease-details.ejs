@@ -3,10 +3,19 @@
 <!-- Lease Details Page -->
 <div class="lease-details-container">
     <!-- Page Header -->
-    <%- include('../partials/page-header', {
+     <%- include('../partials/page-header', {
         headerTitle: 'Lease Agreement Details',
         headerSubtitle: `Unit ${lease.unit.unitNumber} - ${lease.tenant.firstName} ${lease.tenant.lastName}`,
-        backUrl: '/manager/dashboard'
+        backUrl: '/manager/dashboard',
+        backText: 'Back to Dashboard',
+        headerActions: [
+            {
+                href: `/manager/tenant/${lease.tenant._id}`,
+                btnClass: 'btn-secondary',
+                icon: 'fas fa-home',
+                text: 'Tenant Details',
+            }
+        ]
     }) %>
 
     <!-- Main Content Grid -->
@@ -235,10 +244,12 @@
                         <i class="fas fa-print"></i>
                         <span>Print Lease</span>
                     </button>
-                    <button class="action-button" onclick="emailLease('<%= lease._id %>')">
+                    <% if (lease.status === 'active') { %>
+                     <button class="action-button" onclick="emailLease('<%= lease._id %>')">
                         <i class="fas fa-envelope"></i>
                         <span>Email to Tenant</span>
                     </button>
+                    <% } %>
                     <% if (lease.status === 'active' && lease.daysRemaining < 90) { %>
                     <button class="action-button warning" onclick="renewLease('<%= lease._id %>')">
                         <i class="fas fa-sync"></i>

@@ -316,6 +316,7 @@
 
 .request-item-detailed {
   display: flex;
+  align-items: center;
   gap: var(--spacing-md);
   padding: var(--spacing-lg);
   border: 1px solid #e5e7eb;
@@ -356,7 +357,8 @@
 
 .request-content .request-header {
   display: flex;
-  justify-content: space-between;
+  gap: var(--spacing-xl);
+  justify-content: flex-start;
   align-items: center;
   margin-bottom: var(--spacing-sm);
 }

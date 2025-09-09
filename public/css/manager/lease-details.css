@@ -9,8 +9,9 @@
 .lease-progress {
   margin-bottom: var(--spacing-xl);
   padding: var(--spacing-lg);
-  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  background: #f9fafb;
   border-radius: var(--border-radius-lg);
+  border: 1px solid #e5e7eb;
 }
 
 .progress-info {
@@ -32,9 +33,8 @@
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  background: var(--primary-color);
   transition: width 0.5s ease;
-  box-shadow: 0 2px 4px rgba(208, 167, 100, 0.3);
 }
 
 /* Financial Summary */
@@ -44,17 +44,17 @@
   gap: var(--spacing-lg);
   margin-bottom: var(--spacing-xl);
   padding: var(--spacing-xl);
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  background: #f9fafb;
   border-radius: var(--border-radius-xl);
-  box-shadow: 0 4px 6px rgba(208, 167, 100, 0.1);
+  border: 1px solid #e5e7eb;
 }
 
 .amount-box {
   text-align: center;
   padding: var(--spacing-md);
-  background: rgba(255, 255, 255, 0.8);
+  background: var(--white);
   border-radius: var(--border-radius-lg);
-  backdrop-filter: blur(10px);
+  border: 1px solid #e5e7eb;
 }
 
 .amount-box label {
@@ -138,8 +138,9 @@
   flex-direction: column;
   gap: var(--spacing-xs);
   padding: var(--spacing-md);
-  background: #fafafa;
+  background: var(--white);
   border-radius: var(--border-radius-md);
+  border: 1px solid #e5e7eb;
   border-left: 3px solid var(--primary-color);
 }
 
@@ -160,9 +161,9 @@
 /* Unit Summary */
 .unit-summary {
   padding: var(--spacing-xl);
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  background: #f9fafb;
   border-radius: var(--border-radius-xl);
-  border: 1px solid #bae6fd;
+  border: 1px solid #e5e7eb;
 }
 
 .unit-summary h4 {
@@ -202,13 +203,14 @@
 .document-icon {
   width: 60px;
   height: 60px;
-  background: var(--primary-light, #fef3c7);
+  background: #f9fafb;
   color: var(--primary-color);
   border-radius: var(--border-radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 28px;
+  border: 1px solid #e5e7eb;
 }
 
 .document-info {
@@ -284,7 +286,8 @@
 }
 
 .action-button.warning:hover {
-  background: #fef3c7;
+    background: #fffbeb;
+    border-color: #f59e0b;
 }
 
 .action-button.warning i {
@@ -296,7 +299,8 @@
 }
 
 .action-button.danger:hover {
-  background: #fee2e2;
+    background: #fef2f2;
+    border-color: #ef4444;
 }
 
 .action-button.danger i {
@@ -310,23 +314,27 @@
 
 /* Status Badge Updates */
 .badge-active {
-  background: #d1fae5;
-  color: #065f46;
+  background: #ecfdf5;
+  color: #10b981;
+  border: 1px solid #86efac;
 }
 
 .badge-expired {
-  background: #fee2e2;
-  color: #991b1b;
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
 }
 
 .badge-terminated {
-  background: #e5e7eb;
-  color: #4b5563;
+  background: #f9fafb;
+  color: #6b7280;
+  border: 1px solid #e5e7eb;
 }
 
 .badge-pending {
-  background: #fef3c7;
-  color: #92400e;
+  background: #fffbeb;
+  color: #d97706;
+  border: 1px solid #fcd34d;
 }
 
 /* Responsive */

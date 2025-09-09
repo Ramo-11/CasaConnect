@@ -99,9 +99,9 @@ managerWeb.get("/units/:unitId", unitManagement.viewUnit);
 managerWeb.get("/units/:unitId/edit", unitManagement.editUnit);
 
 managerAPI.get("/units/available", unitManagement.getAvailableUnits);
-managerAPI.get("/units/:unitId", unitManagement.getUnit);
 managerAPI.get("/units/stats", unitManagement.getUnitsStats);
 managerAPI.post("/units", unitManagement.createUnit);
+managerAPI.get("/units/:unitId", unitManagement.getUnit);
 managerAPI.put("/units/:unitId", unitManagement.updateUnit);
 managerAPI.delete("/units/:unitId", unitManagement.deleteUnit);
 

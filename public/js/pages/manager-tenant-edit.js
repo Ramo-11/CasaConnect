@@ -74,7 +74,7 @@ const TenantEditManager = {
         try {
             const formData = CasaConnect.FormUtils.serializeForm(form);
             const response = await CasaConnect.APIClient.post(
-                `/manager/tenant/${this.tenantId}/update`, 
+                `/api/manager/tenant/${this.tenantId}/update`, 
                 formData
             );
 

@@ -5,11 +5,8 @@ const Document = require('../../../models/Document');
 const Payment = require("../../../models/Payment");
 const ServiceRequest = require("../../../models/ServiceRequest");
 const Notification = require("../../../models/Notification");
-const bcrypt = require("bcryptjs");
 const nodemailer = require("nodemailer");
 const { logger } = require("../../logger");
-const storageService = require('../../services/storageService');
-const crypto = require('crypto');
 require("dotenv").config();
 
 function generateTempPassword() {
@@ -29,7 +26,7 @@ async function sendCredentialsEmail(tenant, password) {
         secure: false,
         auth: {
             user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_APP_PASSWORD,
+            pass: process.env.EMAIL_PASSWORD,
         },
     });
 

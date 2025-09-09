@@ -5,7 +5,10 @@ const ServiceRequest = require("../../../models/ServiceRequest");
 const storageService = require("../../services/storageService");
 const Document = require("../../../models/Document");
 const Notification = require("../../../models/Notification");
+const emailService = require('../../services/emailService');
+const nodemailer = require("nodemailer");
 const { logger } = require("../../logger");
+require("dotenv").config();
 
 exports.createLease = async (req, res) => {
   try {
@@ -593,29 +596,29 @@ exports.emailLeaseToTenant = async (req, res) => {
             });
         }
         
-        // Send email notification to tenant
+        await emailService.sendLeaseDocument(lease.tenant, lease, lease.unit);
+        
+        // Create notification for tenant
         await Notification.create({
             recipient: lease.tenant._id,
             type: 'system',
-            title: 'Lease Document Available',
-            message: `Your lease agreement for Unit ${lease.unit.unitNumber} has been sent to your email`,
+            title: 'Lease Document Sent',
+            message: `Your lease agreement for Unit ${lease.unit.unitNumber} has been sent to ${lease.tenant.email}`,
             relatedModel: 'Lease',
             relatedId: lease._id,
             priority: 'normal'
         });
         
-        // In production, implement actual email sending here
-        // using nodemailer with the document attachment
-        
         res.json({
             success: true,
-            message: 'Lease document emailed to tenant'
+            message: 'Lease document successfully emailed to tenant'
         });
     } catch (error) {
         logger.error(`Email lease error: ${error}`);
         res.status(500).json({
             success: false,
-            message: 'Failed to email lease document'
+            message: 'Failed to email lease document',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
 };
