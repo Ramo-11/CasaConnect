@@ -74,8 +74,8 @@ exports.viewApplicationForReview = async (req, res) => {
         res.render('manager/application-review-details', {
             title: `Review Application: ${application.firstName} ${application.lastName}`,
             layout: 'layout',
-            additionalCSS: ['manager/application-review.css'],
-            additionalJS: ['manager/application-review.js'],
+            additionalCSS: ['manager/application-review-details.css'],
+            additionalJS: ['manager/application-review-details.js'],
             user: req.session.user || { role: 'manager' },
             application,
             path: req.path,
@@ -169,6 +169,30 @@ exports.approveApplication = async (req, res) => {
             success: false,
             message: 'Failed to approve application',
         });
+    }
+};
+
+exports.unapproveApplication = async (req, res) => {
+    try {
+        const { applicationId } = req.params;
+
+        const application = await TenantApplication.findById(applicationId);
+        if (!application || application.status !== 'approved') {
+            return res.status(400).json({ success: false, message: 'Invalid operation' });
+        }
+
+        application.status = 'pending';
+        application.reviewedBy = null;
+        application.reviewedAt = null;
+        application.reviewNotes = '';
+        application.createdTenant = null;
+        await application.save();
+
+        logger.info(`Application ${applicationId} unapproved`);
+        res.json({ success: true, message: 'Application unapproved' });
+    } catch (err) {
+        logger.error(`Unapprove error: ${err}`);
+        res.status(500).json({ success: false, message: 'Failed to unapprove' });
     }
 };
 

@@ -318,6 +318,7 @@
 }
 
 .alert-warning {
+    margin-top: 16px;
     background: #fed7aa;
     color: #92400e;
     border-left: 4px solid #f59e0b;

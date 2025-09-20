@@ -1,13 +1,13 @@
-const User = require('../../models/User');
-const Lease = require('../../models/Lease');
-const Unit = require('../../models/Unit');
-const ServiceRequest = require('../../models/ServiceRequest');
-const Payment = require('../../models/Payment');
-const TenantApplication = require('../../models/TenantApplication');
-const Notification = require('../../models/Notification');
+const User = require('../../../models/User');
+const Lease = require('../../../models/Lease');
+const Unit = require('../../../models/Unit');
+const ServiceRequest = require('../../../models/ServiceRequest');
+const Payment = require('../../../models/Payment');
+const TenantApplication = require('../../../models/TenantApplication');
+const Notification = require('../../../models/Notification');
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
-const { logger } = require('../logger');
+const { logger } = require('../../logger');
 
 // Get Manager Dashboard
 exports.getDashboard = async (req, res) => {
@@ -80,9 +80,8 @@ exports.getDashboard = async (req, res) => {
             status: 'pending',
         });
 
-        const approvedToday = await TenantApplication.countDocuments({
+        const approvedApplications = await TenantApplication.countDocuments({
             status: 'approved',
-            reviewedAt: { $gte: today },
         });
 
         // Format tenant data
@@ -175,7 +174,7 @@ exports.getDashboard = async (req, res) => {
             tenants: formattedTenants,
             allUnitsList,
             pendingApplications,
-            approvedToday,
+            approvedApplications,
             recentRequests: formattedRequests,
             expiringLeases: formattedExpiringLeases, // New data
             portalUrl: process.env.PORTAL_URL || 'http://localhost:3000',

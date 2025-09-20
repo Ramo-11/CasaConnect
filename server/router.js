@@ -7,7 +7,6 @@ const router = express.Router();
 
 // Controllers
 const authController = require('./controllers/authController');
-const managerController = require('./controllers/managerController');
 
 // Tenant Controllers
 const tenantDashboard = require('./controllers/tenant/dashboardController');
@@ -18,6 +17,7 @@ const tenantNotifications = require('./controllers/tenant/notificationController
 const tenantServiceRequest = require('./controllers/tenant/serviceRequestController');
 
 // Management Controllers
+const dashboardController = require('./controllers/management/dashboardController');
 const tenantManagement = require('./controllers/management/tenantManagement');
 const leaseManagement = require('./controllers/management/leaseManagement');
 const unitManagement = require('./controllers/management/unitManagement');
@@ -61,8 +61,8 @@ managerWeb.use(isAuthenticated, isManager);
 managerAPI.use(isAuthenticated, isManager);
 
 // Manager: Dashboard
-managerWeb.get(['/', '/dashboard'], managerController.getDashboard);
-managerAPI.get('/dashboard-stats', managerController.getDashboardStats);
+managerWeb.get(['/', '/dashboard'], dashboardController.getDashboard);
+managerAPI.get('/dashboard-stats', dashboardController.getDashboardStats);
 
 // Manager: Tenant Management
 managerWeb.get('/tenants', tenantManagement.getTenants);
@@ -123,6 +123,7 @@ managerAPI.delete('/service-requests/:requestId', serviceRequestManagement.delet
 managerWeb.get('/applications-review', applicationReview.getApplicationsForReview);
 managerWeb.get('/application-review/:applicationId', applicationReview.viewApplicationForReview);
 managerAPI.post('/application/:applicationId/approve', applicationReview.approveApplication);
+managerAPI.post('/application/:applicationId/unapprove', applicationReview.unapproveApplication);
 managerAPI.post('/application/:applicationId/decline', applicationReview.declineApplication);
 
 // Mount Manager routers

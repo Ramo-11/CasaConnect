@@ -93,6 +93,8 @@
             <% } %>
         <% } %>
 
+        <%- include('partials/modals/shared-modals') %>
+
         <!-- Modal Partials - Include based on page needs -->
         <% if (typeof user !== 'undefined' && user && user.role === 'manager') { %>
             <% 
@@ -102,8 +104,6 @@
             const includeUnitModals = currentPath.includes('unit') || currentPath.includes('dashboard');
             const includeLeaseModals = includeTenantModals || includeUnitModals; // Lease modals needed on both
             %>
-
-            <%- include('partials/modals/shared-modals') %>
 
             <% if (includeTenantModals) { %>
                 <%- include('partials/modals/manager/tenant-management-modals') %>

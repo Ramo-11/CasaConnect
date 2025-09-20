@@ -230,9 +230,11 @@ const ApplicationDetails = {
 
 // Global functions
 window.openUploadModal = (documentType) => {
+    console.log('Opening upload modal for type:', documentType);
     if (documentType) {
         const select = document.getElementById('documentType');
         if (select) {
+            console.log('Setting document type select to:', documentType);
             select.value = documentType;
             // Trigger change event
             select.dispatchEvent(new Event('change'));

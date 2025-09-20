@@ -54,7 +54,7 @@ const ApplicationReview = {
 
                 // Redirect to new tenant details
                 setTimeout(() => {
-                    window.location.href = `/manager/tenant/${response.tenantId}`;
+                    window.location.href = `/manager/applications-review`;
                 }, 1500);
             } else {
                 throw new Error(response.error || 'Failed to approve application');
@@ -106,6 +106,25 @@ const ApplicationReview = {
 // Global functions
 window.approveApplication = (applicationId) => {
     CasaConnect.ModalManager.openModal('approveModal');
+};
+
+window.unapproveApplication = async (applicationId) => {
+    if (!confirm('Are you sure you want to unapprove this application?')) return;
+
+    try {
+        const response = await CasaConnect.APIClient.post(
+            `/api/manager/application/${applicationId}/unapprove`
+        );
+
+        if (response.success) {
+            CasaConnect.NotificationManager.success('Application unapproved');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            throw new Error(response.message);
+        }
+    } catch (err) {
+        CasaConnect.NotificationManager.error(err.message);
+    }
 };
 
 window.declineApplication = (applicationId) => {

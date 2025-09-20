@@ -201,7 +201,7 @@
       </div>
       <div class="card-body">
         <div class="applications-summary">
-          <p>Review and approve tenant applications submitted by boarding managers.</p>
+          <p>Track all tenant applications and their statuses.</p>
           
           <div class="stats-row mt-3">
             <div class="mini-stat">
@@ -209,8 +209,8 @@
                 <i class="fas fa-clock"></i>
               </span>
               <div class="stat-content">
-                <span class="stat-label">Pending Review</span>
-                <span class="stat-value" id="pendingApplicationsCount">-</span>
+                <span class="stat-label">Total Pending</span>
+                <span class="stat-value" id="pendingApplicationsCount"><%= pendingApplications %></span>
               </div>
             </div>
             <div class="mini-stat">
@@ -218,8 +218,8 @@
                 <i class="fas fa-check-circle"></i>
               </span>
               <div class="stat-content">
-                <span class="stat-label">Approved Today</span>
-                <span class="stat-value" id="approvedTodayCount">-</span>
+                <span class="stat-label">Total Approved</span>
+                <span class="stat-value" id="approvedApplicationsCount"><%= approvedApplications %></span>
               </div>
             </div>
           </div>
