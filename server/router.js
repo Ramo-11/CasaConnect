@@ -200,6 +200,7 @@ boardingWeb.get('/application/:applicationId', boardingApplications.viewApplicat
 
 // Boarding Manager: API
 boardingAPI.post('/application', boardingApplications.createApplication);
+boardingAPI.put('/application/:applicationId', boardingApplications.updateApplication);
 boardingAPI.post(
     '/application/:applicationId/document',
     upload.single('file'),

@@ -1,6 +1,7 @@
 const TenantApplication = require('../../../models/TenantApplication');
 const User = require('../../../models/User');
 const Notification = require('../../../models/Notification');
+const emailService = require('../../services/emailService');
 const { logger } = require('../../logger');
 
 // Get Applications for Review (Manager)
@@ -109,6 +110,14 @@ exports.approveApplication = async (req, res) => {
             });
         }
 
+        const existingUser = await User.findOne({ email: application.email });
+        if (existingUser) {
+            return res.status(400).json({
+                success: false,
+                message: 'A user with this email already exists',
+            });
+        }
+
         // Create tenant account
         const tempPassword = createPassword || generateTempPassword();
 
@@ -144,8 +153,9 @@ exports.approveApplication = async (req, res) => {
             priority: 'high',
         });
 
-        // Send credentials email to new tenant
-        // This would use the existing sendCredentialsEmail function from tenantManagement
+        if (createPassword) {
+            await emailService.sendCredentialsEmail(tenant, tempPassword);
+        }
 
         logger.info(`Application ${applicationId} approved, tenant ${tenant._id} created`);
         res.json({

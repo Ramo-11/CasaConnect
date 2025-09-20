@@ -5,6 +5,7 @@ const Document = require('../../../models/Document');
 const Payment = require('../../../models/Payment');
 const ServiceRequest = require('../../../models/ServiceRequest');
 const Notification = require('../../../models/Notification');
+const emailService = require('../../services/emailService');
 const nodemailer = require('nodemailer');
 const { logger } = require('../../logger');
 require('dotenv').config();
@@ -17,47 +18,6 @@ function generateTempPassword() {
         password += charset.charAt(Math.floor(Math.random() * charset.length));
     }
     return password;
-}
-
-async function sendCredentialsEmail(tenant, password) {
-    const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST || 'smtp.gmail.com',
-        port: process.env.SMTP_PORT || 587,
-        secure: false,
-        auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASSWORD,
-        },
-    });
-
-    const mailOptions = {
-        from: process.env.EMAIL_USER || 'noreply@casaconnect.com',
-        to: tenant.email,
-        subject: 'Your CasaConnect Portal Login Credentials',
-        html: `
-            <h2>Welcome to CasaConnect Portal</h2>
-            <p>Dear ${tenant.firstName},</p>
-            <p>Your account has been created. Here are your login credentials:</p>
-            <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <p><strong>Portal URL:</strong> ${
-                    process.env.PORTAL_URL || 'http://localhost:3000'
-                }</p>
-                <p><strong>Email:</strong> ${tenant.email}</p>
-                <p><strong>Temporary Password:</strong> ${password}</p>
-            </div>
-            <p><strong>Important:</strong> You will be required to change your password upon first login.</p>
-            <p>If you have any questions, please contact our office.</p>
-            <p>Best regards,<br>CasaConnect Management</p>
-        `,
-    };
-
-    try {
-        await transporter.sendMail(mailOptions);
-        logger.info(`Credentials email sent to: ${tenant.email}`);
-    } catch (error) {
-        logger.error(`Email send error: ${error}`);
-        throw error;
-    }
 }
 
 // Create Tenant Account
@@ -92,7 +52,7 @@ exports.createTenant = async (req, res) => {
 
         // Send credentials email if requested
         if (sendCredentials === 'on') {
-            await sendCredentialsEmail(tenant, password);
+            await emailService.sendCredentialsEmail(tenant, password);
         }
 
         // Create notification for manager
@@ -144,7 +104,7 @@ exports.sendCredentials = async (req, res) => {
         }
 
         // Send email with credentials
-        await sendCredentialsEmail(tenant, password);
+        await emailService.sendCredentialsEmail(tenant, password);
 
         res.json({
             success: true,
@@ -474,7 +434,7 @@ exports.resetPassword = async (req, res) => {
         tenant.requirePasswordChange = true;
         await tenant.save();
 
-        await sendCredentialsEmail(tenant, tempPassword);
+        await emailService.sendCredentialsEmail(tenant, tempPassword);
 
         res.json({
             success: true,

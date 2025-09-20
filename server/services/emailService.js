@@ -10,16 +10,16 @@ class EmailService {
 
     createTransporter() {
         return nodemailer.createTransport({
-            host: process.env.SMTP_HOST || "smtp.gmail.com",
+            host: process.env.SMTP_HOST || 'smtp.gmail.com',
             port: process.env.SMTP_PORT || 587,
             secure: process.env.SMTP_SECURE === 'true',
             auth: {
                 user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASSWORD
+                pass: process.env.EMAIL_PASSWORD,
             },
             tls: {
-                rejectUnauthorized: false
-            }
+                rejectUnauthorized: false,
+            },
         });
     }
 
@@ -30,7 +30,7 @@ class EmailService {
                 month: 'long',
                 day: 'numeric',
                 hour: '2-digit',
-                minute: '2-digit'
+                minute: '2-digit',
             });
 
             const html = `
@@ -61,7 +61,9 @@ class EmailService {
                                 </tr>
                                 <tr>
                                     <td style="padding: 5px 0;"><strong>Transaction ID:</strong></td>
-                                    <td style="font-family: monospace;">${payment.transactionId}</td>
+                                    <td style="font-family: monospace;">${
+                                        payment.transactionId
+                                    }</td>
                                 </tr>
                             </table>
                         </div>
@@ -72,7 +74,9 @@ class EmailService {
                         
                         <p style="color: #6b7280; font-size: 14px;">
                             CasaConnect Property Management<br>
-                            If you have questions, contact us at ${process.env.SUPPORT_EMAIL || 'support@casaconnect.com'}
+                            If you have questions, contact us at ${
+                                process.env.SUPPORT_EMAIL || 'support@casaconnect.com'
+                            }
                         </p>
                     </div>
                 </div>
@@ -82,7 +86,7 @@ class EmailService {
                 from: `"CasaConnect" <${process.env.EMAIL_USER}>`,
                 to: tenant.email,
                 subject: `Rent Payment Confirmation - Unit ${lease.unit.unitNumber}`,
-                html
+                html,
             });
 
             logger.info(`Rent payment confirmation sent to ${tenant.email}`);
@@ -96,7 +100,7 @@ class EmailService {
             const requestDate = new Date().toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'long',
-                day: 'numeric'
+                day: 'numeric',
             });
 
             const html = `
@@ -140,8 +144,10 @@ class EmailService {
                         
                         <p style="margin-top: 20px;">Our maintenance team will review your request and contact you within 24-48 hours.</p>
                         
-                        ${serviceRequest.priority === 'emergency' ? 
-                            '<p style="color: #ef4444;"><strong>For emergencies, please also call: (555) 123-4567</strong></p>' : ''
+                        ${
+                            serviceRequest.priority === 'emergency'
+                                ? '<p style="color: #ef4444;"><strong>For emergencies, please also call: (555) 123-4567</strong></p>'
+                                : ''
                         }
                         
                         <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
@@ -158,7 +164,7 @@ class EmailService {
                 from: `"CasaConnect" <${process.env.EMAIL_USER}>`,
                 to: tenant.email,
                 subject: `Service Request Received - ${serviceRequest.title}`,
-                html
+                html,
             });
 
             logger.info(`Service request confirmation sent to ${tenant.email}`);
@@ -174,35 +180,32 @@ class EmailService {
             if (!document || !document.fileName) {
                 throw new Error('Lease document not found');
             }
-            
+
             // Download the file from Supabase
             const { createClient } = require('@supabase/supabase-js');
-            const supabase = createClient(
-                process.env.SUPABASE_URL,
-                process.env.SUPABASE_ANON_KEY
-            );
-            
+            const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+
             const { data: fileData, error } = await supabase.storage
                 .from('casaconnect')
                 .download(document.fileName);
-            
+
             if (error) throw error;
-            
+
             // Convert blob to buffer for nodemailer
             const buffer = Buffer.from(await fileData.arrayBuffer());
-            
+
             // Format dates
             const startDate = new Date(lease.startDate).toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'long',
-                day: 'numeric'
+                day: 'numeric',
             });
             const endDate = new Date(lease.endDate).toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'long',
-                day: 'numeric'
+                day: 'numeric',
             });
-            
+
             const html = `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
                     <div style="background: #d0a764; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
@@ -223,7 +226,9 @@ class EmailService {
                                 </tr>
                                 <tr>
                                     <td style="padding: 5px 0;"><strong>Address:</strong></td>
-                                    <td>${unit.streetAddress}, ${unit.city}, ${unit.state} ${unit.zipCode}</td>
+                                    <td>${unit.streetAddress}, ${unit.city}, ${unit.state} ${
+                unit.zipCode
+            }</td>
                                 </tr>
                                 <tr>
                                     <td style="padding: 5px 0;"><strong>Type:</strong></td>
@@ -253,22 +258,40 @@ class EmailService {
                                 </tr>
                                 <tr>
                                     <td style="padding: 5px 0;"><strong>Rent Due Day:</strong></td>
-                                    <td>${lease.rentDueDay}${lease.rentDueDay === 1 ? 'st' : lease.rentDueDay === 2 ? 'nd' : lease.rentDueDay === 3 ? 'rd' : 'th'} of each month</td>
+                                    <td>${lease.rentDueDay}${
+                lease.rentDueDay === 1
+                    ? 'st'
+                    : lease.rentDueDay === 2
+                    ? 'nd'
+                    : lease.rentDueDay === 3
+                    ? 'rd'
+                    : 'th'
+            } of each month</td>
                                 </tr>
                             </table>
                         </div>
                         
                         <div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">
                             <p style="margin: 0;"><strong>Important:</strong> 
-                            ${lease.status === 'pending' ? 'This lease is pending your signature. Please contact our office to complete the signing process.' : ''}
-                            ${lease.status === 'active' ? 'This is your active lease agreement. Please keep it for your records.' : ''}
+                            ${
+                                lease.status === 'pending'
+                                    ? 'This lease is pending your signature. Please contact our office to complete the signing process.'
+                                    : ''
+                            }
+                            ${
+                                lease.status === 'active'
+                                    ? 'This is your active lease agreement. Please keep it for your records.'
+                                    : ''
+                            }
                             </p>
                         </div>
                         
                         <p>You can access your lease agreement and other documents anytime by logging into your tenant portal:</p>
                         
                         <div style="text-align: center; margin: 25px 0;">
-                            <a href="${process.env.PORTAL_URL || 'http://localhost:3000'}/tenant/dashboard" 
+                            <a href="${
+                                process.env.PORTAL_URL || 'http://localhost:3000'
+                            }/tenant/dashboard" 
                             style="background: #d0a764; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
                                 Access Tenant Portal
                             </a>
@@ -278,13 +301,21 @@ class EmailService {
                         
                         <p style="color: #6b7280; font-size: 14px;">
                             CasaConnect Property Management<br>
-                            ${process.env.SUPPORT_EMAIL ? `Email: ${process.env.SUPPORT_EMAIL}` : 'support@casaconnect.com'}<br>
-                            ${process.env.COMPANY_PHONE ? `Phone: ${process.env.COMPANY_PHONE}` : ''}
+                            ${
+                                process.env.SUPPORT_EMAIL
+                                    ? `Email: ${process.env.SUPPORT_EMAIL}`
+                                    : 'support@casaconnect.com'
+                            }<br>
+                            ${
+                                process.env.COMPANY_PHONE
+                                    ? `Phone: ${process.env.COMPANY_PHONE}`
+                                    : ''
+                            }
                         </p>
                     </div>
                 </div>
             `;
-            
+
             await this.transporter.sendMail({
                 from: `"CasaConnect" <${process.env.EMAIL_USER}>`,
                 to: tenant.email,
@@ -294,14 +325,68 @@ class EmailService {
                     {
                         filename: `Lease_Agreement_Unit_${unit.unitNumber}.pdf`,
                         content: buffer,
-                        contentType: 'application/pdf'
-                    }
-                ]
+                        contentType: 'application/pdf',
+                    },
+                ],
             });
-            
+
             logger.info(`Lease document sent to ${tenant.email} for Unit ${unit.unitNumber}`);
         } catch (error) {
             logger.error(`Failed to send lease document email: ${error.message}`);
+            throw error;
+        }
+    }
+
+    async sendCredentialsEmail(tenant, password) {
+        try {
+            const html = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <div style="background: #d0a764; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
+                    <h2 style="margin: 0; text-align: center;">Welcome to CasaConnect</h2>
+                </div>
+                
+                <div style="border: 1px solid #e5e7eb; border-top: none; padding: 30px; border-radius: 0 0 8px 8px;">
+                    <p>Dear ${tenant.firstName},</p>
+
+                    <p>Your account has been created successfully. Below are your login credentials:</p>
+
+                    <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <p><strong>Portal URL:</strong> ${
+                            process.env.PORTAL_URL || 'http://localhost:3000'
+                        }</p>
+                        <p><strong>Email:</strong> ${tenant.email}</p>
+                        <p><strong>Temporary Password:</strong> ${password}</p>
+                    </div>
+
+                    <p><strong>Note:</strong> You’ll be required to change your password on first login.</p>
+
+                    <div style="text-align: center; margin: 25px 0;">
+                        <a href="${process.env.PORTAL_URL || 'http://localhost:3000'}" 
+                            style="background: #d0a764; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                            Login Now
+                        </a>
+                    </div>
+
+                    <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
+
+                    <p style="color: #6b7280; font-size: 14px;">
+                        CasaConnect Property Management<br>
+                        ${process.env.SUPPORT_EMAIL || 'support@casaconnect.com'}
+                    </p>
+                </div>
+            </div>
+        `;
+
+            await this.transporter.sendMail({
+                from: `"CasaConnect" <${process.env.EMAIL_USER}>`,
+                to: tenant.email,
+                subject: 'Your CasaConnect Login Credentials',
+                html,
+            });
+
+            logger.info(`Credentials email sent to ${tenant.email}`);
+        } catch (error) {
+            logger.error(`Failed to send credentials email: ${error.message}`);
             throw error;
         }
     }

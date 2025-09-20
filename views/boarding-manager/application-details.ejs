@@ -28,26 +28,50 @@
         <div class="card">
             <div class="card-header">
                 <h3>Applicant Information</h3>
+                <% if (application.status === 'pending') { %>
+                    <button class="btn btn-secondary btn-small" id="editInfoBtn" onclick="ApplicationDetails.toggleEditMode()">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                <% } %>
             </div>
             <div class="card-body">
-                <div class="info-grid">
-                    <div class="info-item">
-                        <label>Full Name</label>
-                        <span><%= application.firstName %> <%= application.lastName %></span>
+                <form id="applicantInfoForm">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>First Name</label>
+                            <span class="view-mode"><%= application.firstName %></span>
+                            <input type="text" class="edit-mode" name="firstName" value="<%= application.firstName %>" style="display: none" required />
+                        </div>
+                        <div class="info-item">
+                            <label>Last Name</label>
+                            <span class="view-mode"><%= application.lastName %></span>
+                            <input type="text" class="edit-mode" name="lastName" value="<%= application.lastName %>" style="display: none" required />
+                        </div>
+                        <div class="info-item">
+                            <label>Email</label>
+                            <span class="view-mode"><a href="mailto:<%= application.email %>"><%= application.email %></a></span>
+                            <input type="email" class="edit-mode" name="email" value="<%= application.email %>" style="display: none" required />
+                        </div>
+                        <div class="info-item">
+                            <label>Phone</label>
+                            <span class="view-mode"><a href="tel:<%= application.phone %>"><%= application.phone %></a></span>
+                            <input type="tel" class="edit-mode" name="phone" value="<%= application.phone %>" style="display: none" required />
+                        </div>
+                        <div class="info-item">
+                            <label>Submitted</label>
+                            <span><%= new Date(application.createdAt).toLocaleString() %></span>
+                        </div>
                     </div>
-                    <div class="info-item">
-                        <label>Email</label>
-                        <span><a href="mailto:<%= application.email %>"><%= application.email %></a></span>
+                    <div class="edit-actions" style="display: none; margin-top: 1rem">
+                        <button type="button" class="btn btn-secondary" onclick="ApplicationDetails.cancelEdit()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <span class="btn-text">Save Changes</span>
+                            <span class="btn-loading" style="display: none">
+                                <span class="spinner"></span> Saving...
+                            </span>
+                        </button>
                     </div>
-                    <div class="info-item">
-                        <label>Phone</label>
-                        <span><a href="tel:<%= application.phone %>"><%= application.phone %></a></span>
-                    </div>
-                    <div class="info-item">
-                        <label>Submitted</label>
-                        <span><%= new Date(application.createdAt).toLocaleString() %></span>
-                    </div>
-                </div>
+                </form>
             </div>
         </div>
 
@@ -104,13 +128,11 @@
                                         </button>
                                     <% } %>
                                 <% } else if (application.status === 'pending') { %>
-                                    <button class="btn btn-secondary btn-small" onclick="openUploadModal('<%= doc.key %>')">
-                                        Upload
-                                    </button>
+                                    <button class="btn btn-secondary btn-small" onclick="openUploadModal('<%= doc.key %>')">Upload</button>
                                 <% } %>
                             </div>
                         </div>
-                    <% }) %>
+                    <% }); %>
                 </div>
             </div>
         </div>
@@ -157,7 +179,7 @@
             </div>
         <% } %>
 
-        <!-- Review Notes (if reviewed) -->
+        <!-- Review Notes -->
         <% if (application.reviewedBy) { %>
             <div class="card full-width">
                 <div class="card-header">
@@ -185,59 +207,5 @@
                 </div>
             </div>
         <% } %>
-    </div>
-</div>
-
-<!-- Upload Document Modal -->
-<div id="uploadDocumentModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2>Upload Document</h2>
-            <button class="modal-close" onclick="closeUploadModal()">&times;</button>
-        </div>
-        <div class="modal-body">
-            <form id="uploadDocumentForm">
-                <input type="hidden" id="applicationId" value="<%= application._id %>" />
-
-                <div class="form-group">
-                    <label for="documentType">Document Type *</label>
-                    <select id="documentType" name="documentType" required>
-                        <option value="">Select document type...</option>
-                        <% if (!application.documents.id.documentId) { %><option value="id">ID/Driver License</option><% } %>
-                        <% if (!application.documents.ssn.documentId) { %><option value="ssn">Social Security Card</option><% } %>
-                        <% if (!application.documents.criminal.documentId) { %><option value="criminal">Criminal Background Check</option><% } %>
-                        <% if (!application.documents.income.documentId) { %><option value="income">Proof of Income</option><% } %>
-                        <% if (!application.documents.bank.documentId) { %><option value="bank">Bank Statement</option><% } %>
-                        <option value="other">Other Document</option>
-                    </select>
-                </div>
-
-                <div class="form-group" id="customTitleGroup" style="display: none">
-                    <label for="customTitle">Document Title *</label>
-                    <input type="text" id="customTitle" name="customTitle" />
-                </div>
-
-                <div class="form-group">
-                    <label for="documentFile">Select File *</label>
-                    <input type="file" id="documentFile" name="file" required accept=".pdf,.jpg,.jpeg,.png" />
-                    <small class="form-help">Max file size: 10MB. Supported: PDF, JPG, PNG</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="documentComment">Comment (Optional)</label>
-                    <textarea id="documentComment" name="comment" rows="3" placeholder="Add any notes about this document..."></textarea>
-                </div>
-
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeUploadModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">
-                        <span class="btn-text">Upload Document</span>
-                        <span class="btn-loading" style="display: none">
-                            <span class="spinner"></span> Uploading...
-                        </span>
-                    </button>
-                </div>
-            </form>
-        </div>
     </div>
 </div>

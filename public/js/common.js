@@ -2,10 +2,10 @@
 
 // DOM Ready Helper
 function ready(fn) {
-    if (document.readyState !== "loading") {
+    if (document.readyState !== 'loading') {
         fn();
     } else {
-        document.addEventListener("DOMContentLoaded", fn);
+        document.addEventListener('DOMContentLoaded', fn);
     }
 }
 
@@ -14,8 +14,8 @@ class ModalManager {
     static openModal(modalId) {
         const modal = document.getElementById(modalId);
         if (modal) {
-            modal.classList.add("active");
-            document.body.style.overflow = "hidden";
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
             return modal;
         }
     }
@@ -23,41 +23,41 @@ class ModalManager {
     static closeModal(modalId) {
         const modal = document.getElementById(modalId);
         if (modal) {
-            modal.classList.remove("active");
-            document.body.style.overflow = "";
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
         }
     }
 
     static closeAllModals() {
-        document.querySelectorAll(".modal.active").forEach((modal) => {
-            modal.classList.remove("active");
+        document.querySelectorAll('.modal.active').forEach((modal) => {
+            modal.classList.remove('active');
         });
-        document.body.style.overflow = "";
+        document.body.style.overflow = '';
     }
 
     static init() {
         // Close on outside click
-        document.addEventListener("click", (e) => {
-            if (e.target.classList.contains("modal")) {
-                e.target.classList.remove("active");
-                document.body.style.overflow = "";
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) {
+                e.target.classList.remove('active');
+                document.body.style.overflow = '';
             }
         });
 
         // Close on ESC key
-        document.addEventListener("keydown", (e) => {
-            if (e.key === "Escape") {
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
                 this.closeAllModals();
             }
         });
 
         // Close buttons
-        document.querySelectorAll(".modal-close").forEach((btn) => {
-            btn.addEventListener("click", () => {
-                const modal = btn.closest(".modal");
+        document.querySelectorAll('.modal-close').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const modal = btn.closest('.modal');
                 if (modal) {
-                    modal.classList.remove("active");
-                    document.body.style.overflow = "";
+                    modal.classList.remove('active');
+                    document.body.style.overflow = '';
                 }
             });
         });
@@ -66,8 +66,8 @@ class ModalManager {
 
 // Notification System
 class NotificationManager {
-    static show(message, type = "info", duration = 5000, persistent = false) {
-        const notification = document.createElement("div");
+    static show(message, type = 'info', duration = 5000, persistent = false) {
+        const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
         notification.innerHTML = `
             <div class="notification-content">
@@ -77,23 +77,23 @@ class NotificationManager {
         `;
 
         // Add to container or create one
-        let container = document.getElementById("notification-container");
+        let container = document.getElementById('notification-container');
         if (!container) {
-            container = document.createElement("div");
-            container.id = "notification-container";
+            container = document.createElement('div');
+            container.id = 'notification-container';
             document.body.appendChild(container);
         }
 
         container.appendChild(notification);
 
         // Animate in
-        setTimeout(() => notification.classList.add("show"), 10);
+        setTimeout(() => notification.classList.add('show'), 10);
 
         // Close button
-        const closeBtn = notification.querySelector(".notification-close");
+        const closeBtn = notification.querySelector('.notification-close');
         if (closeBtn) {
-            closeBtn.addEventListener("click", () => {
-                notification.classList.remove("show");
+            closeBtn.addEventListener('click', () => {
+                notification.classList.remove('show');
                 setTimeout(() => notification.remove(), 300);
             });
         }
@@ -101,7 +101,7 @@ class NotificationManager {
         if (!persistent) {
             // Auto remove
             setTimeout(() => {
-                notification.classList.remove("show");
+                notification.classList.remove('show');
                 setTimeout(() => notification.remove(), 2000);
             }, duration);
         }
@@ -110,65 +110,62 @@ class NotificationManager {
     }
 
     static success(message, duration) {
-        return this.show(message, "success", duration);
+        return this.show(message, 'success', duration);
     }
 
     static error(message, durationOrPersistent) {
         // If boolean true is passed, make it persistent
         if (durationOrPersistent === true) {
-            return this.show(message, "error", 5000, true);
+            return this.show(message, 'error', 5000, true);
         }
-        return this.show(message, "error", durationOrPersistent);
+        return this.show(message, 'error', durationOrPersistent);
     }
 
     static warning(message, durationOrPersistent) {
         // If boolean true is passed, make it persistent
         if (durationOrPersistent === true) {
-            return this.show(message, "warning", 5000, true);
+            return this.show(message, 'warning', 5000, true);
         }
-        return this.show(message, "warning", durationOrPersistent);
+        return this.show(message, 'warning', durationOrPersistent);
     }
 
     static info(message, duration) {
-        return this.show(message, "info", duration);
+        return this.show(message, 'info', duration);
     }
 }
 
 // Form Utilities
 class FormUtils {
     static formatCardNumber(input) {
-        let value = input.value.replace(/\D/g, "");
-        let formattedValue = value.match(/.{1,4}/g)?.join(" ") || value;
+        let value = input.value.replace(/\D/g, '');
+        let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
         input.value = formattedValue;
     }
 
     static formatExpiry(input) {
-        let value = input.value.replace(/\D/g, "");
+        let value = input.value.replace(/\D/g, '');
         if (value.length >= 2) {
-            value = value.slice(0, 2) + "/" + value.slice(2, 4);
+            value = value.slice(0, 2) + '/' + value.slice(2, 4);
         }
         input.value = value;
     }
 
     static formatCurrency(input) {
-        let value = parseFloat(input.value.replace(/[^0-9.-]/g, ""));
+        let value = parseFloat(input.value.replace(/[^0-9.-]/g, ''));
         if (!isNaN(value)) {
             input.value = value.toFixed(2);
         }
     }
 
     static formatPhone(input) {
-        let value = input.value.replace(/\D/g, "");
+        let value = input.value.replace(/\D/g, '');
         if (value.length > 0) {
             if (value.length <= 3) {
                 value = `(${value}`;
             } else if (value.length <= 6) {
                 value = `(${value.slice(0, 3)}) ${value.slice(3)}`;
             } else {
-                value = `(${value.slice(0, 3)}) ${value.slice(
-                    3,
-                    6
-                )}-${value.slice(6, 10)}`;
+                value = `(${value.slice(0, 3)}) ${value.slice(3, 6)}-${value.slice(6, 10)}`;
             }
         }
         input.value = value;
@@ -179,7 +176,7 @@ class FormUtils {
     }
 
     static validatePhone(phone) {
-        const cleaned = phone.replace(/\D/g, "");
+        const cleaned = phone.replace(/\D/g, '');
         return cleaned.length === 10;
     }
 
@@ -195,16 +192,29 @@ class FormUtils {
 
 // API Helper
 class APIClient {
+    static sanitizeFilename(filename) {
+        return filename.replace(/[^a-zA-Z0-9_.-]/g, '_');
+    }
+
     static async request(url, options = {}) {
         const defaultOptions = {
             headers: {
-                "Content-Type": "application/json",
+                'Content-Type': 'application/json',
             },
         };
 
-        const config = { ...defaultOptions, ...options };
+        const isFormData = options.body instanceof FormData;
+        const config = {
+            ...defaultOptions,
+            ...options,
+            headers: isFormData
+                ? options.headers
+                : { ...defaultOptions.headers, ...options.headers },
+        };
 
         try {
+            console.log('Making API request to:', url);
+            console.log('Request options:', config);
             const response = await fetch(url, config);
 
             // Try to parse the response as JSON regardless of status
@@ -215,17 +225,15 @@ class APIClient {
                 // If response is not JSON, create a basic error structure
                 data = {
                     success: false,
-                    message: response.statusText || "Request failed",
+                    message: response.statusText || 'Request failed',
                 };
             }
 
             if (!response.ok) {
                 // If the backend sent an error message, use it
                 const errorMessage =
-                    data.message ||
-                    data.error ||
-                    `HTTP error! status: ${response.status}`;
-                console.error("API request failed:", errorMessage);
+                    data.message || data.error || `HTTP error! status: ${response.status}`;
+                console.error('API request failed:', errorMessage);
                 return {
                     success: false,
                     error: errorMessage,
@@ -235,72 +243,77 @@ class APIClient {
 
             return { success: true, data };
         } catch (error) {
-            console.error("API request failed:", error);
+            console.error('API request failed:', error);
             return {
                 success: false,
-                error: error.message || "Network error occurred",
+                error: error.message || 'Network error occurred',
             };
         }
     }
 
     static get(url) {
-        return this.request(url, { method: "GET" });
+        return this.request(url, { method: 'GET' });
     }
 
     static post(url, data) {
         const isFormData = data instanceof FormData;
 
+        console.log(`isFormData: ${isFormData}`);
+        console.log(`Data before sanitization: ${JSON.stringify(data)}`);
+
+        if (!isFormData && data?.filename) {
+            data.filename = this.sanitizeFilename(data.filename);
+        }
+
+        console.log(`Data after sanitization: ${JSON.stringify(data)}`);
         return this.request(url, {
-            method: "POST",
+            method: 'POST',
             body: isFormData ? data : JSON.stringify(data),
-            headers: isFormData ? {} : { "Content-Type": "application/json" },
+            headers: isFormData ? {} : { 'Content-Type': 'application/json' },
         });
     }
 
     static put(url, data) {
         return this.request(url, {
-            method: "PUT",
+            method: 'PUT',
             body: JSON.stringify(data),
         });
     }
 
     static delete(url) {
-        return this.request(url, { method: "DELETE" });
+        return this.request(url, { method: 'DELETE' });
     }
 }
 
 // Loading State Manager
 class LoadingManager {
-    static show(element, text = "Loading...") {
+    static show(element, text = 'Loading...') {
         const original = element.innerHTML;
-        element.setAttribute("data-original-content", original);
+        element.setAttribute('data-original-content', original);
         element.disabled = true;
         element.innerHTML = `<span class="spinner"></span> ${text}`;
         return original;
     }
 
     static hide(element) {
-        const original = element.getAttribute("data-original-content");
+        const original = element.getAttribute('data-original-content');
         if (original) {
             element.innerHTML = original;
             element.disabled = false;
-            element.removeAttribute("data-original-content");
+            element.removeAttribute('data-original-content');
         }
     }
 }
 
 // Date Utilities
 class DateUtils {
-    static formatDate(date, format = "MM/DD/YYYY") {
+    static formatDate(date, format = 'MM/DD/YYYY') {
         const d = new Date(date);
-        const month = (d.getMonth() + 1).toString().padStart(2, "0");
-        const day = d.getDate().toString().padStart(2, "0");
+        const month = (d.getMonth() + 1).toString().padStart(2, '0');
+        const day = d.getDate().toString().padStart(2, '0');
         const year = d.getFullYear();
 
-        return format
-            .replace("MM", month)
-            .replace("DD", day)
-            .replace("YYYY", year);
+        return format.replace('MM', month).replace('DD', day).replace('YYYY', year);
     }
 
     static getDaysUntil(date) {
@@ -326,7 +339,7 @@ class StorageHelper {
             const item = localStorage.getItem(key);
             return item ? JSON.parse(item) : null;
         } catch (e) {
-            console.error("Error reading from localStorage:", e);
+            console.error('Error reading from localStorage:', e);
             return null;
         }
     }
@@ -336,7 +349,7 @@ class StorageHelper {
             localStorage.setItem(key, JSON.stringify(value));
             return true;
         } catch (e) {
-            console.error("Error writing to localStorage:", e);
+            console.error('Error writing to localStorage:', e);
             return false;
         }
     }
@@ -381,9 +394,9 @@ ready(() => {
     ModalManager.init();
 
     // Add notification styles if not present
-    if (!document.getElementById("notification-styles")) {
-        const styles = document.createElement("style");
-        styles.id = "notification-styles";
+    if (!document.getElementById('notification-styles')) {
+        const styles = document.createElement('style');
+        styles.id = 'notification-styles';
         styles.textContent = `
       #notification-container {
         position: fixed;
@@ -459,21 +472,19 @@ ready(() => {
 
     // Auto-format inputs
     document.querySelectorAll('[data-format="card"]').forEach((input) => {
-        input.addEventListener("input", () =>
-            FormUtils.formatCardNumber(input)
-        );
+        input.addEventListener('input', () => FormUtils.formatCardNumber(input));
     });
 
     document.querySelectorAll('[data-format="expiry"]').forEach((input) => {
-        input.addEventListener("input", () => FormUtils.formatExpiry(input));
+        input.addEventListener('input', () => FormUtils.formatExpiry(input));
     });
 
     document.querySelectorAll('[data-format="currency"]').forEach((input) => {
-        input.addEventListener("blur", () => FormUtils.formatCurrency(input));
+        input.addEventListener('blur', () => FormUtils.formatCurrency(input));
     });
 
     document.querySelectorAll('[data-format="phone"]').forEach((input) => {
-        input.addEventListener("input", () => FormUtils.formatPhone(input));
+        input.addEventListener('input', () => FormUtils.formatPhone(input));
     });
 });
 

@@ -117,6 +117,82 @@ exports.createApplication = async (req, res) => {
     }
 };
 
+// Update Application Details
+exports.updateApplication = async (req, res) => {
+    try {
+        const { applicationId } = req.params;
+        const { firstName, lastName, email, phone } = req.body;
+
+        const application = await TenantApplication.findById(applicationId);
+
+        if (!application) {
+            return res.status(404).json({
+                success: false,
+                message: 'Application not found',
+            });
+        }
+
+        // Verify ownership
+        if (application.submittedBy.toString() !== req.session.userId) {
+            return res.status(403).json({
+                success: false,
+                message: 'Unauthorized',
+            });
+        }
+
+        // Only allow editing pending applications
+        if (application.status !== 'pending') {
+            return res.status(400).json({
+                success: false,
+                message: 'Cannot edit applications that are not pending',
+            });
+        }
+
+        // Check if email is being changed and if it's already in use
+        if (email.toLowerCase() !== application.email.toLowerCase()) {
+            const existingApp = await TenantApplication.findOne({
+                email: email.toLowerCase(),
+                _id: { $ne: applicationId },
+            });
+
+            if (existingApp) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'An application already exists for this email',
+                });
+            }
+        }
+
+        // Update application
+        application.firstName = firstName;
+        application.lastName = lastName;
+        application.email = email.toLowerCase();
+        application.phone = phone;
+        application.updatedAt = new Date();
+
+        await application.save();
+
+        logger.info(`Application ${applicationId} updated by user ${req.session.userId}`);
+
+        res.json({
+            success: true,
+            message: 'Application updated successfully',
+            application: {
+                firstName: application.firstName,
+                lastName: application.lastName,
+                email: application.email,
+                phone: application.phone,
+            },
+        });
+    } catch (error) {
+        logger.error(`Update application error: ${error}`);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update application',
+        });
+    }
+};
+
 // Upload Application Document
 exports.uploadDocument = async (req, res) => {
     try {
@@ -188,7 +264,9 @@ exports.uploadDocument = async (req, res) => {
 
         await application.save();
 
-        logger.info(`Document uploaded for application ${applicationId}: ${documentType}`);
+        logger.info(
+            `Document uploaded for application with id ${applicationId}, document type: ${documentType}`
+        );
         res.json({
             success: true,
             message: 'Document uploaded successfully',

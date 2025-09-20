@@ -6,6 +6,7 @@ CasaConnect.ready(() => {
 
 const ApplicationDetails = {
     applicationId: null,
+    isEditMode: false,
 
     init() {
         const element = document.querySelector('[data-application-id]');
@@ -15,6 +16,48 @@ const ApplicationDetails = {
 
         this.initializeUploadForm();
         this.initializeDocumentTypeSelect();
+        this.initializeEditForm();
+    },
+
+    initializeEditForm() {
+        const form = document.getElementById('applicantInfoForm');
+        if (!form) return;
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await this.handleUpdateApplication(e);
+        });
+    },
+
+    toggleEditMode() {
+        this.isEditMode = !this.isEditMode;
+
+        const viewElements = document.querySelectorAll('.view-mode');
+        const editElements = document.querySelectorAll('.edit-mode');
+        const editActions = document.querySelector('.edit-actions');
+        const editBtn = document.getElementById('editInfoBtn');
+
+        if (this.isEditMode) {
+            viewElements.forEach((el) => (el.style.display = 'none'));
+            editElements.forEach((el) => (el.style.display = 'block'));
+            editActions.style.display = 'flex';
+            editActions.style.gap = '0.5rem';
+            editBtn.style.display = 'none';
+        } else {
+            viewElements.forEach((el) => (el.style.display = ''));
+            editElements.forEach((el) => (el.style.display = 'none'));
+            editActions.style.display = 'none';
+            editBtn.style.display = '';
+        }
+    },
+
+    cancelEdit() {
+        this.toggleEditMode();
+        // Reset form values to original
+        const form = document.getElementById('applicantInfoForm');
+        if (form) {
+            form.reset();
+        }
     },
 
     initializeUploadForm() {
@@ -42,6 +85,58 @@ const ApplicationDetails = {
                     customTitleInput.removeAttribute('required');
                 }
             });
+        }
+    },
+
+    async handleUpdateApplication(e) {
+        const form = e.target;
+        const submitBtn = form.querySelector('button[type="submit"]');
+
+        if (window.FormManager) {
+            FormManager.setSubmitButtonLoading(submitBtn, true, 'Saving...');
+        }
+
+        try {
+            const formData = new FormData(form);
+            const data = {
+                firstName: formData.get('firstName'),
+                lastName: formData.get('lastName'),
+                email: formData.get('email'),
+                phone: formData.get('phone'),
+            };
+
+            const response = await CasaConnect.APIClient.put(
+                `/api/boarding/application/${this.applicationId}`,
+                data
+            );
+
+            if (response.success) {
+                CasaConnect.NotificationManager.success('Application updated successfully!');
+
+                // Update view mode spans with new values
+                document.querySelectorAll('.view-mode').forEach((span, index) => {
+                    const editInput = document.querySelectorAll('.edit-mode')[index];
+                    if (editInput) {
+                        if (editInput.type === 'email') {
+                            span.innerHTML = `<a href="mailto:${editInput.value}">${editInput.value}</a>`;
+                        } else if (editInput.type === 'tel') {
+                            span.innerHTML = `<a href="tel:${editInput.value}">${editInput.value}</a>`;
+                        } else {
+                            span.textContent = editInput.value;
+                        }
+                    }
+                });
+
+                this.toggleEditMode();
+            } else {
+                throw new Error(response.error || 'Failed to update application');
+            }
+        } catch (error) {
+            CasaConnect.NotificationManager.error(error.message);
+        } finally {
+            if (window.FormManager) {
+                FormManager.setSubmitButtonLoading(submitBtn, false);
+            }
         }
     },
 
