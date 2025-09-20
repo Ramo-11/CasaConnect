@@ -1,0 +1,234 @@
+<!-- Application Review Details -->
+<div class="review-details-container" data-application-id="<%= application._id %>">
+    <!-- Page Header -->
+    <%- include('../partials/page-header', {
+        headerTitle: 'Review Application',
+        headerSubtitle: application.firstName + ' ' + application.lastName,
+        backUrl: '/manager/applications-review',
+        backText: 'Back to Applications',
+        headerActions: application.status === 'pending' ? [
+            {
+                text: 'Approve Application',
+                icon: 'fas fa-check',
+                onclick: "approveApplication('" + application._id + "')",
+                btnClass: 'btn-success'
+            },
+            {
+                text: 'Decline Application',
+                icon: 'fas fa-times',
+                onclick: "declineApplication('" + application._id + "')",
+                btnClass: 'btn-danger'
+            }
+        ] : []
+    }) %>
+
+    <!-- Application Status -->
+    <% if (application.status !== 'pending') { %>
+    <div class="status-banner status-<%= application.status %>">
+        <div class="status-content">
+            <i class="fas fa-<%= application.status === 'approved' ? 'check-circle' : 'times-circle' %>"></i>
+            <div>
+                <h3>Application <%= application.status.charAt(0).toUpperCase() + application.status.slice(1) %></h3>
+                <p>Reviewed on <%= new Date(application.reviewedAt).toLocaleDateString() %></p>
+            </div>
+        </div>
+    </div>
+    <% } %>
+
+    <!-- Main Content -->
+    <div class="review-grid">
+        <!-- Applicant Information -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Applicant Information</h3>
+            </div>
+            <div class="card-body">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>Full Name</label>
+                        <span><%= application.firstName %> <%= application.lastName %></span>
+                    </div>
+                    <div class="info-item">
+                        <label>Email</label>
+                        <span><a href="mailto:<%= application.email %>"><%= application.email %></a></span>
+                    </div>
+                    <div class="info-item">
+                        <label>Phone</label>
+                        <span><a href="tel:<%= application.phone %>"><%= application.phone %></a></span>
+                    </div>
+                    <div class="info-item">
+                        <label>Submitted By</label>
+                        <span><%= application.submittedBy.firstName %> <%= application.submittedBy.lastName %></span>
+                    </div>
+                    <div class="info-item">
+                        <label>Submission Date</label>
+                        <span><%= new Date(application.createdAt).toLocaleString() %></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Document Review -->
+        <div class="card full-width">
+            <div class="card-header">
+                <h3>Document Verification</h3>
+                <div class="document-status-summary">
+                    <% let completeCount = 0;
+                    if (application.documents.id.documentId) completeCount++;
+                    if (application.documents.ssn.documentId) completeCount++;
+                    if (application.documents.criminal.documentId) completeCount++;
+                    if (application.documents.income.documentId) completeCount++;
+                    if (application.documents.bank.documentId) completeCount++; %>
+                    <span class="<%= completeCount === 5 ? 'all-complete' : 'incomplete' %>">
+                        <%= completeCount %>/5 Required Documents
+                    </span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="documents-review-list">
+                    <% const requiredDocs = [
+                        { key: 'id', label: 'Government-Issued ID', icon: 'id-card', description: 'Driver\'s license or state ID' },
+                        { key: 'ssn', label: 'Social Security Card', icon: 'file-shield', description: 'SSN verification' },
+                        { key: 'criminal', label: 'Criminal Background Check', icon: 'user-shield', description: 'Background verification' },
+                        { key: 'income', label: 'Proof of Income', icon: 'money-check', description: 'Pay stubs or employment letter' },
+                        { key: 'bank', label: 'Bank Statement', icon: 'university', description: 'Financial verification' }
+                    ]; %>
+                    <% requiredDocs.forEach(doc => { %>
+                        <div class="document-review-item <%= application.documents[doc.key].documentId ? 'verified' : 'missing' %>">
+                            <div class="document-icon">
+                                <i class="fas fa-<%= doc.icon %>"></i>
+                            </div>
+                            <div class="document-details">
+                                <h4><%= doc.label %></h4>
+                                <p class="document-description"><%= doc.description %></p>
+                                <% if (application.documents[doc.key].documentId) { %>
+                                    <div class="document-meta">
+                                        <span class="upload-date">
+                                            <i class="fas fa-calendar"></i>
+                                            Uploaded <%= new Date(application.documents[doc.key].uploadedAt).toLocaleDateString() %>
+                                        </span>
+                                        <% if (application.documents[doc.key].comment) { %>
+                                            <div class="document-comment">
+                                                <i class="fas fa-comment"></i>
+                                                <%= application.documents[doc.key].comment %>
+                                            </div>
+                                        <% } %>
+                                    </div>
+                                <% } else { %>
+                                    <span class="missing-text">
+                                        <i class="fas fa-exclamation-triangle"></i> Document not provided
+                                    </span>
+                                <% } %>
+                            </div>
+                            <div class="document-actions">
+                                <% if (application.documents[doc.key].documentId) { %>
+                                    <button class="btn btn-primary btn-small" onclick="viewDocument('<%= application.documents[doc.key].documentId._id %>')">
+                                        <i class="fas fa-eye"></i> View
+                                    </button>
+                                    <button class="btn btn-secondary btn-small" onclick="downloadDocument('<%= application.documents[doc.key].documentId._id %>')">
+                                        <i class="fas fa-download"></i> Download
+                                    </button>
+                                <% } %>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+
+                <% if (!application.hasAllRequiredDocuments()) { %>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Incomplete Application:</strong> Not all required documents have been provided. You may still approve the application if other verification methods are available.
+                    </div>
+                <% } %>
+            </div>
+        </div>
+
+        <% if (application.status === 'pending') { %>
+        <!-- Quick Actions -->
+        <div class="card full-width">
+            <div class="card-header">
+                <h3>Review Actions</h3>
+            </div>
+            <div class="card-body">
+                <div class="review-actions">
+                    <button class="action-button approve" onclick="approveApplication('<%= application._id %>')">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Approve & Create Tenant Account</span>
+                    </button>
+                    <button class="action-button decline" onclick="declineApplication('<%= application._id %>')">
+                        <i class="fas fa-times-circle"></i>
+                        <span>Decline Application</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <% } %>
+    </div>
+</div>
+
+<!-- Approve Modal -->
+<div id="approveModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Approve Application</h2>
+            <button class="modal-close" onclick="closeApproveModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="approveForm">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    Approving this application will create a tenant account with the provided information.
+                </div>
+
+                <div class="form-group">
+                    <label for="tempPassword">Temporary Password *</label>
+                    <div class="password-input-group">
+                        <input type="text" id="tempPassword" name="createPassword" required />
+                        <button type="button" class="btn btn-secondary" onclick="generateTempPassword()">
+                            Generate
+                        </button>
+                    </div>
+                    <small class="form-help">The tenant will be required to change this on first login</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="approvalNotes">Approval Notes (Optional)</label>
+                    <textarea id="approvalNotes" name="notes" rows="3" placeholder="Any notes about the approval..."></textarea>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeApproveModal()">Cancel</button>
+                    <button type="submit" class="btn btn-success">Approve & Create Account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Decline Modal -->
+<div id="declineModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Decline Application</h2>
+            <button class="modal-close" onclick="closeDeclineModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="declineForm">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    This action cannot be undone. The applicant will be notified of the decision.
+                </div>
+
+                <div class="form-group">
+                    <label for="declineReason">Reason for Declining *</label>
+                    <textarea id="declineReason" name="reason" rows="4" required placeholder="Please provide a reason for declining this application..."></textarea>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeDeclineModal()">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Decline Application</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

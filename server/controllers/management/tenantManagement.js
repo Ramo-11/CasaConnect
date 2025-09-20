@@ -1,18 +1,18 @@
-const User = require("../../../models/User");
+const User = require('../../../models/User');
 const Lease = require('../../../models/Lease');
-const Unit = require("../../../models/Unit");
+const Unit = require('../../../models/Unit');
 const Document = require('../../../models/Document');
-const Payment = require("../../../models/Payment");
-const ServiceRequest = require("../../../models/ServiceRequest");
-const Notification = require("../../../models/Notification");
-const nodemailer = require("nodemailer");
-const { logger } = require("../../logger");
-require("dotenv").config();
+const Payment = require('../../../models/Payment');
+const ServiceRequest = require('../../../models/ServiceRequest');
+const Notification = require('../../../models/Notification');
+const nodemailer = require('nodemailer');
+const { logger } = require('../../logger');
+require('dotenv').config();
 
 function generateTempPassword() {
     const length = 12;
-    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%";
-    let password = "";
+    const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%';
+    let password = '';
     for (let i = 0; i < length; i++) {
         password += charset.charAt(Math.floor(Math.random() * charset.length));
     }
@@ -21,7 +21,7 @@ function generateTempPassword() {
 
 async function sendCredentialsEmail(tenant, password) {
     const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST || "smtp.gmail.com",
+        host: process.env.SMTP_HOST || 'smtp.gmail.com',
         port: process.env.SMTP_PORT || 587,
         secure: false,
         auth: {
@@ -31,15 +31,17 @@ async function sendCredentialsEmail(tenant, password) {
     });
 
     const mailOptions = {
-        from: process.env.EMAIL_USER || "noreply@casaconnect.com",
+        from: process.env.EMAIL_USER || 'noreply@casaconnect.com',
         to: tenant.email,
-        subject: "Your CasaConnect Portal Login Credentials",
+        subject: 'Your CasaConnect Portal Login Credentials',
         html: `
             <h2>Welcome to CasaConnect Portal</h2>
             <p>Dear ${tenant.firstName},</p>
             <p>Your account has been created. Here are your login credentials:</p>
             <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <p><strong>Portal URL:</strong> ${process.env.PORTAL_URL || "http://localhost:3000"}</p>
+                <p><strong>Portal URL:</strong> ${
+                    process.env.PORTAL_URL || 'http://localhost:3000'
+                }</p>
                 <p><strong>Email:</strong> ${tenant.email}</p>
                 <p><strong>Temporary Password:</strong> ${password}</p>
             </div>
@@ -61,22 +63,14 @@ async function sendCredentialsEmail(tenant, password) {
 // Create Tenant Account
 exports.createTenant = async (req, res) => {
     try {
-        const {
-            firstName,
-            lastName,
-            email,
-            phone,
-            password,
-            sendCredentials,
-            notes
-        } = req.body;
+        const { firstName, lastName, email, phone, password, sendCredentials, notes } = req.body;
 
         // Check if email already exists
         const existingUser = await User.findOne({ email: email.toLowerCase() });
         if (existingUser) {
             return res.status(400).json({
                 success: false,
-                message: "Email already registered",
+                message: 'Email already registered',
             });
         }
 
@@ -87,7 +81,7 @@ exports.createTenant = async (req, res) => {
             email: email.toLowerCase(),
             phone,
             password, // Will be hashed by pre-save hook
-            role: "tenant",
+            role: 'tenant',
             notes: notes || null,
             isActive: true,
         });
@@ -97,28 +91,28 @@ exports.createTenant = async (req, res) => {
         logger.info(`Tenant created: ${tenant.fullName} (${tenant.email})`);
 
         // Send credentials email if requested
-        if (sendCredentials === "on") {
+        if (sendCredentials === 'on') {
             await sendCredentialsEmail(tenant, password);
         }
 
         // Create notification for manager
         await Notification.create({
             recipient: req.session.userId,
-            type: "system",
-            title: "Tenant Account Created",
+            type: 'system',
+            title: 'Tenant Account Created',
             message: `Account created for ${tenant.fullName}`,
         });
 
         res.json({
             success: true,
-            message: "Tenant account created successfully",
+            message: 'Tenant account created successfully',
             tenantId: tenant._id,
         });
     } catch (error) {
         logger.error(`Create tenant error: ${error}`);
         res.status(500).json({
             success: false,
-            message: "Failed to create tenant account",
+            message: 'Failed to create tenant account',
         });
     }
 };
@@ -129,10 +123,10 @@ exports.sendCredentials = async (req, res) => {
         const { tenantId, newPassword } = req.body;
 
         const tenant = await User.findById(tenantId);
-        if (!tenant || tenant.role !== "tenant") {
+        if (!tenant || tenant.role !== 'tenant') {
             return res.status(404).json({
                 success: false,
-                message: "Tenant not found",
+                message: 'Tenant not found',
             });
         }
 
@@ -154,13 +148,13 @@ exports.sendCredentials = async (req, res) => {
 
         res.json({
             success: true,
-            message: "Credentials sent successfully",
+            message: 'Credentials sent successfully',
         });
     } catch (error) {
         logger.error(`Send credentials error: ${error}`);
         res.status(500).json({
             success: false,
-            message: "Failed to send credentials",
+            message: 'Failed to send credentials',
         });
     }
 };
@@ -171,65 +165,59 @@ exports.viewTenant = async (req, res) => {
         const { tenantId } = req.params;
 
         const tenant = await User.findById(tenantId);
-        if (!tenant || tenant.role !== "tenant") {
-            return res.status(404).render("error", {
-                title: "Tenant Not Found",
-                message: "Tenant not found",
+        if (!tenant || tenant.role !== 'tenant') {
+            return res.status(404).render('error', {
+                title: 'Tenant Not Found',
+                message: 'Tenant not found',
             });
         }
 
         const activeLease = await Lease.findOne({
             tenant: tenantId,
-            status: 'active'
+            status: 'active',
         }).populate('unit');
 
-        const payments = await Payment.find({ tenant: tenantId })
-            .sort("-createdAt")
-            .limit(12);
+        const payments = await Payment.find({ tenant: tenantId }).sort('-createdAt').limit(12);
 
         const serviceRequests = await ServiceRequest.find({ tenant: tenantId })
-            .sort("-createdAt")
+            .sort('-createdAt')
             .limit(10);
 
         const availableUnitsForLease = await Unit.aggregate([
             {
                 $lookup: {
-                    from: "leases",
-                    localField: "_id",
-                    foreignField: "unit",
-                    pipeline: [
-                        { $match: { status: "active" } }
-                    ],
-                    as: "activeLeases"
-                }
+                    from: 'leases',
+                    localField: '_id',
+                    foreignField: 'unit',
+                    pipeline: [{ $match: { status: 'active' } }],
+                    as: 'activeLeases',
+                },
             },
             { $match: { activeLeases: { $size: 0 } } },
-            { $project: { unitNumber: 1, monthlyRent: 1, streetAddress: 1 } }
+            { $project: { unitNumber: 1, monthlyRent: 1, streetAddress: 1 } },
         ]);
 
         // Get tenants without active leases (for additional tenants if needed)
         const availableTenantsForLease = await User.aggregate([
-            { $match: { role: "tenant" } },
+            { $match: { role: 'tenant' } },
             {
                 $lookup: {
-                    from: "leases",
-                    localField: "_id",
-                    foreignField: "tenant",
-                    pipeline: [
-                        { $match: { status: "active" } }
-                    ],
-                    as: "activeLeases"
-                }
+                    from: 'leases',
+                    localField: '_id',
+                    foreignField: 'tenant',
+                    pipeline: [{ $match: { status: 'active' } }],
+                    as: 'activeLeases',
+                },
             },
             { $match: { activeLeases: { $size: 0 } } },
-            { $project: { firstName: 1, lastName: 1, email: 1 } }
+            { $project: { firstName: 1, lastName: 1, email: 1 } },
         ]);
-    
-        res.render("manager/tenant-details", {
+
+        res.render('manager/tenant-details', {
             title: `Tenant: ${tenant.firstName} ${tenant.lastName}`,
-            layout: "layout",
-            additionalCSS: ["manager/tenant-details.css"],
-            additionalJS: ["pages/manager-tenant-details.js"],
+            layout: 'layout',
+            additionalCSS: ['manager/tenant-details.css'],
+            additionalJS: ['manager/tenant-details.js'],
             user: req.session.user || { role: 'manager' },
             tenant,
             activeLease,
@@ -242,9 +230,9 @@ exports.viewTenant = async (req, res) => {
         });
     } catch (error) {
         logger.error(`View tenant error: ${error}`);
-        res.status(500).render("error", {
-            title: "Error",
-            message: "Failed to load tenant details",
+        res.status(500).render('error', {
+            title: 'Error',
+            message: 'Failed to load tenant details',
         });
     }
 };
@@ -255,70 +243,66 @@ exports.editTenant = async (req, res) => {
         const { tenantId } = req.params;
 
         const tenant = await User.findById(tenantId);
-        if (!tenant || tenant.role !== "tenant") {
-            return res.status(404).render("error", {
-                title: "Tenant Not Found",
-                message: "Tenant not found",
+        if (!tenant || tenant.role !== 'tenant') {
+            return res.status(404).render('error', {
+                title: 'Tenant Not Found',
+                message: 'Tenant not found',
             });
         }
 
         const activeLease = await Lease.findOne({
             tenant: tenantId,
-            status: 'active'
+            status: 'active',
         }).populate('unit');
 
         // Get available units for lease creation (units without active leases)
         const availableUnitsForLease = await Unit.aggregate([
             {
                 $lookup: {
-                    from: "leases",
-                    localField: "_id",
-                    foreignField: "unit",
-                    pipeline: [
-                        { $match: { status: "active" } }
-                    ],
-                    as: "activeLeases"
-                }
+                    from: 'leases',
+                    localField: '_id',
+                    foreignField: 'unit',
+                    pipeline: [{ $match: { status: 'active' } }],
+                    as: 'activeLeases',
+                },
             },
             { $match: { activeLeases: { $size: 0 } } },
-            { $project: { unitNumber: 1, monthlyRent: 1, streetAddress: 1 } }
+            { $project: { unitNumber: 1, monthlyRent: 1, streetAddress: 1 } },
         ]);
 
         // Get tenants without active leases (for additional tenants if needed)
         const availableTenantsForLease = await User.aggregate([
-            { $match: { role: "tenant" } },
+            { $match: { role: 'tenant' } },
             {
                 $lookup: {
-                    from: "leases",
-                    localField: "_id",
-                    foreignField: "tenant",
-                    pipeline: [
-                        { $match: { status: "active" } }
-                    ],
-                    as: "activeLeases"
-                }
+                    from: 'leases',
+                    localField: '_id',
+                    foreignField: 'tenant',
+                    pipeline: [{ $match: { status: 'active' } }],
+                    as: 'activeLeases',
+                },
             },
             { $match: { activeLeases: { $size: 0 } } },
-            { $project: { firstName: 1, lastName: 1, email: 1 } }
+            { $project: { firstName: 1, lastName: 1, email: 1 } },
         ]);
 
-        res.render("manager/tenant-edit", {
+        res.render('manager/tenant-edit', {
             title: `Edit Tenant: ${tenant.firstName} ${tenant.lastName}`,
-            layout: "layout",
+            layout: 'layout',
             additionalCSS: ['manager/tenant-edit.css'],
-            additionalJS: ["pages/manager-tenant-edit.js"],
+            additionalJS: ['manager/tenant-edit.js'],
             user: req.session.user || { role: 'manager' },
             tenant,
             activeLease,
             availableUnitsForLease,
             availableTenantsForLease,
-            path: req.path
+            path: req.path,
         });
     } catch (error) {
         logger.error(`Edit tenant error: ${error}`);
-        res.status(500).render("error", {
-            title: "Error",
-            message: "Failed to load tenant edit form",
+        res.status(500).render('error', {
+            title: 'Error',
+            message: 'Failed to load tenant edit form',
         });
     }
 };
@@ -330,16 +314,16 @@ exports.updateTenant = async (req, res) => {
         const updates = req.body;
 
         const tenant = await User.findById(tenantId);
-        if (!tenant || tenant.role !== "tenant") {
+        if (!tenant || tenant.role !== 'tenant') {
             return res.status(404).json({
                 success: false,
-                message: "Tenant not found",
+                message: 'Tenant not found',
             });
         }
 
         // Update tenant fields
         Object.keys(updates).forEach((key) => {
-            if (key !== "password" && key !== "_id" && key !== "role") {
+            if (key !== 'password' && key !== '_id' && key !== 'role') {
                 tenant[key] = updates[key];
             }
         });
@@ -348,13 +332,13 @@ exports.updateTenant = async (req, res) => {
 
         res.json({
             success: true,
-            message: "Tenant updated successfully",
+            message: 'Tenant updated successfully',
         });
     } catch (error) {
         logger.error(`Update tenant error: ${error}`);
         res.status(500).json({
             success: false,
-            message: "Failed to update tenant",
+            message: 'Failed to update tenant',
         });
     }
 };
@@ -362,24 +346,24 @@ exports.updateTenant = async (req, res) => {
 // Get Tenants List
 exports.getTenants = async (req, res) => {
     try {
-        const tenants = await User.find({ role: "tenant" }).sort("-createdAt");
+        const tenants = await User.find({ role: 'tenant' }).sort('-createdAt');
 
         // Get active leases for all tenants
         const activeLeases = await Lease.find({
-            tenant: { $in: tenants.map(t => t._id) },
-            status: 'active'
+            tenant: { $in: tenants.map((t) => t._id) },
+            status: 'active',
         }).populate('unit');
 
         // Create lease map
         const leaseMap = {};
-        activeLeases.forEach(lease => {
+        activeLeases.forEach((lease) => {
             leaseMap[lease.tenant.toString()] = lease;
         });
 
         // Get available units for new leases
-        const occupiedUnitIds = activeLeases.map(l => l.unit._id.toString());
+        const occupiedUnitIds = activeLeases.map((l) => l.unit._id.toString());
         const availableUnits = await Unit.find({
-            _id: { $nin: occupiedUnitIds }
+            _id: { $nin: occupiedUnitIds },
         });
 
         // Check payment status for each tenant
@@ -394,10 +378,10 @@ exports.getTenants = async (req, res) => {
                     rentPaid = await Payment.findOne({
                         tenant: tenant._id,
                         lease: activeLease._id,
-                        type: "rent",
+                        type: 'rent',
                         month: currentMonth,
                         year: currentYear,
-                        status: "completed",
+                        status: 'completed',
                     });
                 }
 
@@ -405,29 +389,28 @@ exports.getTenants = async (req, res) => {
                     ...tenant.toObject(),
                     activeLease,
                     unitId: activeLease?.unit || null,
-                    paymentStatus: rentPaid ? "current" : (activeLease ? "due" : "no-lease"),
+                    paymentStatus: rentPaid ? 'current' : activeLease ? 'due' : 'no-lease',
                 };
             })
         );
 
-        res.render("manager/tenants", {
-            title: "Tenants Management",
-            layout: "layout",
-            additionalCSS: ["manager/tenants.css"],
-            additionalJS: ["pages/manager-tenants.js"],
+        res.render('manager/tenants', {
+            title: 'Tenants Management',
+            layout: 'layout',
+            additionalCSS: ['manager/tenants.css'],
+            additionalJS: ['manager/tenants.js'],
             user: req.session.user || { role: 'manager' },
             tenants: tenantsWithFullInfo,
             availableUnits,
             availableUnitsForLease: availableUnits,
-            availableTenantsForLease: tenants.filter(t => !t.activeLease),
-            path: req.path
+            availableTenantsForLease: tenants.filter((t) => !t.activeLease),
+            path: req.path,
         });
-
     } catch (error) {
         logger.error(`Get tenants error: ${error}`);
-        res.status(500).render("error", {
-            title: "Error",
-            message: "Failed to load tenants",
+        res.status(500).render('error', {
+            title: 'Error',
+            message: 'Failed to load tenants',
         });
     }
 };
@@ -438,17 +421,17 @@ exports.deleteTenant = async (req, res) => {
         const { tenantId } = req.params;
 
         const tenant = await User.findById(tenantId);
-        if (!tenant || tenant.role !== "tenant") {
+        if (!tenant || tenant.role !== 'tenant') {
             return res.status(404).json({
                 success: false,
-                message: "Tenant not found",
+                message: 'Tenant not found',
             });
         }
 
         // Terminate any active leases
         const activeLease = await Lease.findOne({
             tenant: tenantId,
-            status: 'active'
+            status: 'active',
         });
 
         if (activeLease) {
@@ -462,13 +445,13 @@ exports.deleteTenant = async (req, res) => {
 
         res.json({
             success: true,
-            message: "Tenant deleted successfully",
+            message: 'Tenant deleted successfully',
         });
     } catch (error) {
         logger.error(`Delete tenant error: ${error}`);
         res.status(500).json({
             success: false,
-            message: "Failed to delete tenant",
+            message: 'Failed to delete tenant',
         });
     }
 };
@@ -482,7 +465,7 @@ exports.resetPassword = async (req, res) => {
         if (!tenant || tenant.role !== 'tenant') {
             return res.status(404).json({
                 success: false,
-                message: 'Tenant not found'
+                message: 'Tenant not found',
             });
         }
 
@@ -495,34 +478,33 @@ exports.resetPassword = async (req, res) => {
 
         res.json({
             success: true,
-            message: 'Password reset successfully'
+            message: 'Password reset successfully',
         });
     } catch (error) {
         logger.error(`Reset password error: ${error}`);
         res.status(500).json({
             success: false,
-            message: 'Failed to reset password'
+            message: 'Failed to reset password',
         });
     }
 };
 
-
 exports.suspendAccount = async (req, res) => {
     try {
         const { tenantId } = req.params;
-        const tenant = await User.findById(tenantId); 
-        
+        const tenant = await User.findById(tenantId);
+
         if (!tenant || tenant.role !== 'tenant') {
             return res.status(404).json({
                 success: false,
-                message: 'Tenant not found'
+                message: 'Tenant not found',
             });
         }
 
         if (!tenant.isActive) {
             return res.status(400).json({
                 success: false,
-                message: 'Account is already suspended'
+                message: 'Account is already suspended',
             });
         }
 
@@ -533,13 +515,13 @@ exports.suspendAccount = async (req, res) => {
 
         res.json({
             success: true,
-            message: 'Account suspended successfully'
+            message: 'Account suspended successfully',
         });
     } catch (error) {
         logger.error(`Suspend account error: ${error}`);
         res.status(500).json({
             success: false,
-            message: 'Failed to suspend account'
+            message: 'Failed to suspend account',
         });
     }
 };
@@ -548,21 +530,21 @@ exports.activateAccount = async (req, res) => {
     try {
         const { tenantId } = req.params;
         const tenant = await User.findById(tenantId);
-        
+
         if (!tenant || tenant.role !== 'tenant') {
             return res.status(404).json({
                 success: false,
-                message: 'Tenant not found'
+                message: 'Tenant not found',
             });
         }
 
         if (tenant.isActive) {
             return res.status(400).json({
                 success: false,
-                message: 'Account is already active'
+                message: 'Account is already active',
             });
         }
-        
+
         tenant.isActive = true;
         tenant.suspendedAt = null;
         tenant.suspendedBy = null;
@@ -570,13 +552,13 @@ exports.activateAccount = async (req, res) => {
 
         res.json({
             success: true,
-            message: 'Account activated successfully'
+            message: 'Account activated successfully',
         });
     } catch (error) {
         logger.error(`Activate account error: ${error}`);
         res.status(500).json({
             success: false,
-            message: 'Failed to activate account'
+            message: 'Failed to activate account',
         });
     }
 };
@@ -585,7 +567,7 @@ exports.activateAccount = async (req, res) => {
 exports.exportTenantData = async (req, res) => {
     try {
         const { tenantId } = req.params;
-        
+
         const tenant = await User.findById(tenantId).select('-password');
         const lease = await Lease.findOne({ tenant: tenantId, status: 'active' }).populate('unit');
         const payments = await Payment.find({ tenant: tenantId }).sort('-createdAt');
@@ -595,26 +577,26 @@ exports.exportTenantData = async (req, res) => {
         const exportData = {
             tenant: tenant.toObject(),
             activeLease: lease ? lease.toObject() : null,
-            payments: payments.map(p => p.toObject()),
-            serviceRequests: serviceRequests.map(sr => sr.toObject()),
-            documents: documents.map(d => ({
+            payments: payments.map((p) => p.toObject()),
+            serviceRequests: serviceRequests.map((sr) => sr.toObject()),
+            documents: documents.map((d) => ({
                 title: d.title,
                 type: d.type,
-                createdAt: d.createdAt
+                createdAt: d.createdAt,
             })),
             exportedAt: new Date(),
-            exportedBy: req.session.userId
+            exportedBy: req.session.userId,
         };
 
         res.json({
             success: true,
-            data: exportData
+            data: exportData,
         });
     } catch (error) {
         logger.error(`Export tenant data error: ${error}`);
         res.status(500).json({
             success: false,
-            message: 'Failed to export tenant data'
+            message: 'Failed to export tenant data',
         });
     }
 };

@@ -192,5 +192,43 @@
         </div>
       </div>
     </div>
+
+    <!-- Tenant Applications Card -->
+    <div class="card">
+      <div class="card-header">
+        <h3>Tenant Applications</h3>
+        <a href="/manager/applications-review" class="link-view-all">Review All Applications</a>
+      </div>
+      <div class="card-body">
+        <div class="applications-summary">
+          <p>Review and approve tenant applications submitted by boarding managers.</p>
+          
+          <div class="stats-row mt-3">
+            <div class="mini-stat">
+              <span class="stat-icon pending">
+                <i class="fas fa-clock"></i>
+              </span>
+              <div class="stat-content">
+                <span class="stat-label">Pending Review</span>
+                <span class="stat-value" id="pendingApplicationsCount">-</span>
+              </div>
+            </div>
+            <div class="mini-stat">
+              <span class="stat-icon approved">
+                <i class="fas fa-check-circle"></i>
+              </span>
+              <div class="stat-content">
+                <span class="stat-label">Approved Today</span>
+                <span class="stat-value" id="approvedTodayCount">-</span>
+              </div>
+            </div>
+          </div>
+          
+          <a href="/manager/applications-review" class="btn btn-primary btn-block mt-3">
+            <i class="fas fa-clipboard-check"></i> Review Applications
+          </a>
+        </div>
+      </div>
+    </div>
   </div>
 </div>

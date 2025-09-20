@@ -1,75 +1,73 @@
-const Unit = require("../../../models/Unit");
-const User = require("../../../models/User");
+const Unit = require('../../../models/Unit');
+const User = require('../../../models/User');
 const Lease = require('../../../models/Lease');
-const { logger } = require("../../logger");
+const { logger } = require('../../logger');
 
 // Get Units List
 exports.getUnits = async (req, res) => {
     try {
         // Get tenants without active leases for lease creation
         const availableTenantsForLease = await User.aggregate([
-            { $match: { role: "tenant" } },
+            { $match: { role: 'tenant' } },
             {
                 $lookup: {
-                    from: "leases",
-                    localField: "_id", 
-                    foreignField: "tenant",
-                    pipeline: [
-                        { $match: { status: "active" } }
-                    ],
-                    as: "activeLeases"
-                }
+                    from: 'leases',
+                    localField: '_id',
+                    foreignField: 'tenant',
+                    pipeline: [{ $match: { status: 'active' } }],
+                    as: 'activeLeases',
+                },
             },
             { $match: { activeLeases: { $size: 0 } } },
-            { $project: { firstName: 1, lastName: 1, email: 1 } }
+            { $project: { firstName: 1, lastName: 1, email: 1 } },
         ]);
 
-        const units = await Unit.find().sort("unitNumber");
+        const units = await Unit.find().sort('unitNumber');
 
         // For each unit, find if it has an active lease
         const unitsWithTenants = await Promise.all(
             units.map(async (unit) => {
                 const activeLease = await Lease.findOne({
                     unit: unit._id,
-                    status: 'active'
+                    status: 'active',
                 }).populate('tenant', 'firstName lastName email phone');
-                
+
                 return {
                     ...unit.toObject(),
                     currentTenant: activeLease ? activeLease.tenant : null,
-                    status: activeLease ? 'occupied' : 'available'
+                    status: activeLease ? 'occupied' : 'available',
                 };
             })
         );
 
         // Get available units for lease creation (units without active leases)
         const availableUnitsForLease = unitsWithTenants
-            .filter(unit => unit.status === 'available')
-            .map(unit => ({
+            .filter((unit) => unit.status === 'available')
+            .map((unit) => ({
                 _id: unit._id,
                 unitNumber: unit.unitNumber,
                 monthlyRent: unit.monthlyRent,
-                streetAddress: unit.streetAddress
+                streetAddress: unit.streetAddress,
             }));
 
-        res.render("manager/units", {
-            title: "Units Management",
-            layout: "layout",
-            additionalCSS: ["manager/units.css"],
-            additionalJS: ["pages/manager-units.js"],
+        res.render('manager/units', {
+            title: 'Units Management',
+            layout: 'layout',
+            additionalCSS: ['manager/units.css'],
+            additionalJS: ['manager/units.js'],
             user: req.session.user || { role: 'manager' },
             googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
             units: unitsWithTenants,
-            availableTenants: availableTenantsForLease, // Keep for backward compatibility
+            availableTenants: availableTenantsForLease,
             availableTenantsForLease,
             availableUnitsForLease,
-            path: req.path
+            path: req.path,
         });
     } catch (error) {
         logger.error(`Get units error: ${error}`);
-        res.status(500).render("error", {
-            title: "Error",
-            message: "Failed to load units",
+        res.status(500).render('error', {
+            title: 'Error',
+            message: 'Failed to load units',
         });
     }
 };
@@ -85,7 +83,7 @@ exports.getAvailableUnits = async (req, res) => {
         logger.error(`Get available units error: ${error}`);
         res.status(500).json({
             success: false,
-            message: "Failed to get available units",
+            message: 'Failed to get available units',
         });
     }
 };
@@ -102,15 +100,15 @@ exports.createUnit = async (req, res) => {
         if (existingUnit) {
             return res.status(400).json({
                 success: false,
-                message: "Unit number already exists",
+                message: 'Unit number already exists',
             });
         }
 
         // Clean up optional fields
-        if (!unitData.building || unitData.building === "") {
+        if (!unitData.building || unitData.building === '') {
             delete unitData.building;
         }
-        if (!unitData.floor || unitData.floor === "") {
+        if (!unitData.floor || unitData.floor === '') {
             delete unitData.floor;
         }
 
@@ -123,14 +121,14 @@ exports.createUnit = async (req, res) => {
 
         res.json({
             success: true,
-            message: "Unit created successfully",
+            message: 'Unit created successfully',
             data: unit,
         });
     } catch (error) {
         logger.error(`Create unit error: ${error}`);
         res.status(500).json({
             success: false,
-            message: "Failed to create unit",
+            message: 'Failed to create unit',
         });
     }
 };
@@ -144,20 +142,20 @@ exports.getUnit = async (req, res) => {
         if (!unit) {
             return res.status(404).json({
                 success: false,
-                message: "Unit not found",
+                message: 'Unit not found',
             });
         }
 
         // Get active lease if exists
         const activeLease = await Lease.findOne({
             unit: unitId,
-            status: 'active'
+            status: 'active',
         }).populate('tenant', 'firstName lastName email phone');
 
         const unitData = {
             ...unit.toObject(),
             currentTenant: activeLease ? activeLease.tenant : null,
-            activeLease: activeLease
+            activeLease: activeLease,
         };
 
         res.json({
@@ -168,7 +166,7 @@ exports.getUnit = async (req, res) => {
         logger.error(`Get unit error: ${error}`);
         res.status(500).json({
             success: false,
-            message: "Failed to get unit",
+            message: 'Failed to get unit',
         });
     }
 };
@@ -178,72 +176,72 @@ exports.viewUnit = async (req, res) => {
     try {
         const { unitId } = req.params;
         const unit = await Unit.findById(unitId);
-        
+
         if (!unit) {
-            return res.status(404).render("error", {
-                title: "Unit Not Found",
-                message: "Unit not found",
+            return res.status(404).render('error', {
+                title: 'Unit Not Found',
+                message: 'Unit not found',
             });
         }
 
         // Get active lease with tenant info
         const activeLease = await Lease.findOne({
             unit: unitId,
-            status: 'active'
+            status: 'active',
         }).populate('tenant', 'firstName lastName email phone');
 
         // Get lease history
         const leaseHistory = await Lease.find({
-            unit: unitId
+            unit: unitId,
         })
-        .populate('tenant', 'firstName lastName')
-        .sort('-createdAt')
-        .limit(10);
+            .populate('tenant', 'firstName lastName')
+            .sort('-createdAt')
+            .limit(10);
 
         // Get available tenants for lease creation (ADD THIS)
         const availableTenantsForLease = await User.aggregate([
-            { $match: { role: "tenant" } },
+            { $match: { role: 'tenant' } },
             {
                 $lookup: {
-                    from: "leases",
-                    localField: "_id", 
-                    foreignField: "tenant",
-                    pipeline: [
-                        { $match: { status: "active" } }
-                    ],
-                    as: "activeLeases"
-                }
+                    from: 'leases',
+                    localField: '_id',
+                    foreignField: 'tenant',
+                    pipeline: [{ $match: { status: 'active' } }],
+                    as: 'activeLeases',
+                },
             },
             { $match: { activeLeases: { $size: 0 } } },
-            { $project: { firstName: 1, lastName: 1, email: 1 } }
+            { $project: { firstName: 1, lastName: 1, email: 1 } },
         ]);
 
         // For available units, since this unit is available, include it (ADD THIS)
-        const availableUnitsForLease = [{
-            _id: unit._id,
-            unitNumber: unit.unitNumber,
-            monthlyRent: unit.monthlyRent,
-            streetAddress: unit.streetAddress
-        }];
+        const availableUnitsForLease = [
+            {
+                _id: unit._id,
+                unitNumber: unit.unitNumber,
+                monthlyRent: unit.monthlyRent,
+                streetAddress: unit.streetAddress,
+            },
+        ];
 
-        res.render("manager/unit-details", {
+        res.render('manager/unit-details', {
             title: `Unit ${unit.unitNumber}`,
-            layout: "layout",
-            additionalCSS: ["manager/unit-common.css", "manager/unit-details.css"],
-            additionalJS: ["pages/manager-unit-details.js"],
+            layout: 'layout',
+            additionalCSS: ['manager/unit-common.css', 'manager/unit-details.css'],
+            additionalJS: ['manager/unit-details.js'],
             user: req.session.user || { role: 'manager' },
             unit,
             activeLease,
             leaseHistory,
             availableTenantsForLease,
             availableUnitsForLease,
-            path: req.path
+            path: req.path,
         });
     } catch (error) {
         logger.error(`View unit error: ${error}`);
-        res.status(500).render("error", {
-            title: "Error",
-            message: "Failed to load unit details",
+        res.status(500).render('error', {
+            title: 'Error',
+            message: 'Failed to load unit details',
         });
     }
 };
@@ -265,20 +263,20 @@ exports.updateUnit = async (req, res) => {
         if (!unit) {
             return res.status(404).json({
                 success: false,
-                message: "Unit not found",
+                message: 'Unit not found',
             });
         }
 
         res.json({
             success: true,
-            message: "Unit updated successfully",
+            message: 'Unit updated successfully',
             data: unit,
         });
     } catch (error) {
         logger.error(`Update unit error: ${error}`);
         res.status(500).json({
             success: false,
-            message: "Failed to update unit",
+            message: 'Failed to update unit',
         });
     }
 };
@@ -288,35 +286,35 @@ exports.editUnit = async (req, res) => {
     try {
         const { unitId } = req.params;
         const unit = await Unit.findById(unitId);
-        
+
         if (!unit) {
-            return res.status(404).render("error", {
-                title: "Unit Not Found",
-                message: "Unit not found",
+            return res.status(404).render('error', {
+                title: 'Unit Not Found',
+                message: 'Unit not found',
             });
         }
 
         const activeLease = await Lease.findOne({
             unit: unitId,
-            status: 'active'
+            status: 'active',
         }).populate('tenant');
 
-        res.render("manager/unit-edit", {
+        res.render('manager/unit-edit', {
             title: `Edit Unit ${unit.unitNumber}`,
-            layout: "layout",
-            additionalCSS: ["manager/unit-common.css", "manager/unit-edit.css"],
-            additionalJS: ["pages/manager-unit-edit.js"],
+            layout: 'layout',
+            additionalCSS: ['manager/unit-common.css', 'manager/unit-edit.css'],
+            additionalJS: ['manager/unit-edit.js'],
             user: req.session.user || { role: 'manager' },
             googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
             unit,
             activeLease,
-            path: req.path
+            path: req.path,
         });
     } catch (error) {
         logger.error(`Edit unit error: ${error}`);
-        res.status(500).render("error", {
-            title: "Error",
-            message: "Failed to load unit edit form",
+        res.status(500).render('error', {
+            title: 'Error',
+            message: 'Failed to load unit edit form',
         });
     }
 };
@@ -328,23 +326,23 @@ exports.deleteUnit = async (req, res) => {
 
         const unit = await Unit.findById(unitId);
         if (!unit) {
-            logger.error("Error deleting unit: Unit not found");
+            logger.error('Error deleting unit: Unit not found');
             return res.status(404).json({
                 success: false,
-                message: "Unit not found",
+                message: 'Unit not found',
             });
         }
 
         // Check for active leases
         const activeLease = await Lease.findOne({
             unit: unitId,
-            status: 'active'
+            status: 'active',
         });
 
         if (activeLease) {
             return res.status(400).json({
                 success: false,
-                message: "Cannot delete unit with active lease. Please terminate the lease first.",
+                message: 'Cannot delete unit with active lease. Please terminate the lease first.',
             });
         }
 
@@ -353,13 +351,13 @@ exports.deleteUnit = async (req, res) => {
 
         res.json({
             success: true,
-            message: "Unit deleted successfully",
+            message: 'Unit deleted successfully',
         });
     } catch (error) {
         logger.error(`Error deleting unit: ${error}`);
         res.status(500).json({
             success: false,
-            message: "Failed to delete unit",
+            message: 'Failed to delete unit',
         });
     }
 };
@@ -368,17 +366,17 @@ exports.deleteUnit = async (req, res) => {
 exports.getUnitsStats = async (req, res) => {
     try {
         const units = await Unit.find();
-        
+
         // Get all active leases to determine occupied units
         const activeLeases = await Lease.find({ status: 'active' });
-        const occupiedUnitIds = activeLeases.map(l => l.unit.toString());
+        const occupiedUnitIds = activeLeases.map((l) => l.unit.toString());
 
         const stats = {
             total: units.length,
-            available: units.filter(u => !occupiedUnitIds.includes(u._id.toString())).length,
+            available: units.filter((u) => !occupiedUnitIds.includes(u._id.toString())).length,
             occupied: occupiedUnitIds.length,
-            maintenance: units.filter(u => u.status === "maintenance").length,
-            reserved: units.filter(u => u.status === "reserved").length,
+            maintenance: units.filter((u) => u.status === 'maintenance').length,
+            reserved: units.filter((u) => u.status === 'reserved').length,
         };
 
         res.json({
@@ -389,7 +387,7 @@ exports.getUnitsStats = async (req, res) => {
         logger.error(`Get units stats error: ${error}`);
         res.status(500).json({
             success: false,
-            message: "Failed to get units stats",
+            message: 'Failed to get units stats',
         });
     }
 };

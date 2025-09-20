@@ -1,0 +1,180 @@
+<!-- Boarding Manager Dashboard -->
+<div class="boarding-container">
+    <!-- Dashboard Header -->
+    <%- include('../partials/page-header', {
+        headerTitle: 'Boarding Manager Dashboard',
+        headerSubtitle: 'Manage Tenant Applications',
+        backButton: false,
+        headerActions: [
+            {
+                text: 'New Application',
+                icon: 'fas fa-plus',
+                onclick: 'openNewApplicationModal()',
+                btnClass: 'btn-primary'
+            }
+        ]
+    }) %>
+
+    <!-- Quick Stats -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-clipboard-list"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value"><%= stats.total %></span>
+                <span class="stat-label">Total Applications</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon pending">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value"><%= stats.pending %></span>
+                <span class="stat-label">Pending Review</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon approved">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value"><%= stats.approved %></span>
+                <span class="stat-label">Approved</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon declined">
+                <i class="fas fa-times-circle"></i>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value"><%= stats.declined %></span>
+                <span class="stat-label">Declined</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Applications -->
+    <div class="card">
+        <div class="card-header">
+            <h3>Recent Applications</h3>
+            <a href="/boarding/dashboard" class="link-view-all">View All Applications</a>
+        </div>
+        <div class="card-body">
+            <% if (applications && applications.length > 0) { %>
+                <div class="table-responsive">
+                    <table class="applications-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Submitted</th>
+                                <th>Documents</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% applications.forEach(app => { %>
+                                <tr>
+                                    <td><%= app.firstName %> <%= app.lastName %></td>
+                                    <td><%= app.email %></td>
+                                    <td><%= app.phone %></td>
+                                    <td><%= new Date(app.createdAt).toLocaleDateString() %></td>
+                                    <td>
+                                        <div class="document-count">
+                                            <% 
+                                                let docCount = 0; 
+                                                if (app.documents.id.documentId) docCount++; 
+                                                if (app.documents.ssn.documentId) docCount++; 
+                                                if (app.documents.criminal.documentId) docCount++; 
+                                                if (app.documents.income.documentId) docCount++; 
+                                                if (app.documents.bank.documentId) docCount++; 
+                                            %>
+                                            <span class="<%= docCount === 5 ? 'complete' : 'incomplete' %>">
+                                                <%= docCount %>/5
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge status-<%= app.status %>">
+                                            <%= app.status %>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn-icon" onclick="viewApplication('<%= app._id %>')" title="View">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <% if (app.status === 'pending') { %>
+                                                <button class="btn-icon" onclick="editApplication('<%= app._id %>')" title="Upload Documents">
+                                                    <i class="fas fa-upload"></i>
+                                                </button>
+                                            <% } %>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            <% } else { %>
+                <div class="empty-state-card">
+                    <i class="fas fa-clipboard-list"></i>
+                    <h4>No Applications Yet</h4>
+                    <p>Start by creating your first tenant application</p>
+                    <button class="btn btn-primary" onclick="openNewApplicationModal()">
+                        Create First Application
+                    </button>
+                </div>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<!-- New Application Modal -->
+<div id="newApplicationModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Create New Application</h2>
+            <button class="modal-close" onclick="closeNewApplicationModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="newApplicationForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="firstName">First Name *</label>
+                        <input type="text" id="firstName" name="firstName" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="lastName">Last Name *</label>
+                        <input type="text" id="lastName" name="lastName" required />
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="email">Email *</label>
+                        <input type="email" id="email" name="email" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Phone *</label>
+                        <input type="tel" id="phone" name="phone" required data-format="phone" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeNewApplicationModal()">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <span class="btn-text">Create Application</span>
+                        <span class="btn-loading" style="display: none">
+                            <span class="spinner"></span> Creating...
+                        </span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

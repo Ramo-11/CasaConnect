@@ -1,0 +1,102 @@
+<!-- Manager Review Applications -->
+<div class="review-container">
+    <!-- Page Header -->
+    <%- include('../partials/page-header', { headerTitle: 'Review Tenant Applications',
+    headerSubtitle: 'Approve or decline tenant applications', backUrl: '/manager/dashboard',
+    backText: 'Back to Dashboard' }) %>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <div class="filter-group">
+            <label>Status:</label>
+            <select id="statusFilter" onchange="filterApplications()">
+                <option value="all">All Applications</option>
+                <option value="pending" selected>Pending Review</option>
+                <option value="approved">Approved</option>
+                <option value="declined">Declined</option>
+            </select>
+        </div>
+        <div class="search-group">
+            <input
+                type="text"
+                id="applicationSearch"
+                placeholder="Search by name or email..."
+                onkeyup="filterApplications()"
+            />
+            <i class="fas fa-search"></i>
+        </div>
+    </div>
+
+    <!-- Applications List -->
+    <div class="applications-grid">
+        <% if (applications && applications.length > 0) { %> <% applications.forEach(app => { %>
+        <div
+            class="application-card"
+            data-status="<%= app.status %>"
+            data-name="<%= app.firstName %> <%= app.lastName %>"
+            data-email="<%= app.email %>"
+        >
+            <div class="card-header">
+                <div class="applicant-info">
+                    <h3><%= app.firstName %> <%= app.lastName %></h3>
+                    <p><%= app.email %></p>
+                </div>
+                <span class="badge status-<%= app.status %>"> <%= app.status %> </span>
+            </div>
+
+            <div class="card-body">
+                <div class="info-row">
+                    <span><i class="fas fa-phone"></i> <%= app.phone %></span>
+                    <span
+                        ><i class="fas fa-calendar"></i> <%= new
+                        Date(app.createdAt).toLocaleDateString() %></span
+                    >
+                </div>
+
+                <div class="documents-summary">
+                    <h4>Documents Status</h4>
+                    <div class="doc-indicators">
+                        <% const docs = ['id', 'ssn', 'criminal', 'income', 'bank']; const docLabels
+                        = ['ID', 'SSN', 'Criminal', 'Income', 'Bank']; docs.forEach((doc, index) =>
+                        { %>
+                        <div
+                            class="doc-indicator <%= app.documents[doc].documentId ? 'complete' : 'missing' %>"
+                            title="<%= docLabels[index] %>"
+                        >
+                            <i
+                                class="fas fa-<%= app.documents[doc].documentId ? 'check' : 'times' %>"
+                            ></i>
+                            <%= docLabels[index] %>
+                        </div>
+                        <% }) %>
+                    </div>
+                </div>
+
+                <% if (app.submittedBy) { %>
+                <div class="submitted-by">
+                    <small
+                        >Submitted by: <%= app.submittedBy.firstName %> <%= app.submittedBy.lastName
+                        %></small
+                    >
+                </div>
+                <% } %>
+            </div>
+
+            <div class="card-footer">
+                <button
+                    class="btn btn-primary btn-block"
+                    onclick="reviewApplication('<%= app._id %>')"
+                >
+                    <i class="fas fa-file-alt"></i> Review Application
+                </button>
+            </div>
+        </div>
+        <% }) %> <% } else { %>
+        <div class="empty-state">
+            <i class="fas fa-clipboard-check"></i>
+            <h3>No Applications to Review</h3>
+            <p>All applications have been processed or there are no new submissions</p>
+        </div>
+        <% } %>
+    </div>
+</div>

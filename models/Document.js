@@ -1,60 +1,62 @@
 const mongoose = require('mongoose');
 
 const documentSchema = new mongoose.Schema({
-  title: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  type: {
-    type: String,
-    enum: ['lease', 'lease_archived', 'contract', 'notice', 'invoice', 'other'],
-    required: true
-  },
-  fileName: {
-    type: String,
-    required: true
-  },
-  url: {
-    type: String,
-    default: null
-  },
-  size: {
-    type: Number,
-    required: true
-  },
-  mimeType: {
-    type: String,
-    required: true
-  },
-  relatedTo: {
-    model: {
-      type: String,
-      enum: ['User', 'Unit', 'Lease'],
-      default: null
+    title: {
+        type: String,
+        required: true,
+        trim: true,
     },
-    id: {
-      type: mongoose.Schema.Types.ObjectId,
-      default: null
-    }
-  },
-  uploadedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  sharedWith: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  }],
-  metadata: {
-    type: Map,
-    of: String
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  }
+    type: {
+        type: String,
+        enum: ['lease', 'lease_archived', 'contract', 'notice', 'invoice', 'other'],
+        required: true,
+    },
+    fileName: {
+        type: String,
+        required: true,
+    },
+    url: {
+        type: String,
+        default: null,
+    },
+    size: {
+        type: Number,
+        required: true,
+    },
+    mimeType: {
+        type: String,
+        required: true,
+    },
+    relatedTo: {
+        model: {
+            type: String,
+            enum: ['User', 'Unit', 'Lease', 'TenantApplication'],
+            default: null,
+        },
+        id: {
+            type: mongoose.Schema.Types.ObjectId,
+            default: null,
+        },
+    },
+    uploadedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+    },
+    sharedWith: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+        },
+    ],
+    metadata: {
+        type: Map,
+        of: String,
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now,
+    },
 });
 
 documentSchema.index({ 'relatedTo.model': 1, 'relatedTo.id': 1 });

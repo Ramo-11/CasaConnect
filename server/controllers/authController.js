@@ -1,21 +1,21 @@
-const User = require("../../models/User");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const { logger } = require("../logger");
+const User = require('../../models/User');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { logger } = require('../logger');
 
 // controllers/authController.js (add at bottom or where appropriate)
 exports.attachUserToLocals = (req, res, next) => {
-  // Handy for templates: currentUser will be undefined if logged out
-  if (req.session && req.session.userId) {
-    res.locals.currentUser = {
-      id: req.session.userId,
-      role: req.session.userRole,
-      name: req.session.userName,
-    };
-  } else {
-    res.locals.currentUser = null;
-  }
-  next();
+    // Handy for templates: currentUser will be undefined if logged out
+    if (req.session && req.session.userId) {
+        res.locals.currentUser = {
+            id: req.session.userId,
+            role: req.session.userRole,
+            name: req.session.userName,
+        };
+    } else {
+        res.locals.currentUser = null;
+    }
+    next();
 };
 
 // Get Login Page
@@ -25,14 +25,14 @@ exports.getLogin = (req, res) => {
         return redirectToDashboard(req.session.userRole, res);
     }
 
-    res.render("login", {
-        title: "Login - CasaConnect",
-        description: "Welcome to CasaConnect",
-        additionalCSS: ["login.css"],
-        additionalJS: ["login.js"],
-        layout: "layout",
-        error: req.flash ? req.flash("error") : null,
-        success: req.flash ? req.flash("success") : null,
+    res.render('login', {
+        title: 'Login - CasaConnect',
+        description: 'Welcome to CasaConnect',
+        additionalCSS: ['login.css'],
+        additionalJS: ['login.js'],
+        layout: 'layout',
+        error: req.flash ? req.flash('error') : null,
+        success: req.flash ? req.flash('success') : null,
     });
 };
 
@@ -45,7 +45,7 @@ exports.login = async (req, res) => {
         if (!email || !password) {
             return res.status(400).json({
                 success: false,
-                message: "Please provide email and password",
+                message: 'Please provide email and password',
             });
         }
 
@@ -56,7 +56,7 @@ exports.login = async (req, res) => {
             logger.error(`Login failed - User not found: ${email}`);
             return res.status(401).json({
                 success: false,
-                message: "Invalid email",
+                message: 'Invalid email',
             });
         }
 
@@ -64,8 +64,7 @@ exports.login = async (req, res) => {
         if (!user.isActive) {
             return res.status(403).json({
                 success: false,
-                message:
-                    "Your account has been deactivated. Please contact management.",
+                message: 'Your account has been deactivated. Please contact management.',
             });
         }
 
@@ -76,7 +75,7 @@ exports.login = async (req, res) => {
             logger.error(`Login failed - Invalid password for user: ${email}`);
             return res.status(401).json({
                 success: false,
-                message: "Invalid email or password",
+                message: 'Invalid email or password',
             });
         }
 
@@ -95,9 +94,9 @@ exports.login = async (req, res) => {
                 userId: user._id,
                 role: user.role,
             },
-            process.env.JWT_SECRET || "your-secret-key",
+            process.env.JWT_SECRET || 'your-secret-key',
             {
-                expiresIn: "30d",
+                expiresIn: '30d',
             }
         );
 
@@ -107,7 +106,7 @@ exports.login = async (req, res) => {
         // Return success with role for frontend routing
         res.json({
             success: true,
-            message: "Login successful",
+            message: 'Login successful',
             role: user.role,
             user: {
                 id: user._id,
@@ -117,10 +116,10 @@ exports.login = async (req, res) => {
             },
         });
     } catch (error) {
-        console.error("Login error:", error);
+        console.error('Login error:', error);
         res.status(500).json({
             success: false,
-            message: "An error occurred during login. Please try again.",
+            message: 'An error occurred during login. Please try again.',
         });
     }
 };
@@ -130,14 +129,14 @@ exports.logout = (req, res) => {
     // Destroy session
     req.session.destroy((err) => {
         if (err) {
-            console.error("Logout error:", err);
+            console.error('Logout error:', err);
         }
 
         // Clear cookie
-        res.clearCookie("connect.sid");
+        res.clearCookie('connect.sid');
 
         // Redirect to login
-        res.redirect("/login");
+        res.redirect('/login');
     });
 };
 
@@ -146,46 +145,46 @@ exports.isAuthenticated = (req, res, next) => {
     // Check for session and userId
     if (!req.session || !req.session.userId) {
         // For API routes, return JSON error
-        if (req.path.startsWith("/api/")) {
+        if (req.path.startsWith('/api/')) {
             return res.status(401).json({
                 success: false,
-                message: "Authentication required",
+                message: 'Authentication required',
             });
         }
 
         // For web routes, redirect to login
         if (req.flash) {
-            req.flash("error", "Please login to continue");
+            req.flash('error', 'Please login to continue');
         }
-        return res.redirect("/login");
+        return res.redirect('/login');
     }
 
     // Verify the session is still valid by checking if user exists
     User.findById(req.session.userId)
-        .then(user => {
+        .then((user) => {
             if (!user || !user.isActive) {
                 req.session.destroy();
-                if (req.path.startsWith("/api/")) {
+                if (req.path.startsWith('/api/')) {
                     return res.status(401).json({
                         success: false,
-                        message: "Session expired or invalid",
+                        message: 'Session expired or invalid',
                     });
                 }
-                return res.redirect("/login");
+                return res.redirect('/login');
             }
             req.user = user; // Attach user to request
             next();
         })
-        .catch(err => {
+        .catch((err) => {
             logger.error(`Auth check error: ${err}`);
             req.session.destroy();
-            if (req.path.startsWith("/api/")) {
+            if (req.path.startsWith('/api/')) {
                 return res.status(500).json({
                     success: false,
-                    message: "Authentication error",
+                    message: 'Authentication error',
                 });
             }
-            return res.redirect("/login");
+            return res.redirect('/login');
         });
 };
 
@@ -195,14 +194,14 @@ exports.hasRole = (...roles) => {
         if (!req.session || !req.session.userId) {
             return res.status(401).json({
                 success: false,
-                message: "Authentication required",
+                message: 'Authentication required',
             });
         }
 
         if (!roles.includes(req.session.userRole)) {
             return res.status(403).json({
                 success: false,
-                message: "Access denied. Insufficient permissions.",
+                message: 'Access denied. Insufficient permissions.',
             });
         }
 
@@ -214,35 +213,37 @@ exports.hasRole = (...roles) => {
 exports.isManager = (req, res, next) => {
     // First check authentication
     if (!req.session || !req.session.userId) {
-        if (req.path.startsWith("/api/")) {
+        if (req.path.startsWith('/api/')) {
             return res.status(401).json({
                 success: false,
-                message: "Authentication required",
+                message: 'Authentication required',
             });
         }
-        return res.redirect("/login");
+        return res.redirect('/login');
     }
 
     // Check role
-    if (!["manager", "supervisor"].includes(req.session.userRole)) {
-        logger.warn(`Unauthorized access attempt to manager area by user ${req.session.userId} with role ${req.session.userRole}`);
-        
-        if (req.path.startsWith("/api/")) {
+    if (!['manager', 'supervisor'].includes(req.session.userRole)) {
+        logger.warn(
+            `Unauthorized access attempt to manager area by user ${req.session.userId} with role ${req.session.userRole}`
+        );
+
+        if (req.path.startsWith('/api/')) {
             return res.status(403).json({
                 success: false,
-                message: "Access denied. Manager privileges required.",
+                message: 'Access denied. Manager privileges required.',
             });
         }
-        
+
         // Redirect to appropriate dashboard based on their actual role
-        if (req.session.userRole === "tenant") {
-            return res.redirect("/tenant/dashboard");
+        if (req.session.userRole === 'tenant') {
+            return res.redirect('/tenant/dashboard');
         }
-        
-        return res.render("error", {
-            title: "Access Denied",
-            message: "You do not have permission to access this area.",
-            layout: "layout"
+
+        return res.render('error', {
+            title: 'Access Denied',
+            message: 'You do not have permission to access this area.',
+            layout: 'layout',
         });
     }
 
@@ -253,55 +254,99 @@ exports.isManager = (req, res, next) => {
 exports.isTenant = (req, res, next) => {
     // First check authentication
     if (!req.session || !req.session.userId) {
-        if (req.path.startsWith("/api/")) {
+        if (req.path.startsWith('/api/')) {
             return res.status(401).json({
                 success: false,
-                message: "Authentication required",
+                message: 'Authentication required',
             });
         }
-        return res.redirect("/login");
+        return res.redirect('/login');
     }
 
     // Check role
-    if (req.session.userRole !== "tenant") {
-        logger.warn(`Unauthorized access attempt to tenant area by user ${req.session.userId} with role ${req.session.userRole}`);
-        
-        if (req.path.startsWith("/api/")) {
+    if (req.session.userRole !== 'tenant') {
+        logger.warn(
+            `Unauthorized access attempt to tenant area by user ${req.session.userId} with role ${req.session.userRole}`
+        );
+
+        if (req.path.startsWith('/api/')) {
             return res.status(403).json({
                 success: false,
-                message: "Access denied. Tenant privileges required.",
+                message: 'Access denied. Tenant privileges required.',
             });
         }
-        
+
         // Redirect to appropriate dashboard based on their actual role
-        if (["manager", "supervisor"].includes(req.session.userRole)) {
-            return res.redirect("/manager/dashboard");
+        if (['manager', 'supervisor'].includes(req.session.userRole)) {
+            return res.redirect('/manager/dashboard');
         }
-        
-        return res.render("error", {
-            title: "Access Denied",
-            message: "This area is for tenants only.",
-            layout: "layout"
+
+        return res.render('error', {
+            title: 'Access Denied',
+            message: 'This area is for tenants only.',
+            layout: 'layout',
         });
     }
 
     next();
 };
 
+// create one for isBoardingManager
+exports.isBoardingManager = (req, res, next) => {
+    // First check authentication
+    if (!req.session || !req.session.userId) {
+        if (req.path.startsWith('/api/')) {
+            return res.status(401).json({
+                success: false,
+                message: 'Authentication required',
+            });
+        }
+        return res.redirect('/login');
+    }
+
+    // Check role
+    if (req.session.userRole !== 'boarding_manager') {
+        logger.warn(
+            `Unauthorized access attempt to boarding manager area by user ${req.session.userId} with role ${req.session.userRole}`
+        );
+        if (req.path.startsWith('/api/')) {
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied. Boarding Manager privileges required.',
+            });
+        }
+        // Redirect to appropriate dashboard based on their actual role
+        if (['manager', 'supervisor'].includes(req.session.userRole)) {
+            return res.redirect('/manager/dashboard');
+        }
+        if (req.session.userRole === 'tenant') {
+            return res.redirect('/tenant/dashboard');
+        }
+        return res.render('error', {
+            title: 'Access Denied',
+            message: 'This area is for boarding managers only.',
+            layout: 'layout',
+        });
+    }
+    next();
+};
+
 // Helper: Redirect to appropriate dashboard based on role
 function redirectToDashboard(role, res) {
     switch (role) {
-        case "manager":
-        case "supervisor":
-            return res.redirect("/manager/dashboard");
-        case "tenant":
-            return res.redirect("/tenant/dashboard");
-        case "electrician":
-        case "plumber":
-        case "general_repair":
-            return res.redirect("/technician/dashboard");
+        case 'manager':
+        case 'supervisor':
+            return res.redirect('/manager/dashboard');
+        case 'tenant':
+            return res.redirect('/tenant/dashboard');
+        case 'boarding_manager':
+            return res.redirect('/boarding/dashboard');
+        case 'electrician':
+        case 'plumber':
+        case 'general_repair':
+            return res.redirect('/technician/dashboard');
         default:
-            return res.redirect("/dashboard");
+            return res.redirect('/dashboard');
     }
 }
 
@@ -310,7 +355,7 @@ exports.forgotPassword = async (req, res) => {
     // Implement password reset logic
     res.json({
         success: false,
-        message: "Password reset functionality coming soon",
+        message: 'Password reset functionality coming soon',
     });
 };
 
@@ -319,6 +364,6 @@ exports.resetPassword = async (req, res) => {
     // Implement password reset logic
     res.json({
         success: false,
-        message: "Password reset functionality coming soon",
+        message: 'Password reset functionality coming soon',
     });
 };

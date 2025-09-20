@@ -1,44 +1,44 @@
-const User = require("../../models/User");
+const User = require('../../models/User');
 const Lease = require('../../models/Lease');
-const Unit = require("../../models/Unit");
-const ServiceRequest = require("../../models/ServiceRequest");
-const Payment = require("../../models/Payment");
-const Notification = require("../../models/Notification");
-const bcrypt = require("bcryptjs");
-const nodemailer = require("nodemailer");
-const { logger } = require("../logger");
+const Unit = require('../../models/Unit');
+const ServiceRequest = require('../../models/ServiceRequest');
+const Payment = require('../../models/Payment');
+const TenantApplication = require('../../models/TenantApplication');
+const Notification = require('../../models/Notification');
+const bcrypt = require('bcryptjs');
+const nodemailer = require('nodemailer');
+const { logger } = require('../logger');
 
 // Get Manager Dashboard
 exports.getDashboard = async (req, res) => {
     try {
         const managerId = req.session.userId;
         // Should be updated during production
-        // TODO("update manager details")
-        const manager = await User.findById(managerId) || {
+        const manager = (await User.findById(managerId)) || {
             firstName: 'Dev',
             lastName: 'Manager',
             email: 'dev@example.com',
-            role: 'manager'
+            role: 'manager',
         };
         if (!manager) {
-            return res.status(404).render("error", {
-                title: "Error",
-                message: "Manager account not found",
+            return res.status(404).render('error', {
+                title: 'Error',
+                message: 'Manager account not found',
             });
         }
 
         // Get all units
         const units = await Unit.find();
         const totalUnits = units.length;
-        
+
         // Get active leases to determine occupied units
         const activeLeases = await Lease.find({ status: 'active' }).populate('unit');
-        const occupiedUnitIds = activeLeases.map(lease => lease.unit._id.toString());
-        
+        const occupiedUnitIds = activeLeases.map((lease) => lease.unit._id.toString());
+
         const occupiedUnits = occupiedUnitIds.length;
         const availableUnits = totalUnits - occupiedUnits;
 
-        const allUnitsList = units.map(u => ({
+        const allUnitsList = units.map((u) => ({
             id: u._id,
             unitNumber: u.unitNumber,
             propertyType: u.propertyType,
@@ -54,32 +54,42 @@ exports.getDashboard = async (req, res) => {
 
         // Get active service requests count
         const activeRequests = await ServiceRequest.countDocuments({
-            status: { $in: ["pending", "assigned", "in_progress"] },
+            status: { $in: ['pending', 'assigned', 'in_progress'] },
         });
 
         // Get tenants with their active leases
-        const tenants = await User.find({ role: "tenant" })
-            .sort("-createdAt")
-            .lean();
+        const tenants = await User.find({ role: 'tenant' }).sort('-createdAt').lean();
 
         // Get all active leases in one query for efficiency
-        const tenantIds = tenants.map(t => t._id);
+        const tenantIds = tenants.map((t) => t._id);
         const tenantLeases = await Lease.find({
             tenant: { $in: tenantIds },
-            status: 'active'
+            status: 'active',
         }).populate('unit');
 
         // Create a map for quick lease lookup
         const leaseMap = {};
-        tenantLeases.forEach(lease => {
+        tenantLeases.forEach((lease) => {
             leaseMap[lease.tenant.toString()] = lease;
+        });
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const pendingApplications = await TenantApplication.countDocuments({
+            status: 'pending',
+        });
+
+        const approvedToday = await TenantApplication.countDocuments({
+            status: 'approved',
+            reviewedAt: { $gte: today },
         });
 
         // Format tenant data
         const formattedTenants = await Promise.all(
             tenants.map(async (tenant) => {
                 const activeLease = leaseMap[tenant._id.toString()];
-                
+
                 // Check payment status
                 const currentMonth = new Date().getMonth() + 1;
                 const currentYear = new Date().getFullYear();
@@ -89,10 +99,10 @@ exports.getDashboard = async (req, res) => {
                     rentPaid = await Payment.findOne({
                         tenant: tenant._id,
                         lease: activeLease._id,
-                        type: "rent",
+                        type: 'rent',
                         month: currentMonth,
                         year: currentYear,
-                        status: "completed",
+                        status: 'completed',
                     });
                 }
 
@@ -101,62 +111,62 @@ exports.getDashboard = async (req, res) => {
                     fullName: `${tenant.firstName} ${tenant.lastName}`,
                     email: tenant.email,
                     phone: tenant.phone,
-                    unitNumber: activeLease?.unit?.unitNumber || "Unassigned",
-                    leaseEnd: activeLease ? formatDate(activeLease.endDate) : "N/A",
-                    paymentStatus: rentPaid ? "current" : (activeLease ? "due" : "no-lease"),
+                    unitNumber: activeLease?.unit?.unitNumber || 'Unassigned',
+                    leaseEnd: activeLease ? formatDate(activeLease.endDate) : 'N/A',
+                    paymentStatus: rentPaid ? 'current' : activeLease ? 'due' : 'no-lease',
                     hasActiveLease: !!activeLease,
-                    leaseId: activeLease?._id || null
+                    leaseId: activeLease?._id || null,
                 };
             })
         );
 
         // Get recent service requests
         const recentRequests = await ServiceRequest.find()
-            .populate("unit", "unitNumber")
-            .populate("tenant", "firstName lastName")
-            .sort("-createdAt")
+            .populate('unit', 'unitNumber')
+            .populate('tenant', 'firstName lastName')
+            .sort('-createdAt')
             .limit(5)
             .lean();
 
         const formattedRequests = recentRequests.map((req) => ({
             id: req._id,
             title: req.title,
-            unitNumber: req.unit ? req.unit.unitNumber : "N/A",
-            category: req.category.replace("_", " "),
+            unitNumber: req.unit ? req.unit.unitNumber : 'N/A',
+            category: req.category.replace('_', ' '),
             priority: req.priority,
-            status: req.status.replace("_", " "),
+            status: req.status.replace('_', ' '),
             date: formatDate(req.createdAt),
         }));
 
         // Get upcoming lease expirations (next 60 days)
         const sixtyDaysFromNow = new Date();
         sixtyDaysFromNow.setDate(sixtyDaysFromNow.getDate() + 60);
-        
+
         const expiringLeases = await Lease.find({
             status: 'active',
-            endDate: { 
+            endDate: {
                 $gte: new Date(),
-                $lte: sixtyDaysFromNow 
-            }
+                $lte: sixtyDaysFromNow,
+            },
         })
-        .populate('tenant', 'firstName lastName')
-        .populate('unit', 'unitNumber')
-        .sort('endDate')
-        .limit(5);
+            .populate('tenant', 'firstName lastName')
+            .populate('unit', 'unitNumber')
+            .sort('endDate')
+            .limit(5);
 
-        const formattedExpiringLeases = expiringLeases.map(lease => ({
+        const formattedExpiringLeases = expiringLeases.map((lease) => ({
             id: lease._id,
             tenantName: `${lease.tenant.firstName} ${lease.tenant.lastName}`,
             unitNumber: lease.unit.unitNumber,
             endDate: formatDate(lease.endDate),
-            daysRemaining: lease.daysRemaining
+            daysRemaining: lease.daysRemaining,
         }));
 
-        res.render("manager/dashboard", {
-            title: "Manager Dashboard",
-            layout: "layout",
-            additionalCSS: ["manager/dashboard.css"],
-            additionalJS: ["pages/manager-dashboard.js"],
+        res.render('manager/dashboard', {
+            title: 'Manager Dashboard',
+            layout: 'layout',
+            additionalCSS: ['manager/dashboard.css'],
+            additionalJS: ['manager/dashboard.js'],
             user: manager,
             totalUnits,
             occupiedUnits,
@@ -164,15 +174,17 @@ exports.getDashboard = async (req, res) => {
             activeRequests,
             tenants: formattedTenants,
             allUnitsList,
+            pendingApplications,
+            approvedToday,
             recentRequests: formattedRequests,
             expiringLeases: formattedExpiringLeases, // New data
-            portalUrl: process.env.PORTAL_URL || "http://localhost:3000",
+            portalUrl: process.env.PORTAL_URL || 'http://localhost:3000',
         });
     } catch (error) {
         logger.error(`Dashboard error: ${error}`);
-        res.status(500).render("error", {
-            title: "Error",
-            message: "Failed to load dashboard",
+        res.status(500).render('error', {
+            title: 'Error',
+            message: 'Failed to load dashboard',
         });
     }
 };
@@ -182,15 +194,11 @@ exports.getDashboardStats = async (req, res) => {
     try {
         const units = await Unit.find();
         const totalUnits = units.length;
-        const occupiedUnits = units.filter(
-            (u) => u.status === "occupied"
-        ).length;
-        const availableUnits = units.filter(
-            (u) => u.status === "available"
-        ).length;
+        const occupiedUnits = units.filter((u) => u.status === 'occupied').length;
+        const availableUnits = units.filter((u) => u.status === 'available').length;
 
         const activeRequests = await ServiceRequest.countDocuments({
-            status: { $in: ["pending", "assigned", "in_progress"] },
+            status: { $in: ['pending', 'assigned', 'in_progress'] },
         });
 
         res.json({
@@ -206,16 +214,16 @@ exports.getDashboardStats = async (req, res) => {
         logger.error(`Dashboard stats error: ${error}`);
         res.status(500).json({
             success: false,
-            message: "Failed to get dashboard stats",
+            message: 'Failed to get dashboard stats',
         });
     }
 };
 
 // Helper Functions
 function formatDate(date) {
-    return new Date(date).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
+    return new Date(date).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
     });
 }
