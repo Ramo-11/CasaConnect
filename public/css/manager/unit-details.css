@@ -9,6 +9,167 @@
     margin-bottom: 2rem;
 }
 
+/* Unit Expenses Section */
+.expense-total {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--primary-color);
+    background: #fef3c7;
+    padding: var(--spacing-xs) var(--spacing-md);
+    border-radius: var(--border-radius-md);
+}
+
+.expense-items {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.expense-item {
+    display: grid;
+    grid-template-columns: 120px 1fr auto;
+    gap: var(--spacing-md);
+    align-items: center;
+    padding: var(--spacing-md);
+    background: #f9fafb;
+    border-radius: var(--border-radius-lg);
+    border: 1px solid #e5e7eb;
+    transition: all var(--transition-fast);
+}
+
+.expense-item:hover {
+    background: #f3f4f6;
+    transform: translateX(4px);
+    border-color: var(--primary-color);
+}
+
+.expense-date {
+    font-size: var(--font-size-sm);
+    color: #6b7280;
+    font-weight: var(--font-weight-medium);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.expense-date::before {
+    content: '\f073';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    color: #9ca3af;
+    font-size: 12px;
+}
+
+.expense-desc {
+    font-size: var(--font-size-base);
+    color: var(--text-dark);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.expense-desc.no-description {
+    color: #9ca3af;
+    font-style: italic;
+}
+
+.expense-amount {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    color: var(--primary-color);
+    background: var(--white);
+    padding: var(--spacing-xs) var(--spacing-md);
+    border-radius: var(--border-radius-md);
+    border: 1px solid #e5e7eb;
+    text-align: right;
+    min-width: 100px;
+}
+
+.expense-category {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: var(--border-radius-sm);
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    font-weight: var(--font-weight-medium);
+    letter-spacing: 0.5px;
+}
+
+.expense-category.maintenance {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.expense-category.repair {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.expense-category.utilities {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.expense-category.supplies {
+    background: #e0e7ff;
+    color: #4338ca;
+}
+
+.expense-category.other {
+    background: #f3f4f6;
+    color: #4b5563;
+}
+
+/* Empty state for expenses */
+.no-expenses {
+    text-align: center;
+    padding: var(--spacing-2xl);
+    background: #f9fafb;
+    border-radius: var(--border-radius-lg);
+    border: 2px dashed #e5e7eb;
+}
+
+.no-expenses i {
+    font-size: 48px;
+    color: #d1d5db;
+    margin-bottom: var(--spacing-md);
+}
+
+.no-expenses p {
+    color: #6b7280;
+    margin-bottom: var(--spacing-lg);
+}
+
+/* Expense Summary */
+.expense-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: #f9fafb;
+    border-radius: var(--border-radius-lg);
+    margin-bottom: var(--spacing-lg);
+}
+
+.expense-stat {
+    text-align: center;
+}
+
+.expense-stat-label {
+    display: block;
+    font-size: var(--font-size-xs);
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: var(--spacing-xs);
+}
+
+.expense-stat-value {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--text-dark);
+}
+
 /* Enhanced Card Styles */
 .card {
     background: var(--white);
@@ -339,22 +500,36 @@
     .lease-dates {
         grid-template-columns: 1fr;
     }
-    
+
     .info-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .action-row {
         flex-direction: column;
     }
-    
+
     .action-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .card-header {
         flex-direction: column;
         gap: var(--spacing-md);
         text-align: center;
+    }
+
+    .expense-item {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-sm);
+    }
+
+    .expense-date {
+        font-size: var(--font-size-xs);
+    }
+
+    .expense-amount {
+        text-align: left;
+        width: fit-content;
     }
 }

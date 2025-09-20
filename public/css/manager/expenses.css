@@ -1,0 +1,54 @@
+/* Expense Management Styles */
+.expenses-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: var(--spacing-lg);
+}
+
+.expense-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+}
+
+.expenses-table {
+    width: 100%;
+}
+
+.expense-amount {
+    font-weight: var(--font-weight-semibold);
+    color: var(--primary-color);
+}
+
+.category-badge {
+    padding: 4px 8px;
+    border-radius: var(--border-radius-md);
+    font-size: var(--font-size-sm);
+    text-transform: capitalize;
+}
+
+.category-maintenance {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.category-repair {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.category-utilities {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.category-supplies {
+    background: #e0e7ff;
+    color: #4338ca;
+}
+
+.category-other {
+    background: #f3f4f6;
+    color: #4b5563;
+}

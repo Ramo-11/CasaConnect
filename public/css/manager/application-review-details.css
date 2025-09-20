@@ -343,7 +343,7 @@
 /* Modal Overrides */
 .password-input-group {
     display: flex;
-    gap: var(--spacing-sm);
+    gap: var(--spacing-md);
 }
 
 .password-input-group input {

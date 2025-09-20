@@ -24,6 +24,7 @@ const unitManagement = require('./controllers/management/unitManagement');
 const serviceRequestManagement = require('./controllers/management/serviceRequestManagement');
 const documentManagement = require('./controllers/management/documentManagement');
 const applicationReview = require('./controllers/management/applicationReview');
+const expenseManagement = require('./controllers/management/expenseManagement');
 
 // Boarding Manager Controllers
 const boardingApplications = require('./controllers/boardingManager/applicationController');
@@ -118,6 +119,11 @@ managerAPI.put('/service-requests/:requestId/status', serviceRequestManagement.u
 managerAPI.get('/service-requests/updates', serviceRequestManagement.checkRequestUpdates);
 managerAPI.put('/service-requests/:requestId/cancel', serviceRequestManagement.cancelRequest);
 managerAPI.delete('/service-requests/:requestId', serviceRequestManagement.deleteRequest);
+
+managerWeb.get('/expenses', expenseManagement.getExpenses);
+managerAPI.post('/expense', upload.single('receipt'), expenseManagement.createExpense);
+managerAPI.delete('/expense/:expenseId', expenseManagement.deleteExpense);
+managerAPI.get('/unit/:unitId/expenses', expenseManagement.getUnitExpenses);
 
 // Manager: Application Review
 managerWeb.get('/applications-review', applicationReview.getApplicationsForReview);
