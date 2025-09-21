@@ -84,6 +84,10 @@ exports.getDashboard = async (req, res) => {
             status: 'approved',
         });
 
+        const rejectedApplications = await TenantApplication.countDocuments({
+            status: 'rejected',
+        });
+
         // Format tenant data
         const formattedTenants = await Promise.all(
             tenants.map(async (tenant) => {
@@ -175,6 +179,7 @@ exports.getDashboard = async (req, res) => {
             allUnitsList,
             pendingApplications,
             approvedApplications,
+            rejectedApplications,
             recentRequests: formattedRequests,
             expiringLeases: formattedExpiringLeases, // New data
             portalUrl: process.env.PORTAL_URL || 'http://localhost:3000',

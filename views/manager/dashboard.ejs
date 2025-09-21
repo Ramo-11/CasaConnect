@@ -241,6 +241,7 @@
                 <span class="stat-value" id="pendingApplicationsCount"><%= pendingApplications %></span>
               </div>
             </div>
+
             <div class="mini-stat">
               <span class="stat-icon approved">
                 <i class="fas fa-check-circle"></i>
@@ -250,7 +251,18 @@
                 <span class="stat-value" id="approvedApplicationsCount"><%= approvedApplications %></span>
               </div>
             </div>
+
+            <div class="mini-stat">
+              <span class="stat-icon danger">
+                <i class="fas fa-times-circle"></i>
+              </span>
+              <div class="stat-content">
+                <span class="stat-label">Total Rejected</span>
+                <span class="stat-value" id="rejectedApplicationsCount"><%= rejectedApplications %></span>
+              </div>
+            </div>
           </div>
+
           
           <a href="/manager/applications-review" class="btn btn-primary btn-block mt-3">
             <i class="fas fa-clipboard-check"></i> Review Applications

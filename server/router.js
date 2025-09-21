@@ -131,6 +131,7 @@ managerWeb.get('/application-review/:applicationId', applicationReview.viewAppli
 managerAPI.post('/application/:applicationId/approve', applicationReview.approveApplication);
 managerAPI.post('/application/:applicationId/unapprove', applicationReview.unapproveApplication);
 managerAPI.post('/application/:applicationId/decline', applicationReview.declineApplication);
+managerAPI.post('/application/:applicationId/undecline', applicationReview.undeclineApplication);
 
 // Mount Manager routers
 router.use('/manager', managerWeb);

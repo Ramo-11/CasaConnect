@@ -74,9 +74,9 @@
 
         <!-- Modal Scripts - Load based on user role and page context -->
         <% if (typeof user !== 'undefined' && user && user.role === 'manager') { %>
-            <script src="/js/modals/manager-tenant-modal.js"></script>
-            <script src="/js/modals/manager-unit-modal.js"></script>
-            <script src="/js/modals/manager-lease-modal.js"></script>
+            <script src="/js/manager/modals/tenant-modal.js"></script>
+            <script src="/js/manager/modals/unit-modal.js"></script>
+            <script src="/js/manager/modals/lease-modal.js"></script>
         <% } %>
 
         <% if (typeof user !== 'undefined' && user && user.role === 'tenant') { %>
@@ -93,7 +93,9 @@
             <% } %>
         <% } %>
 
-        <%- include('partials/modals/shared-modals') %>
+        <% if (typeof user !== 'undefined' && user && user.role === 'boarding_manager') { %>
+            <%- include('boarding-manager/upload-document-modal') %>
+        <% } %>
 
         <!-- Modal Partials - Include based on page needs -->
         <% if (typeof user !== 'undefined' && user && user.role === 'manager') { %>

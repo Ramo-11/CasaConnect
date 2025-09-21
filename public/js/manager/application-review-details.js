@@ -131,6 +131,25 @@ window.declineApplication = (applicationId) => {
     CasaConnect.ModalManager.openModal('declineModal');
 };
 
+window.undeclineApplication = async (applicationId) => {
+    if (!confirm('Are you sure you want to undecline this application?')) return;
+
+    try {
+        const response = await CasaConnect.APIClient.post(
+            `/api/manager/application/${applicationId}/undecline`
+        );
+
+        if (response.success) {
+            CasaConnect.NotificationManager.success('Application undeclined');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            throw new Error(response.message);
+        }
+    } catch (err) {
+        CasaConnect.NotificationManager.error(err.message);
+    }
+};
+
 window.closeApproveModal = () => {
     ApplicationReview.closeApproveModal();
 };

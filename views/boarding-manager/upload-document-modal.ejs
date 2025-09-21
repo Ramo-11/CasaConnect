@@ -1,0 +1,71 @@
+<!-- Upload Document Modal for Tenant Applications -->
+<div id="uploadDocumentModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Upload Document</h2>
+            <button class="modal-close" onclick="closeUploadModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="uploadDocumentForm">
+                <div class="form-group">
+                    <label for="documentType">Document Type *</label>
+                    <select id="documentType" name="documentType" required>
+                        <option value="">Select document type...</option>
+                        <option value="id">ID/Driver License</option>
+                        <option value="ssn">Social Security Card</option>
+                        <option value="criminal">Criminal Background Check</option>
+                        <option value="income">Proof of Income</option>
+                        <option value="bank">Bank Statement</option>
+                        <option value="other">Other/Additional Document</option>
+                    </select>
+                </div>
+
+                <div id="customTitleGroup" class="form-group" style="display: none">
+                    <label for="customTitle">Document Title *</label>
+                    <input
+                        type="text"
+                        id="customTitle"
+                        name="customTitle"
+                        placeholder="Enter document title"
+                    />
+                </div>
+
+                <div class="form-group">
+                    <label for="documentFile">Select File *</label>
+                    <input
+                        type="file"
+                        id="documentFile"
+                        name="file"
+                        required
+                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                    />
+                    <small class="form-help"
+                        >Max file size: 10MB. Supported formats: PDF, DOC, DOCX, JPG, PNG</small
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="documentComment">Comment (optional)</label>
+                    <textarea
+                        id="documentComment"
+                        name="comment"
+                        placeholder="Add any notes about this document"
+                        rows="3"
+                    ></textarea>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeUploadModal()">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <span class="btn-text">Upload Document</span>
+                        <span class="btn-loading" style="display: none">
+                            <span class="spinner"></span> Uploading...
+                        </span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

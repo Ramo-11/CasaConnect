@@ -176,6 +176,20 @@
                     </div>
                 </div>
             </div>
+        <% } else if (application.status === 'declined') { %>
+            <div class="card full-width">
+                <div class="card-header">
+                    <h3>Undo Decline</h3>
+                </div>
+                <div class="card-body">
+                    <div class="review-actions">
+                        <button class="action-button decline" onclick="undeclineApplication('<%= application._id %>')">
+                            <i class="fas fa-undo"></i>
+                            <span>Undecline Application</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
         <% } %>
     </div>
 </div>

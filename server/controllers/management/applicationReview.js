@@ -248,6 +248,30 @@ exports.declineApplication = async (req, res) => {
     }
 };
 
+exports.undeclineApplication = async (req, res) => {
+    try {
+        const { applicationId } = req.params;
+
+        const application = await TenantApplication.findById(applicationId);
+        if (!application || application.status !== 'declined') {
+            return res.status(400).json({ success: false, message: 'Invalid operation' });
+        }
+
+        application.status = 'pending';
+        application.reviewedBy = null;
+        application.reviewedAt = null;
+        application.reviewNotes = '';
+        application.createdTenant = null;
+        await application.save();
+
+        logger.info(`Application ${applicationId} undeclined`);
+        res.json({ success: true, message: 'Application undeclined' });
+    } catch (err) {
+        logger.error(`Undecline error: ${err}`);
+        res.status(500).json({ success: false, message: 'Failed to undecline' });
+    }
+};
+
 function generateTempPassword() {
     const length = 12;
     const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%';

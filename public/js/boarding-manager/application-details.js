@@ -83,60 +83,9 @@ const ApplicationDetails = {
                 } else {
                     customTitleGroup.style.display = 'none';
                     customTitleInput.removeAttribute('required');
+                    customTitleInput.value = '';
                 }
             });
-        }
-    },
-
-    async handleUpdateApplication(e) {
-        const form = e.target;
-        const submitBtn = form.querySelector('button[type="submit"]');
-
-        if (window.FormManager) {
-            FormManager.setSubmitButtonLoading(submitBtn, true, 'Saving...');
-        }
-
-        try {
-            const formData = new FormData(form);
-            const data = {
-                firstName: formData.get('firstName'),
-                lastName: formData.get('lastName'),
-                email: formData.get('email'),
-                phone: formData.get('phone'),
-            };
-
-            const response = await CasaConnect.APIClient.put(
-                `/api/boarding/application/${this.applicationId}`,
-                data
-            );
-
-            if (response.success) {
-                CasaConnect.NotificationManager.success('Application updated successfully!');
-
-                // Update view mode spans with new values
-                document.querySelectorAll('.view-mode').forEach((span, index) => {
-                    const editInput = document.querySelectorAll('.edit-mode')[index];
-                    if (editInput) {
-                        if (editInput.type === 'email') {
-                            span.innerHTML = `<a href="mailto:${editInput.value}">${editInput.value}</a>`;
-                        } else if (editInput.type === 'tel') {
-                            span.innerHTML = `<a href="tel:${editInput.value}">${editInput.value}</a>`;
-                        } else {
-                            span.textContent = editInput.value;
-                        }
-                    }
-                });
-
-                this.toggleEditMode();
-            } else {
-                throw new Error(response.error || 'Failed to update application');
-            }
-        } catch (error) {
-            CasaConnect.NotificationManager.error(error.message);
-        } finally {
-            if (window.FormManager) {
-                FormManager.setSubmitButtonLoading(submitBtn, false);
-            }
         }
     },
 
@@ -156,9 +105,12 @@ const ApplicationDetails = {
             return;
         }
 
-        if (window.FormManager) {
-            FormManager.setSubmitButtonLoading(submitBtn, true, 'Uploading...');
-        }
+        // Set loading state
+        submitBtn.disabled = true;
+        const btnText = submitBtn.querySelector('.btn-text');
+        const btnLoading = submitBtn.querySelector('.btn-loading');
+        if (btnText) btnText.style.display = 'none';
+        if (btnLoading) btnLoading.style.display = 'inline-block';
 
         try {
             const formData = new FormData();
@@ -166,20 +118,30 @@ const ApplicationDetails = {
             formData.append('file', file);
 
             let documentType = document.getElementById('documentType').value;
+
+            // Handle "other" document type
             if (documentType === 'other') {
-                documentType = document.getElementById('customTitle').value;
+                const customTitle = document.getElementById('customTitle').value.trim();
+                if (!customTitle) {
+                    throw new Error('Please enter a document title');
+                }
+                formData.append('documentType', customTitle);
+            } else {
+                formData.append('documentType', documentType);
             }
-            formData.append('documentType', documentType);
 
             const comment = document.getElementById('documentComment').value;
             if (comment) {
                 formData.append('comment', comment);
             }
 
-            const response = await CasaConnect.APIClient.post(
+            const response = await fetch(
                 `/api/boarding/application/${this.applicationId}/document`,
-                formData
-            );
+                {
+                    method: 'POST',
+                    body: formData,
+                }
+            ).then((res) => res.json());
 
             if (response.success) {
                 CasaConnect.NotificationManager.success('Document uploaded successfully!');
@@ -190,9 +152,10 @@ const ApplicationDetails = {
             }
         } catch (error) {
             CasaConnect.NotificationManager.error(error.message);
-            if (window.FormManager) {
-                FormManager.setSubmitButtonLoading(submitBtn, false);
-            }
+        } finally {
+            submitBtn.disabled = false;
+            if (btnText) btnText.style.display = '';
+            if (btnLoading) btnLoading.style.display = 'none';
         }
     },
 
@@ -201,10 +164,16 @@ const ApplicationDetails = {
         const form = document.getElementById('uploadDocumentForm');
         if (form) form.reset();
 
-        // Reset custom title visibility
+        const select = document.getElementById('documentType');
+        if (select) select.value = '';
+
         const customTitleGroup = document.getElementById('customTitleGroup');
-        if (customTitleGroup) {
-            customTitleGroup.style.display = 'none';
+        if (customTitleGroup) customTitleGroup.style.display = 'none';
+
+        const customTitleInput = document.getElementById('customTitle');
+        if (customTitleInput) {
+            customTitleInput.value = '';
+            customTitleInput.removeAttribute('required');
         }
     },
 
