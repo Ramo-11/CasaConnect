@@ -1,7 +1,7 @@
 // Manager Tenant Edit Page JavaScript
 
 // Initialize edit form
-CasaConnect.ready(() => {
+PM.ready(() => {
     const form = document.getElementById('editTenantForm');
     if (form) {
         const tenantId = form.getAttribute('data-tenant-id');
@@ -26,7 +26,10 @@ const TenantEditManager = {
         // Initialize draft handling if FormManager is available
         if (window.FormManager) {
             FormManager.initializeDraftHandling(form, `tenant-edit-draft-${this.tenantId}`);
-            this.beforeUnloadHandler = FormManager.trackUnsavedChanges(form, `tenant-original-${this.tenantId}`);
+            this.beforeUnloadHandler = FormManager.trackUnsavedChanges(
+                form,
+                `tenant-original-${this.tenantId}`
+            );
         }
 
         // Form submission
@@ -49,7 +52,7 @@ const TenantEditManager = {
 
     async handleSubmit(e) {
         const form = e.target;
-        
+
         // Use FormManager validation if available, otherwise basic validation
         if (window.FormManager && !FormManager.validateForm(form)) {
             return;
@@ -59,7 +62,7 @@ const TenantEditManager = {
         }
 
         const submitBtn = form.querySelector('button[type="submit"]');
-        
+
         // Use FormManager or manual loading state
         if (window.FormManager) {
             FormManager.setSubmitButtonLoading(submitBtn, true, 'Saving...');
@@ -72,9 +75,9 @@ const TenantEditManager = {
         }
 
         try {
-            const formData = CasaConnect.FormUtils.serializeForm(form);
-            const response = await CasaConnect.APIClient.post(
-                `/api/manager/tenant/${this.tenantId}/update`, 
+            const formData = PM.FormUtils.serializeForm(form);
+            const response = await PM.APIClient.post(
+                `/api/manager/tenant/${this.tenantId}/update`,
                 formData
             );
 
@@ -83,13 +86,13 @@ const TenantEditManager = {
                 if (window.FormManager) {
                     FormManager.clearDraft(`tenant-edit-draft-${this.tenantId}`);
                 }
-                
+
                 // Remove beforeunload handler
                 if (this.beforeUnloadHandler) {
                     window.removeEventListener('beforeunload', this.beforeUnloadHandler);
                 }
-                
-                CasaConnect.NotificationManager.success('Tenant information updated successfully!');
+
+                PM.NotificationManager.success('Tenant information updated successfully!');
                 setTimeout(() => {
                     window.location.href = `/manager/tenant/${this.tenantId}`;
                 }, 1500);
@@ -97,8 +100,8 @@ const TenantEditManager = {
                 throw new Error(response.error || 'Failed to update tenant');
             }
         } catch (error) {
-            CasaConnect.NotificationManager.error(error.message);
-            
+            PM.NotificationManager.error(error.message);
+
             if (window.FormManager) {
                 FormManager.setSubmitButtonLoading(submitBtn, false);
             } else {
@@ -127,9 +130,9 @@ const TenantEditManager = {
         const leaseStatusSelect = document.getElementById('leaseStatus');
         if (leaseStatusSelect) {
             const originalStatus = leaseStatusSelect.value;
-            leaseStatusSelect.addEventListener('change', function() {
+            leaseStatusSelect.addEventListener('change', function () {
                 if (this.value === 'terminated' && originalStatus !== 'terminated') {
-                    CasaConnect.NotificationManager.warning(
+                    PM.NotificationManager.warning(
                         'Warning: Terminating a lease will end the rental agreement immediately.'
                     );
                 }
@@ -140,15 +143,15 @@ const TenantEditManager = {
         const accountStatusSelect = document.getElementById('isActive');
         if (accountStatusSelect) {
             const originalStatus = accountStatusSelect.value;
-            accountStatusSelect.addEventListener('change', function() {
+            accountStatusSelect.addEventListener('change', function () {
                 if (this.value === 'false' && originalStatus === 'true') {
-                    CasaConnect.NotificationManager.warning(
+                    PM.NotificationManager.warning(
                         'Warning: Deactivating this account will prevent the tenant from logging in.'
                     );
                 }
             });
         }
-    }
+    },
 };
 
 // Global helper functions for onclick handlers in HTML

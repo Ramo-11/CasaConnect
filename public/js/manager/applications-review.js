@@ -1,6 +1,6 @@
 // Manager Applications Review JavaScript
 
-CasaConnect.ready(() => {
+PM.ready(() => {
     ApplicationsReview.init();
 });
 

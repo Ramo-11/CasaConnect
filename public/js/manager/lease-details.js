@@ -2,7 +2,7 @@
 let currentLeaseId = null;
 
 // Initialize lease details page
-CasaConnect.ready(() => {
+PM.ready(() => {
     const leaseElement = document.querySelector('[data-lease-id]');
     if (leaseElement) {
         currentLeaseId = leaseElement.getAttribute('data-lease-id');
@@ -22,11 +22,11 @@ function viewUnit(unitId) {
 // Edit Lease
 function editLease(leaseId) {
     currentLeaseId = leaseId;
-    CasaConnect.ModalManager.openModal('editLeaseModal');
+    PM.ModalManager.openModal('editLeaseModal');
 }
 
 function closeEditLeaseModal() {
-    CasaConnect.ModalManager.closeModal('editLeaseModal');
+    PM.ModalManager.closeModal('editLeaseModal');
 }
 
 // Print Lease
@@ -37,52 +37,56 @@ function printLease(leaseId) {
 // Email Lease to Tenant
 async function emailLease(leaseId) {
     if (!confirm('Send lease document to tenant via email?')) return;
-    
+
     try {
-        const response = await CasaConnect.APIClient.post(`/api/manager/lease/${leaseId}/email`, {});
-        
+        const response = await PM.APIClient.post(`/api/manager/lease/${leaseId}/email`, {});
+
         if (response.success) {
-            CasaConnect.NotificationManager.success('Lease emailed to tenant successfully');
+            PM.NotificationManager.success('Lease emailed to tenant successfully');
         } else {
             throw new Error(response.error || 'Failed to send email');
         }
     } catch (error) {
-        CasaConnect.NotificationManager.error(error.message);
+        PM.NotificationManager.error(error.message);
     }
 }
 
 function renewLease(leaseId) {
     currentLeaseId = leaseId;
-    CasaConnect.ModalManager.openModal('renewLeaseModal');
+    PM.ModalManager.openModal('renewLeaseModal');
 }
 
 function closeRenewLeaseModal() {
-    CasaConnect.ModalManager.closeModal('renewLeaseModal');
+    PM.ModalManager.closeModal('renewLeaseModal');
     document.getElementById('renewLeaseForm').reset();
 }
 
 // Terminate Lease Modal
 function terminateLease(leaseId) {
     currentLeaseId = leaseId;
-    CasaConnect.ModalManager.openModal('terminateModal');
+    PM.ModalManager.openModal('terminateModal');
 }
 
 function closeTerminateModal() {
-    CasaConnect.ModalManager.closeModal('terminateModal');
+    PM.ModalManager.closeModal('terminateModal');
     document.getElementById('terminateForm').reset();
 }
 
 // Delete Lease (completely removes lease)
 async function deleteLease(leaseId) {
-    if (!confirm('Are you sure you want to permanently delete this lease? This will remove all associated documents and cannot be undone.')) {
+    if (
+        !confirm(
+            'Are you sure you want to permanently delete this lease? This will remove all associated documents and cannot be undone.'
+        )
+    ) {
         return;
     }
-    
+
     try {
-        const response = await CasaConnect.APIClient.delete(`/api/manager/lease/${leaseId}`);
-        
+        const response = await PM.APIClient.delete(`/api/manager/lease/${leaseId}`);
+
         if (response.success) {
-            CasaConnect.NotificationManager.success('Lease deleted successfully');
+            PM.NotificationManager.success('Lease deleted successfully');
             setTimeout(() => {
                 window.history.back();
             }, 1500);
@@ -90,66 +94,72 @@ async function deleteLease(leaseId) {
             throw new Error(response.error || 'Failed to delete lease');
         }
     } catch (error) {
-        CasaConnect.NotificationManager.error(error.message);
+        PM.NotificationManager.error(error.message);
     }
 }
 
 // Initialize Edit Lease Form Submission
-CasaConnect.ready(() => {
+PM.ready(() => {
     const editForm = document.getElementById('editLeaseForm');
     if (editForm) {
         editForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const leaseId = document.getElementById('editLeaseId').value;
             const formData = new FormData(editForm);
-            
+
             const updates = {};
             for (let [key, value] of formData.entries()) {
                 if (key !== 'document') {
                     updates[key] = value;
                 }
             }
-            
+
             const btn = editForm.querySelector('button[type="submit"]');
             const btnText = btn.querySelector('.btn-text');
             const btnLoading = btn.querySelector('.btn-loading');
-            
+
             btnText.style.display = 'none';
             btnLoading.style.display = 'inline-block';
             btn.disabled = true;
-            
+
             try {
                 const fileInput = document.getElementById('editLeaseDocument');
                 let documentId = null;
-                
+
                 if (fileInput.files && fileInput.files[0]) {
                     const docFormData = new FormData();
                     docFormData.append('file', fileInput.files[0]);
-                    docFormData.append('title', `Updated Lease Agreement - ${new Date().toLocaleDateString()}`);
+                    docFormData.append(
+                        'title',
+                        `Updated Lease Agreement - ${new Date().toLocaleDateString()}`
+                    );
                     docFormData.append('type', 'lease');
                     docFormData.append('relatedModel', 'Lease');
                     docFormData.append('relatedId', leaseId);
-                    
-                    const docResponse = await CasaConnect.APIClient.post('/api/manager/documents', docFormData);
-                    
+
+                    const docResponse = await PM.APIClient.post(
+                        '/api/manager/documents',
+                        docFormData
+                    );
+
                     if (docResponse.success) {
                         documentId = docResponse.data._id;
                         updates.document = documentId;
                     }
                 }
-                
-                const response = await CasaConnect.APIClient.put(`/api/manager/lease/${leaseId}`, updates);
-                
+
+                const response = await PM.APIClient.put(`/api/manager/lease/${leaseId}`, updates);
+
                 if (response.success) {
-                    CasaConnect.NotificationManager.success('Lease updated successfully');
+                    PM.NotificationManager.success('Lease updated successfully');
                     closeEditLeaseModal();
                     setTimeout(() => location.reload(), 1500);
                 } else {
                     throw new Error(response.error || 'Failed to update lease');
                 }
             } catch (error) {
-                CasaConnect.NotificationManager.error(error.message);
+                PM.NotificationManager.error(error.message);
                 btnText.style.display = 'inline-block';
                 btnLoading.style.display = 'none';
                 btn.disabled = false;
@@ -159,49 +169,52 @@ CasaConnect.ready(() => {
 });
 
 // Initialize Renew Lease Form Submission
-CasaConnect.ready(() => {
+PM.ready(() => {
     const renewForm = document.getElementById('renewLeaseForm');
     if (renewForm) {
         renewForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const leaseId = document.getElementById('renewalLeaseId').value;
             const formData = new FormData(renewForm);
-            
+
             const startDate = new Date(formData.get('startDate'));
             const endDate = new Date(formData.get('endDate'));
-            
+
             if (endDate <= startDate) {
-                CasaConnect.NotificationManager.error('End date must be after start date');
+                PM.NotificationManager.error('End date must be after start date');
                 return;
             }
-            
+
             const termMonths = Math.round((endDate - startDate) / (1000 * 60 * 60 * 24 * 30));
             if (termMonths < 1) {
-                CasaConnect.NotificationManager.error('Renewal term must be at least 1 month');
+                PM.NotificationManager.error('Renewal term must be at least 1 month');
                 return;
             }
-            
+
             const fileInput = document.getElementById('renewalDocument');
             if (!fileInput.files || !fileInput.files[0]) {
-                CasaConnect.NotificationManager.error('Please upload the renewal agreement document');
+                PM.NotificationManager.error('Please upload the renewal agreement document');
                 return;
             }
-            
+
             const btn = renewForm.querySelector('button[type="submit"]');
             const btnText = btn.querySelector('.btn-text');
             const btnLoading = btn.querySelector('.btn-loading');
-            
+
             btnText.style.display = 'none';
             btnLoading.style.display = 'inline-block';
             btn.disabled = true;
-            
+
             try {
                 formData.append('currentLeaseId', leaseId);
-                const response = await CasaConnect.APIClient.post(`/api/manager/lease/${leaseId}/renew`, formData);
-                
+                const response = await PM.APIClient.post(
+                    `/api/manager/lease/${leaseId}/renew`,
+                    formData
+                );
+
                 if (response.success) {
-                    CasaConnect.NotificationManager.success('Lease renewed successfully!');
+                    PM.NotificationManager.success('Lease renewed successfully!');
                     closeRenewLeaseModal();
                     setTimeout(() => {
                         window.location.href = `/manager/lease/${response.data.data.newLeaseId}`;
@@ -210,14 +223,14 @@ CasaConnect.ready(() => {
                     throw new Error(response.error || 'Failed to renew lease');
                 }
             } catch (error) {
-                CasaConnect.NotificationManager.error(error.message);
+                PM.NotificationManager.error(error.message);
                 btnText.style.display = 'inline-block';
                 btnLoading.style.display = 'none';
                 btn.disabled = false;
             }
         });
     }
-    
+
     const renewalStartDate = document.getElementById('renewalStartDate');
     if (renewalStartDate) {
         renewalStartDate.addEventListener('change', (e) => {
@@ -230,40 +243,40 @@ CasaConnect.ready(() => {
 });
 
 // Initialize Terminate Form
-CasaConnect.ready(() => {
+PM.ready(() => {
     const form = document.getElementById('terminateForm');
     if (form) {
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const reason = document.getElementById('terminationReason').value;
-            
+
             if (!reason.trim()) {
-                CasaConnect.NotificationManager.error('Please provide a termination reason');
+                PM.NotificationManager.error('Please provide a termination reason');
                 return;
             }
-            
+
             try {
-                const response = await CasaConnect.APIClient.post(
+                const response = await PM.APIClient.post(
                     `/api/manager/lease/${currentLeaseId}/terminate`,
                     { reason }
                 );
-                
+
                 if (response.success) {
-                    CasaConnect.NotificationManager.success('Lease terminated successfully');
+                    PM.NotificationManager.success('Lease terminated successfully');
                     closeTerminateModal();
                     setTimeout(() => location.reload(), 1500);
                 } else {
                     throw new Error(response.error || 'Failed to terminate lease');
                 }
             } catch (error) {
-                CasaConnect.NotificationManager.error(error.message);
+                PM.NotificationManager.error(error.message);
             }
         });
     }
 });
 
-CasaConnect.ready(() => {
+PM.ready(() => {
     if (currentLeaseId) {
         DocumentManager.initializeUploadForm(() => {
             setTimeout(() => {

@@ -1,6 +1,6 @@
 // Application Details JavaScript
 
-CasaConnect.ready(() => {
+PM.ready(() => {
     ApplicationDetails.init();
 });
 
@@ -95,13 +95,13 @@ const ApplicationDetails = {
         const fileInput = document.getElementById('documentFile');
 
         if (!fileInput.files || !fileInput.files[0]) {
-            CasaConnect.NotificationManager.error('Please select a file to upload');
+            PM.NotificationManager.error('Please select a file to upload');
             return;
         }
 
         const file = fileInput.files[0];
         if (file.size > 10 * 1024 * 1024) {
-            CasaConnect.NotificationManager.error('File size must be under 10MB');
+            PM.NotificationManager.error('File size must be under 10MB');
             return;
         }
 
@@ -144,14 +144,14 @@ const ApplicationDetails = {
             ).then((res) => res.json());
 
             if (response.success) {
-                CasaConnect.NotificationManager.success('Document uploaded successfully!');
+                PM.NotificationManager.success('Document uploaded successfully!');
                 this.closeUploadModal();
                 setTimeout(() => location.reload(), 1500);
             } else {
                 throw new Error(response.error || 'Failed to upload document');
             }
         } catch (error) {
-            CasaConnect.NotificationManager.error(error.message);
+            PM.NotificationManager.error(error.message);
         } finally {
             submitBtn.disabled = false;
             if (btnText) btnText.style.display = '';
@@ -160,7 +160,7 @@ const ApplicationDetails = {
     },
 
     closeUploadModal() {
-        CasaConnect.ModalManager.closeModal('uploadDocumentModal');
+        PM.ModalManager.closeModal('uploadDocumentModal');
         const form = document.getElementById('uploadDocumentForm');
         if (form) form.reset();
 
@@ -181,18 +181,18 @@ const ApplicationDetails = {
         if (!confirm('Are you sure you want to delete this document?')) return;
 
         try {
-            const response = await CasaConnect.APIClient.delete(
+            const response = await PM.APIClient.delete(
                 `/api/boarding/application/${this.applicationId}/document/${documentType}`
             );
 
             if (response.success) {
-                CasaConnect.NotificationManager.success('Document deleted successfully');
+                PM.NotificationManager.success('Document deleted successfully');
                 setTimeout(() => location.reload(), 1500);
             } else {
                 throw new Error(response.error || 'Failed to delete document');
             }
         } catch (error) {
-            CasaConnect.NotificationManager.error(error.message);
+            PM.NotificationManager.error(error.message);
         }
     },
 };
@@ -209,7 +209,7 @@ window.openUploadModal = (documentType) => {
             select.dispatchEvent(new Event('change'));
         }
     }
-    CasaConnect.ModalManager.openModal('uploadDocumentModal');
+    PM.ModalManager.openModal('uploadDocumentModal');
 };
 
 window.closeUploadModal = () => {

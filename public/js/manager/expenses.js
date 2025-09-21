@@ -1,6 +1,6 @@
 // Expense Management JavaScript
 
-CasaConnect.ready(() => {
+PM.ready(() => {
     initializeExpenseForm();
 });
 
@@ -20,17 +20,17 @@ function initializeExpenseForm() {
 
             try {
                 const formData = new FormData(form);
-                const response = await CasaConnect.APIClient.post('/api/manager/expense', formData);
+                const response = await PM.APIClient.post('/api/manager/expense', formData);
 
                 if (response.success) {
-                    CasaConnect.NotificationManager.success('Expense added successfully!');
+                    PM.NotificationManager.success('Expense added successfully!');
                     closeAddExpenseModal();
                     setTimeout(() => location.reload(), 1500);
                 } else {
                     throw new Error(response.error || 'Failed to add expense');
                 }
             } catch (error) {
-                CasaConnect.NotificationManager.error(error.message);
+                PM.NotificationManager.error(error.message);
                 btnText.style.display = 'inline-flex';
                 btnLoading.style.display = 'none';
                 submitBtn.disabled = false;
@@ -40,11 +40,11 @@ function initializeExpenseForm() {
 }
 
 function openAddExpenseModal() {
-    CasaConnect.ModalManager.openModal('addExpenseModal');
+    PM.ModalManager.openModal('addExpenseModal');
 }
 
 function closeAddExpenseModal() {
-    CasaConnect.ModalManager.closeModal('addExpenseModal');
+    PM.ModalManager.closeModal('addExpenseModal');
     document.getElementById('addExpenseForm').reset();
 }
 
@@ -52,16 +52,16 @@ async function deleteExpense(expenseId) {
     if (!confirm('Are you sure you want to delete this expense?')) return;
 
     try {
-        const response = await CasaConnect.APIClient.delete(`/api/manager/expense/${expenseId}`);
+        const response = await PM.APIClient.delete(`/api/manager/expense/${expenseId}`);
 
         if (response.success) {
-            CasaConnect.NotificationManager.success('Expense deleted successfully');
+            PM.NotificationManager.success('Expense deleted successfully');
             setTimeout(() => location.reload(), 1500);
         } else {
             throw new Error(response.error || 'Failed to delete expense');
         }
     } catch (error) {
-        CasaConnect.NotificationManager.error(error.message);
+        PM.NotificationManager.error(error.message);
     }
 }
 

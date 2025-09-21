@@ -3,7 +3,7 @@
 let selectedTenantId = null;
 
 // Initialize manager dashboard
-CasaConnect.ready(() => {
+PM.ready(() => {
     initializeTenantSearch();
 });
 
@@ -13,7 +13,7 @@ function initializeTenantSearch() {
     if (searchInput) {
         searchInput.addEventListener(
             'input',
-            CasaConnect.debounce((e) => {
+            PM.debounce((e) => {
                 const searchTerm = e.target.value.toLowerCase();
                 const rows = document.querySelectorAll('#tenantsTableBody tr');
 
@@ -40,7 +40,7 @@ function editTenant(tenantId) {
 function autoRefreshDashboard() {
     setInterval(async () => {
         try {
-            const response = await CasaConnect.APIClient.get('/manager/dashboard-stats');
+            const response = await PM.APIClient.get('/manager/dashboard-stats');
             if (response.success) {
                 updateDashboardStats(response.data);
             }
@@ -67,7 +67,7 @@ function updateDashboardStats(data) {
 
 async function updateApplicationStats() {
     try {
-        const response = await CasaConnect.APIClient.get('/api/manager/application-stats');
+        const response = await PM.APIClient.get('/api/manager/application-stats');
         if (response.success) {
             const pendingCount = document.getElementById('pendingApplicationsCount');
             const approvedCount = document.getElementById('approvedTodayCount');
@@ -80,7 +80,7 @@ async function updateApplicationStats() {
     }
 }
 
-CasaConnect.ready(() => {
+PM.ready(() => {
     updateApplicationStats();
 });
 
@@ -110,11 +110,11 @@ function openPaymentRecordsModal() {
     const currentYear = new Date().getFullYear();
     document.getElementById('recordsYear').textContent = currentYear;
     loadPaymentRecords(currentYear);
-    CasaConnect.ModalManager.openModal('paymentRecordsModal');
+    PM.ModalManager.openModal('paymentRecordsModal');
 }
 
 function closePaymentRecordsModal() {
-    CasaConnect.ModalManager.closeModal('paymentRecordsModal');
+    PM.ModalManager.closeModal('paymentRecordsModal');
 }
 
 async function loadPaymentRecords(year) {
@@ -123,9 +123,7 @@ async function loadPaymentRecords(year) {
     tbody.innerHTML = '<tr><td colspan="17" class="text-center">Loading...</td></tr>';
 
     try {
-        const response = await CasaConnect.APIClient.get(
-            `/api/manager/payment-records?year=${year}`
-        );
+        const response = await PM.APIClient.get(`/api/manager/payment-records?year=${year}`);
 
         if (response.success) {
             renderPaymentRecords(response.data.data.records);

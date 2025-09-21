@@ -1,6 +1,6 @@
 // Unit Edit Page JavaScript
 
-CasaConnect.ready(() => {
+PM.ready(() => {
     const form = document.getElementById('editUnitForm');
     if (form) {
         const unitId = form.getAttribute('data-unit-id');
@@ -34,7 +34,7 @@ const UnitEditManager = {
 
     async handleSubmit(e) {
         const form = e.target;
-        
+
         if (window.FormManager && !FormManager.validateForm(form)) {
             return;
         }
@@ -47,7 +47,7 @@ const UnitEditManager = {
         try {
             const formData = new FormData(form);
             const amenities = formData.getAll('amenities');
-            
+
             const unitData = {
                 unitNumber: formData.get('unitNumber'),
                 propertyType: formData.get('propertyType'),
@@ -59,7 +59,7 @@ const UnitEditManager = {
                 bathrooms: parseFloat(formData.get('bathrooms')),
                 squareFeet: parseInt(formData.get('squareFeet')),
                 monthlyRent: parseFloat(formData.get('monthlyRent')),
-                amenities: amenities
+                amenities: amenities,
             };
 
             // Add optional fields
@@ -68,13 +68,10 @@ const UnitEditManager = {
             if (building?.trim()) unitData.building = building;
             if (floor) unitData.floor = parseInt(floor);
 
-            const response = await CasaConnect.APIClient.put(
-                `/api/manager/units/${this.unitId}`,
-                unitData
-            );
+            const response = await PM.APIClient.put(`/api/manager/units/${this.unitId}`, unitData);
 
             if (response.success) {
-                CasaConnect.NotificationManager.success('Unit updated successfully!');
+                PM.NotificationManager.success('Unit updated successfully!');
                 setTimeout(() => {
                     window.location.href = `/manager/units/${this.unitId}`;
                 }, 1500);
@@ -82,7 +79,7 @@ const UnitEditManager = {
                 throw new Error(response.error || 'Failed to update unit');
             }
         } catch (error) {
-            CasaConnect.NotificationManager.error(error.message);
+            PM.NotificationManager.error(error.message);
             if (window.FormManager) {
                 FormManager.setSubmitButtonLoading(submitBtn, false);
             }
@@ -95,9 +92,9 @@ const UnitEditManager = {
             if (input) {
                 const autocomplete = new google.maps.places.Autocomplete(input, {
                     types: ['address'],
-                    componentRestrictions: { country: 'us' }
+                    componentRestrictions: { country: 'us' },
                 });
-                
+
                 autocomplete.addListener('place_changed', () => {
                     const place = autocomplete.getPlace();
                     if (place.address_components) {
@@ -114,23 +111,25 @@ const UnitEditManager = {
             route: '',
             locality: '',
             administrative_area_level_1: '',
-            postal_code: ''
+            postal_code: '',
         };
-        
-        place.address_components.forEach(component => {
+
+        place.address_components.forEach((component) => {
             const types = component.types;
             if (types.includes('street_number')) components.street_number = component.long_name;
             if (types.includes('route')) components.route = component.long_name;
             if (types.includes('locality')) components.locality = component.long_name;
-            if (types.includes('administrative_area_level_1')) components.administrative_area_level_1 = component.short_name;
+            if (types.includes('administrative_area_level_1'))
+                components.administrative_area_level_1 = component.short_name;
             if (types.includes('postal_code')) components.postal_code = component.long_name;
         });
-        
-        document.getElementById('streetAddress').value = `${components.street_number} ${components.route}`.trim();
+
+        document.getElementById('streetAddress').value =
+            `${components.street_number} ${components.route}`.trim();
         document.getElementById('city').value = components.locality;
         document.getElementById('state').value = components.administrative_area_level_1;
         document.getElementById('zipCode').value = components.postal_code;
-    }
+    },
 };
 
 window.navigateBack = () => {
@@ -140,7 +139,7 @@ window.navigateBack = () => {
 window.togglePropertyFields = () => {
     const propertyType = document.getElementById('propertyType')?.value;
     const buildingFloorRow = document.getElementById('buildingFloorRow');
-    
+
     if (buildingFloorRow) {
         if (['apartment', 'condo', 'studio'].includes(propertyType)) {
             buildingFloorRow.style.display = 'flex';

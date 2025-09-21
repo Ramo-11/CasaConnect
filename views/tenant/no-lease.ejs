@@ -3,34 +3,34 @@
         <div class="no-lease-icon">
             <i class="fas fa-home"></i>
         </div>
-        
-        <h1>Welcome to CasaConnect</h1>
-        
+
+        <h1>Welcome to PM</h1>
+
         <div class="no-lease-message">
             <p>You don't have an active lease at this time.</p>
             <p>Your property manager will notify you once your lease has been activated.</p>
         </div>
-        
+
         <div class="no-lease-info">
             <div class="info-card">
                 <i class="fas fa-envelope"></i>
                 <h3>Check Your Email</h3>
                 <p>You'll receive an email notification when your lease is ready.</p>
             </div>
-            
+
             <div class="info-card">
                 <i class="fas fa-phone"></i>
                 <h3>Contact Management</h3>
                 <p>If you have questions, please contact your property manager.</p>
             </div>
-            
+
             <div class="info-card">
                 <i class="fas fa-clock"></i>
                 <h3>Check Back Soon</h3>
                 <p>Your dashboard will be available once your lease is active.</p>
             </div>
         </div>
-        
+
         <div class="no-lease-actions">
             <button class="btn btn-secondary" onclick="location.reload()">
                 <i class="fas fa-sync-alt"></i> Refresh Page
@@ -39,10 +39,12 @@
                 <i class="fas fa-sign-out-alt"></i> Sign Out
             </button>
         </div>
-        
+
         <div class="no-lease-footer">
             <p>Logged in as: <strong><%= user.firstName %> <%= user.lastName %></strong></p>
-            <p class="text-muted">Account created: <%= new Date(user.createdAt).toLocaleDateString() %></p>
+            <p class="text-muted">
+                Account created: <%= new Date(user.createdAt).toLocaleDateString() %>
+            </p>
         </div>
     </div>
 </div>

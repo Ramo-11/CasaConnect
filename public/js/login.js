@@ -15,7 +15,7 @@ function togglePassword() {
 }
 
 // Initialize login form
-CasaConnect.ready(() => {
+PM.ready(() => {
     const loginForm = document.getElementById('loginForm');
 
     if (loginForm) {
@@ -32,7 +32,7 @@ CasaConnect.ready(() => {
             submitBtn.disabled = true;
 
             // Get form data
-            const formData = CasaConnect.FormUtils.serializeForm(loginForm);
+            const formData = PM.FormUtils.serializeForm(loginForm);
 
             try {
                 const response = await fetch('/auth/login', {
@@ -70,7 +70,7 @@ CasaConnect.ready(() => {
                 }
             } catch (error) {
                 // Show error
-                CasaConnect.NotificationManager.error(error.message || 'Invalid email or password');
+                PM.NotificationManager.error(error.message || 'Invalid email or password');
 
                 // Reset button
                 btnText.style.display = 'block';
@@ -87,7 +87,7 @@ CasaConnect.ready(() => {
     const emailInput = document.getElementById('email');
 
     // Load saved email if remember was checked
-    const savedEmail = CasaConnect.StorageHelper.get('rememberedEmail');
+    const savedEmail = PM.StorageHelper.get('rememberedEmail');
     if (savedEmail) {
         emailInput.value = savedEmail;
     }
@@ -95,16 +95,16 @@ CasaConnect.ready(() => {
     // Save/remove email based on checkbox
     rememberCheckbox.addEventListener('change', (e) => {
         if (e.target.checked && emailInput.value) {
-            CasaConnect.StorageHelper.set('rememberedEmail', emailInput.value);
+            PM.StorageHelper.set('rememberedEmail', emailInput.value);
         } else {
-            CasaConnect.StorageHelper.remove('rememberedEmail');
+            PM.StorageHelper.remove('rememberedEmail');
         }
     });
 
     // Update stored email when it changes
     emailInput.addEventListener('blur', () => {
         if (rememberCheckbox.checked && emailInput.value) {
-            CasaConnect.StorageHelper.set('rememberedEmail', emailInput.value);
+            PM.StorageHelper.set('rememberedEmail', emailInput.value);
         }
     });
 

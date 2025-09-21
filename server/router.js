@@ -50,6 +50,10 @@ router.use(attachUserToLocals);
 router.get(['/', '/login'], authController.getLogin);
 router.get('/logout', authController.logout);
 router.post('/auth/login', authController.login);
+router.get('/auth/forgot-password', authController.getForgotPassword);
+router.post('/auth/forgot-password', authController.forgotPassword);
+router.get('/auth/reset-password/:token', authController.getResetPassword);
+router.post('/auth/reset-password/:token', authController.resetPassword);
 
 /**
  * MANAGER (Web + API)

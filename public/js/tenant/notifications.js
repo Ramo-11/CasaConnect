@@ -4,13 +4,13 @@
 const TenantNotifications = {
     pollInterval: null,
     unreadCount: 0,
-    
+
     init() {
         this.setupNotificationBell();
         this.loadNotifications();
         this.startPolling();
     },
-    
+
     setupNotificationBell() {
         const bell = document.getElementById('notificationBellBtn');
         if (bell) {
@@ -19,20 +19,23 @@ const TenantNotifications = {
                 this.toggleNotificationPanel();
             });
         }
-        
+
         // Close panel when clicking outside
         document.addEventListener('click', (e) => {
             const panel = document.getElementById('notificationsPanel');
             const bell = document.getElementById('notificationBellBtn');
-            
-            if (panel && panel.style.display !== 'none' && 
-                !panel.contains(e.target) && 
-                !bell.contains(e.target)) {
+
+            if (
+                panel &&
+                panel.style.display !== 'none' &&
+                !panel.contains(e.target) &&
+                !bell.contains(e.target)
+            ) {
                 panel.style.display = 'none';
             }
         });
     },
-    
+
     toggleNotificationPanel() {
         const panel = document.getElementById('notificationsPanel');
         if (!panel) {
@@ -42,15 +45,15 @@ const TenantNotifications = {
 
         const isHidden = panel.style.display === 'none';
         panel.style.display = isHidden ? 'block' : 'none';
-        
+
         if (isHidden) {
             this.loadNotifications();
         }
     },
-    
+
     async loadNotifications() {
         try {
-            const response = await CasaConnect.APIClient.get('/api/tenant/notifications?unreadOnly=true');
+            const response = await PM.APIClient.get('/api/tenant/notifications?unreadOnly=true');
             if (response.success) {
                 this.updateNotificationDisplay(response.data.data || response.data);
             }
@@ -58,7 +61,7 @@ const TenantNotifications = {
             console.error('Failed to load notifications:', error);
         }
     },
-    
+
     updateNotificationDisplay(notifications) {
         if (!Array.isArray(notifications)) {
             console.error('Notifications must be an array');
@@ -66,26 +69,30 @@ const TenantNotifications = {
         }
         const panel = document.getElementById('notificationsPanel');
         if (!panel) return;
-        
+
         const listContainer = panel.querySelector('.notifications-list');
         const badge = document.querySelector('.notification-badge');
-        
+
         // Update unread count
-        this.unreadCount = notifications.filter(n => !n.isRead).length;
-        
+        this.unreadCount = notifications.filter((n) => !n.isRead).length;
+
         if (badge) {
             badge.textContent = this.unreadCount;
             badge.style.display = this.unreadCount > 0 ? 'flex' : 'none';
         }
-        
+
         // Update list
         if (notifications.length === 0) {
             listContainer.innerHTML = '<p class="no-notifications">No new notifications</p>';
             return;
         }
-        
-        listContainer.innerHTML = notifications.map(notification => `
-            <div class="notification-item priority-${notification.priority} ${notification.isRead ? 'read' : ''}" 
+
+        listContainer.innerHTML = notifications
+            .map(
+                (notification) => `
+            <div class="notification-item priority-${notification.priority} ${
+                    notification.isRead ? 'read' : ''
+                }" 
                  data-id="${notification.id}"
                  onclick="TenantNotifications.markAsRead('${notification.id}')">
                 <div class="notification-icon">
@@ -97,38 +104,40 @@ const TenantNotifications = {
                     <span class="notification-time">${notification.timeAgo}</span>
                 </div>
             </div>
-        `).join('');
+        `
+            )
+            .join('');
     },
-    
+
     getNotificationIcon(type) {
         const icons = {
-            'payment_received': 'check-circle',
-            'payment_due': 'exclamation-circle',
-            'payment_failed': 'times-circle',
-            'service_request_new': 'tools',
-            'service_request_assigned': 'user-check',
-            'service_request_updated': 'sync',
-            'service_request_completed': 'check',
-            'maintenance_scheduled': 'calendar',
-            'announcement': 'bullhorn',
-            'system': 'info-circle'
+            payment_received: 'check-circle',
+            payment_due: 'exclamation-circle',
+            payment_failed: 'times-circle',
+            service_request_new: 'tools',
+            service_request_assigned: 'user-check',
+            service_request_updated: 'sync',
+            service_request_completed: 'check',
+            maintenance_scheduled: 'calendar',
+            announcement: 'bullhorn',
+            system: 'info-circle',
         };
         return icons[type] || 'bell';
     },
-    
+
     async markAsRead(notificationId) {
         try {
-            const response = await CasaConnect.APIClient.post(
+            const response = await PM.APIClient.post(
                 `/api/tenant/notification/${notificationId}/read`
             );
-            
+
             if (response.success) {
                 // Update UI
                 const item = document.querySelector(`[data-id="${notificationId}"]`);
                 if (item) {
                     item.classList.add('read');
                 }
-                
+
                 // Update count
                 this.unreadCount = Math.max(0, this.unreadCount - 1);
                 this.updateBadge();
@@ -137,29 +146,30 @@ const TenantNotifications = {
             console.error('Failed to mark notification as read:', error);
         }
     },
-    
+
     async markAllAsRead() {
         try {
-            const response = await CasaConnect.APIClient.post('/api/tenant/notifications/mark-all-read');
-            
+            const response = await PM.APIClient.post('/api/tenant/notifications/mark-all-read');
+
             if (response.success) {
                 // Clear the notification panel
                 const listContainer = document.querySelector('.notifications-list');
                 if (listContainer) {
-                    listContainer.innerHTML = '<p class="no-notifications">No new notifications</p>';
+                    listContainer.innerHTML =
+                        '<p class="no-notifications">No new notifications</p>';
                 }
-                
+
                 // Reset count and badge
                 this.unreadCount = 0;
                 this.updateBadge();
-                
-                CasaConnect.NotificationManager.success('All notifications marked as read');
+
+                PM.NotificationManager.success('All notifications marked as read');
             }
         } catch (error) {
             console.error('Failed to mark all as read:', error);
         }
     },
-    
+
     updateBadge() {
         const badge = document.querySelector('.notification-badge');
         if (badge) {
@@ -167,29 +177,29 @@ const TenantNotifications = {
             badge.style.display = this.unreadCount > 0 ? 'flex' : 'none';
         }
     },
-    
+
     startPolling() {
         // Poll for new notifications every 2 minutes
         this.pollInterval = setInterval(() => {
             this.checkForNewNotifications();
         }, 120000);
     },
-    
+
     async checkForNewNotifications() {
         try {
-            const response = await CasaConnect.APIClient.get('/api/tenant/notifications?unreadOnly=true');
+            const response = await PM.APIClient.get('/api/tenant/notifications?unreadOnly=true');
             if (response.success) {
                 const notifications = response.data.data || response.data; // Extract the array
                 if (notifications.length > this.unreadCount) {
                     // New notifications received
                     this.loadNotifications();
-                    
+
                     // Show browser notification if permitted
                     if (Notification.permission === 'granted' && notifications.length > 0) {
                         const latestNotification = notifications[0];
-                        new Notification('CasaConnect', {
+                        new Notification('PM', {
                             body: latestNotification.message,
-                            icon: '/favicon.ico'
+                            icon: '/favicon.ico',
                         });
                     }
                 }
@@ -198,18 +208,18 @@ const TenantNotifications = {
             console.error('Failed to check for notifications:', error);
         }
     },
-    
+
     requestNotificationPermission() {
         if ('Notification' in window && Notification.permission === 'default') {
             Notification.requestPermission();
         }
     },
-    
+
     destroy() {
         if (this.pollInterval) {
             clearInterval(this.pollInterval);
         }
-    }
+    },
 };
 
 // Global exports

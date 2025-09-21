@@ -19,7 +19,7 @@ async function createBoardingManager() {
     const user = await User.create({
         firstName: 'Boarding',
         lastName: 'Manager',
-        email: 'boarding@casaconnect.com',
+        email: 'boarding@sahabpm.com',
         password: 'Boarding123!',
         phone: '(555) 111-1111',
         role: 'boarding_manager',

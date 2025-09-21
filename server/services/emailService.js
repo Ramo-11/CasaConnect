@@ -23,6 +23,41 @@ class EmailService {
         });
     }
 
+    async sendPasswordResetEmail(user, resetURL) {
+        try {
+            const html = `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #333;">Password Reset Request</h2>
+                    <p>Hi ${user.firstName},</p>
+                    <p>You requested to reset your password. Please click the button below to reset it:</p>
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="${resetURL}" style="background-color: #3b82f6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">Reset Password</a>
+                    </div>
+                    <p>Or copy and paste this link into your browser:</p>
+                    <p style="color: #3b82f6; word-break: break-all;">${resetURL}</p>
+                    <p><strong>This link will expire in 1 hour.</strong></p>
+                    <p>If you didn't request this password reset, please ignore this email and your password will remain unchanged.</p>
+                    <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
+                    <p style="color: #666; font-size: 12px;">This is an automated email. Please do not reply to this message.</p>
+                </div>
+            `;
+
+            await this.transporter.sendMail({
+                from: `"${process.env.APP_NAME || 'Sahab Property Management'}" <${
+                    process.env.EMAIL_USER
+                }>`,
+                to: user.email,
+                subject: 'Reset Your Password',
+                html,
+            });
+
+            logger.info(`Password reset email sent to ${user.email}`);
+        } catch (error) {
+            logger.error(`Failed to send reset email: ${error.message}`);
+            throw error;
+        }
+    }
+
     async sendRentPaymentConfirmation(tenant, payment, lease) {
         try {
             const paymentDate = new Date().toLocaleDateString('en-US', {
@@ -73,9 +108,9 @@ class EmailService {
                         <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
                         
                         <p style="color: #6b7280; font-size: 14px;">
-                            CasaConnect Property Management<br>
+                            PM Property Management<br>
                             If you have questions, contact us at ${
-                                process.env.SUPPORT_EMAIL || 'support@casaconnect.com'
+                                process.env.SUPPORT_EMAIL || 'support@sahabpm.com'
                             }
                         </p>
                     </div>
@@ -83,7 +118,7 @@ class EmailService {
             `;
 
             await this.transporter.sendMail({
-                from: `"CasaConnect" <${process.env.EMAIL_USER}>`,
+                from: `"PM" <${process.env.EMAIL_USER}>`,
                 to: tenant.email,
                 subject: `Rent Payment Confirmation - Unit ${lease.unit.unitNumber}`,
                 html,
@@ -153,7 +188,7 @@ class EmailService {
                         <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
                         
                         <p style="color: #6b7280; font-size: 14px;">
-                            CasaConnect Property Management<br>
+                            PM Property Management<br>
                             Track your request status in your tenant dashboard
                         </p>
                     </div>
@@ -161,7 +196,7 @@ class EmailService {
             `;
 
             await this.transporter.sendMail({
-                from: `"CasaConnect" <${process.env.EMAIL_USER}>`,
+                from: `"PM" <${process.env.EMAIL_USER}>`,
                 to: tenant.email,
                 subject: `Service Request Received - ${serviceRequest.title}`,
                 html,
@@ -186,7 +221,7 @@ class EmailService {
             const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
             const { data: fileData, error } = await supabase.storage
-                .from('casaconnect')
+                .from('sahabpm')
                 .download(document.fileName);
 
             if (error) throw error;
@@ -300,11 +335,11 @@ class EmailService {
                         <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
                         
                         <p style="color: #6b7280; font-size: 14px;">
-                            CasaConnect Property Management<br>
+                            PM Property Management<br>
                             ${
                                 process.env.SUPPORT_EMAIL
                                     ? `Email: ${process.env.SUPPORT_EMAIL}`
-                                    : 'support@casaconnect.com'
+                                    : 'support@sahabpm.com'
                             }<br>
                             ${
                                 process.env.COMPANY_PHONE
@@ -317,7 +352,7 @@ class EmailService {
             `;
 
             await this.transporter.sendMail({
-                from: `"CasaConnect" <${process.env.EMAIL_USER}>`,
+                from: `"PM" <${process.env.EMAIL_USER}>`,
                 to: tenant.email,
                 subject: `Lease Agreement - Unit ${unit.unitNumber}`,
                 html,
@@ -342,7 +377,7 @@ class EmailService {
             const html = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
                 <div style="background: #d0a764; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
-                    <h2 style="margin: 0; text-align: center;">Welcome to CasaConnect</h2>
+                    <h2 style="margin: 0; text-align: center;">Welcome to PM</h2>
                 </div>
                 
                 <div style="border: 1px solid #e5e7eb; border-top: none; padding: 30px; border-radius: 0 0 8px 8px;">
@@ -370,17 +405,17 @@ class EmailService {
                     <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
 
                     <p style="color: #6b7280; font-size: 14px;">
-                        CasaConnect Property Management<br>
-                        ${process.env.SUPPORT_EMAIL || 'support@casaconnect.com'}
+                        PM Property Management<br>
+                        ${process.env.SUPPORT_EMAIL || 'support@sahabpm.com'}
                     </p>
                 </div>
             </div>
         `;
 
             await this.transporter.sendMail({
-                from: `"CasaConnect" <${process.env.EMAIL_USER}>`,
+                from: `"PM" <${process.env.EMAIL_USER}>`,
                 to: tenant.email,
-                subject: 'Your CasaConnect Login Credentials',
+                subject: 'Your PM Login Credentials',
                 html,
             });
 

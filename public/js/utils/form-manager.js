@@ -3,107 +3,109 @@ class FormManager {
     // Validation utilities
     static validateForm(formElement) {
         let isValid = true;
-        
+
         // Clear previous errors
-        formElement.querySelectorAll('.form-group.error').forEach(group => {
+        formElement.querySelectorAll('.form-group.error').forEach((group) => {
             group.classList.remove('error');
         });
-        
+
         // Validate required fields
         const requiredFields = formElement.querySelectorAll('[required]');
-        requiredFields.forEach(field => {
+        requiredFields.forEach((field) => {
             if (!field.value.trim()) {
                 this.showFieldError(field);
                 isValid = false;
             }
         });
-        
+
         // Validate specific field types
-        formElement.querySelectorAll('input[type="email"]').forEach(field => {
-            if (field.value && !CasaConnect.FormUtils.validateEmail(field.value)) {
+        formElement.querySelectorAll('input[type="email"]').forEach((field) => {
+            if (field.value && !PM.FormUtils.validateEmail(field.value)) {
                 this.showFieldError(field);
-                CasaConnect.NotificationManager.error('Please enter a valid email address');
+                PM.NotificationManager.error('Please enter a valid email address');
                 isValid = false;
             }
         });
-        
-        formElement.querySelectorAll('input[type="tel"], input[data-format="phone"]').forEach(field => {
-            if (field.value && !CasaConnect.FormUtils.validatePhone(field.value)) {
-                this.showFieldError(field);
-                CasaConnect.NotificationManager.error('Please enter a valid 10-digit phone number');
-                isValid = false;
-            }
-        });
-        
+
+        formElement
+            .querySelectorAll('input[type="tel"], input[data-format="phone"]')
+            .forEach((field) => {
+                if (field.value && !PM.FormUtils.validatePhone(field.value)) {
+                    this.showFieldError(field);
+                    PM.NotificationManager.error('Please enter a valid 10-digit phone number');
+                    isValid = false;
+                }
+            });
+
         if (!isValid) {
-            CasaConnect.NotificationManager.error('Please fill in all required fields correctly');
+            PM.NotificationManager.error('Please fill in all required fields correctly');
         }
-        
+
         return isValid;
     }
-    
+
     static showFieldError(field) {
         const formGroup = field.closest('.form-group');
         if (formGroup) {
             formGroup.classList.add('error');
         }
     }
-    
+
     static clearFieldError(field) {
         const formGroup = field.closest('.form-group');
         if (formGroup) {
             formGroup.classList.remove('error');
         }
     }
-    
+
     // Draft handling
     static initializeDraftHandling(formElement, draftKey) {
         let autoSaveTimer = null;
-        
+
         const autoSave = () => {
             clearTimeout(autoSaveTimer);
             autoSaveTimer = setTimeout(() => {
-                const formData = CasaConnect.FormUtils.serializeForm(formElement);
-                CasaConnect.StorageHelper.set(draftKey, formData);
+                const formData = PM.FormUtils.serializeForm(formElement);
+                PM.StorageHelper.set(draftKey, formData);
                 console.log('Draft saved');
             }, 2000);
         };
-        
+
         formElement.addEventListener('input', autoSave);
         formElement.addEventListener('change', autoSave);
-        
+
         return autoSave;
     }
-    
+
     static clearDraft(draftKey) {
-        CasaConnect.StorageHelper.remove(draftKey);
+        PM.StorageHelper.remove(draftKey);
     }
-    
+
     // Unsaved changes handling
     static trackUnsavedChanges(formElement, originalDataKey) {
-        const originalData = CasaConnect.FormUtils.serializeForm(formElement);
-        CasaConnect.StorageHelper.set(originalDataKey, originalData);
-        
+        const originalData = PM.FormUtils.serializeForm(formElement);
+        PM.StorageHelper.set(originalDataKey, originalData);
+
         const handler = (e) => {
-            const currentData = CasaConnect.FormUtils.serializeForm(formElement);
-            const savedData = CasaConnect.StorageHelper.get(originalDataKey);
-            
+            const currentData = PM.FormUtils.serializeForm(formElement);
+            const savedData = PM.StorageHelper.get(originalDataKey);
+
             if (JSON.stringify(currentData) !== JSON.stringify(savedData)) {
                 e.preventDefault();
                 e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
             }
         };
-        
+
         window.addEventListener('beforeunload', handler);
-        
+
         return handler;
     }
-    
+
     // Submit button state management
     static setSubmitButtonLoading(button, isLoading = true, loadingText = 'Saving...') {
         const btnText = button.querySelector('.btn-text');
         const btnLoading = button.querySelector('.btn-loading');
-        
+
         if (isLoading) {
             if (btnText) btnText.style.display = 'none';
             if (btnLoading) {
@@ -120,19 +122,19 @@ class FormManager {
             button.disabled = false;
         }
     }
-    
+
     // Password generation (moved from tenant modal manager)
     static generatePassword(length = 12) {
         const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%';
         let password = '';
-        
+
         for (let i = 0; i < length; i++) {
             password += charset.charAt(Math.floor(Math.random() * charset.length));
         }
-        
+
         return password;
     }
-    
+
     static setFieldValue(fieldId, value) {
         const field = document.getElementById(fieldId);
         if (field) {

@@ -8,7 +8,7 @@ const DocumentManager = {
         container.innerHTML = '<div class="loading-spinner">Loading documents...</div>';
 
         try {
-            const response = await CasaConnect.APIClient.get(
+            const response = await PM.APIClient.get(
                 `/api/manager/documents?relatedModel=${relatedModel}&relatedId=${relatedId}`
             );
 
@@ -85,12 +85,10 @@ const DocumentManager = {
         if (!confirm('Are you sure you want to delete this document?')) return;
 
         try {
-            const response = await CasaConnect.APIClient.delete(
-                `/api/manager/documents/${documentId}`
-            );
+            const response = await PM.APIClient.delete(`/api/manager/documents/${documentId}`);
 
             if (response.success) {
-                CasaConnect.NotificationManager.success('Document deleted successfully');
+                PM.NotificationManager.success('Document deleted successfully');
                 setTimeout(() => {
                     if (reloadCallback && typeof reloadCallback === 'function') {
                         reloadCallback();
@@ -101,7 +99,7 @@ const DocumentManager = {
             }
         } catch (error) {
             console.error('Delete error:', error); // Add debugging
-            CasaConnect.NotificationManager.error(error.message);
+            PM.NotificationManager.error(error.message);
         }
     },
 
@@ -149,12 +147,12 @@ const DocumentManager = {
             }
         }
 
-        CasaConnect.ModalManager.openModal('uploadDocumentModal');
+        PM.ModalManager.openModal('uploadDocumentModal');
     },
 
     // Close upload modal
     closeUploadDocumentModal() {
-        CasaConnect.ModalManager.closeModal('uploadDocumentModal');
+        PM.ModalManager.closeModal('uploadDocumentModal');
         const form = document.getElementById('uploadDocumentForm');
         if (form) form.reset();
     },
@@ -179,7 +177,7 @@ const DocumentManager = {
                 // Double-check on client side
                 const leaseOption = document.querySelector('#documentType option[value="lease"]');
                 if (leaseOption && (leaseOption.disabled || leaseOption.style.display === 'none')) {
-                    CasaConnect.NotificationManager.error(
+                    PM.NotificationManager.error(
                         'Cannot upload lease document without an active lease'
                     );
                     btnText.style.display = 'inline-block';
@@ -203,13 +201,10 @@ const DocumentManager = {
             btn.disabled = true;
 
             try {
-                const response = await CasaConnect.APIClient.post(
-                    '/api/manager/documents',
-                    formData
-                );
+                const response = await PM.APIClient.post('/api/manager/documents', formData);
 
                 if (response.success) {
-                    CasaConnect.NotificationManager.success('Document uploaded successfully');
+                    PM.NotificationManager.success('Document uploaded successfully');
                     this.closeUploadDocumentModal();
 
                     // Call reload callback if provided
@@ -220,7 +215,7 @@ const DocumentManager = {
                     throw new Error(response.error || 'Failed to upload document');
                 }
             } catch (error) {
-                CasaConnect.NotificationManager.error(error.message);
+                PM.NotificationManager.error(error.message);
                 btnText.style.display = 'inline-block';
                 btnLoading.style.display = 'none';
                 btn.disabled = false;

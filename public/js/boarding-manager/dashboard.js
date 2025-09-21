@@ -1,6 +1,6 @@
 // Boarding Manager Dashboard JavaScript
 
-CasaConnect.ready(() => {
+PM.ready(() => {
     BoardingDashboard.init();
 });
 
@@ -32,14 +32,11 @@ const BoardingDashboard = {
         }
 
         try {
-            const formData = CasaConnect.FormUtils.serializeForm(form);
-            const response = await CasaConnect.APIClient.post(
-                '/api/boarding/application',
-                formData
-            );
+            const formData = PM.FormUtils.serializeForm(form);
+            const response = await PM.APIClient.post('/api/boarding/application', formData);
 
             if (response.success) {
-                CasaConnect.NotificationManager.success('Application created successfully!');
+                PM.NotificationManager.success('Application created successfully!');
                 this.closeNewApplicationModal();
 
                 // Fix: Access applicationId from response.data
@@ -58,7 +55,7 @@ const BoardingDashboard = {
                 throw new Error(response.error || 'Failed to create application');
             }
         } catch (error) {
-            CasaConnect.NotificationManager.error(error.message);
+            PM.NotificationManager.error(error.message);
             if (window.FormManager) {
                 FormManager.setSubmitButtonLoading(submitBtn, false);
             }
@@ -66,7 +63,7 @@ const BoardingDashboard = {
     },
 
     closeNewApplicationModal() {
-        CasaConnect.ModalManager.closeModal('newApplicationModal');
+        PM.ModalManager.closeModal('newApplicationModal');
         const form = document.getElementById('newApplicationForm');
         if (form) form.reset();
     },
@@ -74,7 +71,7 @@ const BoardingDashboard = {
 
 // Global functions
 window.openNewApplicationModal = () => {
-    CasaConnect.ModalManager.openModal('newApplicationModal');
+    PM.ModalManager.openModal('newApplicationModal');
 };
 
 window.closeNewApplicationModal = () => {

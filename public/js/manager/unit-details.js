@@ -1,6 +1,6 @@
 // Unit Details Page JavaScript
 
-CasaConnect.ready(() => {
+PM.ready(() => {
     const unitElement = document.querySelector('[data-unit-id]');
     if (unitElement) {
         const unitId = unitElement.getAttribute('data-unit-id');

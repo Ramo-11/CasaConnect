@@ -7,7 +7,7 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANO
 exports.uploadFile = async (file, folder = 'documents') => {
     try {
         const fileName = `${folder}/${Date.now()}-${file.originalname}`;
-        const { error } = await supabase.storage.from('casaconnect').upload(fileName, file.buffer, {
+        const { error } = await supabase.storage.from('sahabpm').upload(fileName, file.buffer, {
             contentType: file.mimetype,
             cacheControl: '3600',
         });
@@ -27,7 +27,7 @@ exports.uploadFile = async (file, folder = 'documents') => {
 
 exports.deleteFile = async (fileName) => {
     try {
-        const { error } = await supabase.storage.from('casaconnect').remove([fileName]);
+        const { error } = await supabase.storage.from('sahabpm').remove([fileName]);
 
         if (error) throw error;
         return true;
@@ -84,7 +84,7 @@ exports.deleteServicePhotos = async (fileNames) => {
 exports.getSignedUrl = async (fileName, expiresIn = 3600, opts = {}) => {
     try {
         const { data, error } = await supabase.storage
-            .from('casaconnect')
+            .from('sahabpm')
             .createSignedUrl(fileName, expiresIn, {
                 download: opts.download || undefined,
             });

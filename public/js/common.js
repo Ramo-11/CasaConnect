@@ -489,7 +489,7 @@ ready(() => {
 });
 
 // Export for use in other files
-window.CasaConnect = {
+window.PM = {
     ready,
     ModalManager,
     NotificationManager,

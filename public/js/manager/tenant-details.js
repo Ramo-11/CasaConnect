@@ -2,7 +2,7 @@
 let currentTenantId = null;
 
 // Initialize tenant details page
-CasaConnect.ready(() => {
+PM.ready(() => {
     const tenantElement = document.querySelector('[data-tenant-id]');
     if (tenantElement) {
         currentTenantId = tenantElement.getAttribute('data-tenant-id');
@@ -46,19 +46,17 @@ async function resetPassword(tenantId) {
     }
 
     try {
-        const response = await CasaConnect.APIClient.post('/api/manager/tenant/reset-password', {
+        const response = await PM.APIClient.post('/api/manager/tenant/reset-password', {
             tenantId: tenantId,
         });
 
         if (response.success) {
-            CasaConnect.NotificationManager.success(
-                'Password reset successfully. Email sent to tenant.'
-            );
+            PM.NotificationManager.success('Password reset successfully. Email sent to tenant.');
         } else {
             throw new Error(response.error || 'Failed to reset password');
         }
     } catch (error) {
-        CasaConnect.NotificationManager.error(error.message);
+        PM.NotificationManager.error(error.message);
     }
 }
 
@@ -69,23 +67,23 @@ function viewRequest(requestId) {
 
 // Send Notification
 function sendNotification(tenantId) {
-    CasaConnect.NotificationManager.info('Notification feature coming soon');
+    PM.NotificationManager.info('Notification feature coming soon');
 }
 
 // Generate Lease Document
 async function generateLeaseDocument(tenantId) {
     try {
-        CasaConnect.NotificationManager.info('Generating lease document...');
-        const response = await CasaConnect.APIClient.get(`/manager/tenant/${tenantId}/lease`);
+        PM.NotificationManager.info('Generating lease document...');
+        const response = await PM.APIClient.get(`/manager/tenant/${tenantId}/lease`);
 
         if (response.success) {
             window.open(response.data.downloadUrl, '_blank');
-            CasaConnect.NotificationManager.success('Lease document generated successfully');
+            PM.NotificationManager.success('Lease document generated successfully');
         } else {
             throw new Error(response.error || 'Failed to generate lease');
         }
     } catch (error) {
-        CasaConnect.NotificationManager.error('Lease generation feature coming soon');
+        PM.NotificationManager.error('Lease generation feature coming soon');
     }
 }
 
@@ -97,8 +95,8 @@ function viewDocuments(tenantId) {
 // Export Tenant Data
 async function exportTenantData(tenantId) {
     try {
-        CasaConnect.NotificationManager.info('Exporting tenant data...');
-        const response = await CasaConnect.APIClient.get(`/api/manager/tenant/${tenantId}/export`);
+        PM.NotificationManager.info('Exporting tenant data...');
+        const response = await PM.APIClient.get(`/api/manager/tenant/${tenantId}/export`);
 
         if (response.success) {
             const blob = new Blob([JSON.stringify(response.data, null, 2)], {
@@ -113,10 +111,10 @@ async function exportTenantData(tenantId) {
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
 
-            CasaConnect.NotificationManager.success('Data exported successfully');
+            PM.NotificationManager.success('Data exported successfully');
         }
     } catch (error) {
-        CasaConnect.NotificationManager.error(error.message);
+        PM.NotificationManager.error(error.message);
     }
 }
 
@@ -174,19 +172,19 @@ async function updateStatus(requestId, newStatus) {
     if (!confirm(`Update status to ${newStatus.replace('_', ' ')}?`)) return;
 
     try {
-        const response = await CasaConnect.APIClient.put(
+        const response = await PM.APIClient.put(
             `/api/manager/service-requests/${requestId}/status`,
             { status: newStatus }
         );
 
         if (response.success) {
-            CasaConnect.NotificationManager.success('Status updated successfully');
+            PM.NotificationManager.success('Status updated successfully');
             setTimeout(() => location.reload(), 1500);
         } else {
             throw new Error(response.message || 'Failed to update status');
         }
     } catch (error) {
-        CasaConnect.NotificationManager.error(error.message);
+        PM.NotificationManager.error(error.message);
     }
 }
 
@@ -194,19 +192,19 @@ async function cancelRequest(requestId) {
     if (!confirm('Are you sure you want to cancel this service request?')) return;
 
     try {
-        const response = await CasaConnect.APIClient.put(
+        const response = await PM.APIClient.put(
             `/api/manager/service-requests/${requestId}/status`,
             { status: 'cancelled' }
         );
 
         if (response.success) {
-            CasaConnect.NotificationManager.success('Request cancelled successfully');
+            PM.NotificationManager.success('Request cancelled successfully');
             setTimeout(() => location.reload(), 1500);
         } else {
             throw new Error(response.message || 'Failed to cancel request');
         }
     } catch (error) {
-        CasaConnect.NotificationManager.error(error.message);
+        PM.NotificationManager.error(error.message);
     }
 }
 
@@ -220,39 +218,37 @@ async function deleteServiceRequest(requestId) {
     }
 
     try {
-        const response = await CasaConnect.APIClient.delete(
-            `/api/manager/service-requests/${requestId}`
-        );
+        const response = await PM.APIClient.delete(`/api/manager/service-requests/${requestId}`);
 
         if (response.success) {
-            CasaConnect.NotificationManager.success('Service request deleted successfully');
+            PM.NotificationManager.success('Service request deleted successfully');
             setTimeout(() => location.reload(), 1500);
         } else {
             throw new Error(response.message || 'Failed to delete request');
         }
     } catch (error) {
-        CasaConnect.NotificationManager.error(error.message);
+        PM.NotificationManager.error(error.message);
     }
 }
 
 // Assignment Modal Functions
 function openAssignModal(requestId) {
     document.getElementById('assignRequestId').value = requestId;
-    CasaConnect.ModalManager.openModal('assignModal');
+    PM.ModalManager.openModal('assignModal');
 }
 
 function closeAssignModal() {
-    CasaConnect.ModalManager.closeModal('assignModal');
+    PM.ModalManager.closeModal('assignModal');
     document.getElementById('assignForm').reset();
 }
 
 function addNote(requestId) {
     document.getElementById('noteRequestId').value = requestId;
-    CasaConnect.ModalManager.openModal('noteModal');
+    PM.ModalManager.openModal('noteModal');
 }
 
 function closeNoteModal() {
-    CasaConnect.ModalManager.closeModal('noteModal');
+    PM.ModalManager.closeModal('noteModal');
     document.getElementById('noteForm').reset();
 }
 
@@ -298,11 +294,11 @@ function openRecordPaymentModal(tenantId) {
     document.getElementById('rentDetailsSection').style.display = 'none';
     document.getElementById('rentAmountInfo').style.display = 'none';
 
-    CasaConnect.ModalManager.openModal('recordPaymentModal');
+    PM.ModalManager.openModal('recordPaymentModal');
 }
 
 function closeRecordPaymentModal() {
-    CasaConnect.ModalManager.closeModal('recordPaymentModal');
+    PM.ModalManager.closeModal('recordPaymentModal');
 }
 
 function handlePaymentTypeChange() {
@@ -359,7 +355,7 @@ function checkRentAmount() {
 }
 
 // Initialize payment form submission
-CasaConnect.ready(() => {
+PM.ready(() => {
     const recordPaymentForm = document.getElementById('recordPaymentForm');
     if (recordPaymentForm) {
         recordPaymentForm.addEventListener('submit', async (e) => {
@@ -374,23 +370,23 @@ CasaConnect.ready(() => {
             submitBtn.disabled = true;
 
             try {
-                const formData = CasaConnect.FormUtils.serializeForm(e.target);
+                const formData = PM.FormUtils.serializeForm(e.target);
                 const tenantId = formData.tenantId;
 
-                const response = await CasaConnect.APIClient.post(
+                const response = await PM.APIClient.post(
                     `/api/manager/tenant/${tenantId}/payment`,
                     formData
                 );
 
                 if (response.success) {
-                    CasaConnect.NotificationManager.success('Payment recorded successfully!');
+                    PM.NotificationManager.success('Payment recorded successfully!');
                     closeRecordPaymentModal();
                     setTimeout(() => location.reload(), 1500);
                 } else {
                     throw new Error(response.error || 'Failed to record payment');
                 }
             } catch (error) {
-                CasaConnect.NotificationManager.error(error.message);
+                PM.NotificationManager.error(error.message);
                 btnText.style.display = 'inline-flex';
                 btnLoading.style.display = 'none';
                 submitBtn.disabled = false;
@@ -400,27 +396,27 @@ CasaConnect.ready(() => {
 });
 
 // Initialize forms
-CasaConnect.ready(() => {
+PM.ready(() => {
     const assignForm = document.getElementById('assignForm');
     if (assignForm) {
         assignForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const formData = CasaConnect.FormUtils.serializeForm(assignForm);
+            const formData = PM.FormUtils.serializeForm(assignForm);
 
             try {
-                const response = await CasaConnect.APIClient.post(
+                const response = await PM.APIClient.post(
                     '/api/manager/service-requests/assign',
                     formData
                 );
                 if (response.success) {
-                    CasaConnect.NotificationManager.success('Technician assigned successfully');
+                    PM.NotificationManager.success('Technician assigned successfully');
                     closeAssignModal();
                     setTimeout(() => location.reload(), 1500);
                 } else {
                     throw new Error(response.message || 'Failed to assign technician');
                 }
             } catch (error) {
-                CasaConnect.NotificationManager.error(error.message);
+                PM.NotificationManager.error(error.message);
             }
         });
     }
@@ -429,22 +425,22 @@ CasaConnect.ready(() => {
     if (noteForm) {
         noteForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const formData = CasaConnect.FormUtils.serializeForm(noteForm);
+            const formData = PM.FormUtils.serializeForm(noteForm);
 
             try {
-                const response = await CasaConnect.APIClient.post(
+                const response = await PM.APIClient.post(
                     '/api/manager/service-requests/note',
                     formData
                 );
                 if (response.success) {
-                    CasaConnect.NotificationManager.success('Note added successfully');
+                    PM.NotificationManager.success('Note added successfully');
                     closeNoteModal();
                     setTimeout(() => location.reload(), 1500);
                 } else {
                     throw new Error(response.message || 'Failed to add note');
                 }
             } catch (error) {
-                CasaConnect.NotificationManager.error(error.message);
+                PM.NotificationManager.error(error.message);
             }
         });
     }
@@ -461,19 +457,16 @@ async function suspendAccount(tenantId) {
     }
 
     try {
-        const response = await CasaConnect.APIClient.put(
-            `/api/manager/tenant/${tenantId}/suspend`,
-            {}
-        );
+        const response = await PM.APIClient.put(`/api/manager/tenant/${tenantId}/suspend`, {});
 
         if (response.success) {
-            CasaConnect.NotificationManager.success('Account suspended successfully');
+            PM.NotificationManager.success('Account suspended successfully');
             setTimeout(() => location.reload(), 1500);
         } else {
             throw new Error(response.error || 'Failed to suspend account');
         }
     } catch (error) {
-        CasaConnect.NotificationManager.error(error.message);
+        PM.NotificationManager.error(error.message);
     }
 }
 
@@ -483,19 +476,16 @@ async function activateAccount(tenantId) {
     }
 
     try {
-        const response = await CasaConnect.APIClient.put(
-            `/api/manager/tenant/${tenantId}/activate`,
-            {}
-        );
+        const response = await PM.APIClient.put(`/api/manager/tenant/${tenantId}/activate`, {});
 
         if (response.success) {
-            CasaConnect.NotificationManager.success('Account activated successfully');
+            PM.NotificationManager.success('Account activated successfully');
             setTimeout(() => location.reload(), 1500);
         } else {
             throw new Error(response.error || 'Failed to activate account');
         }
     } catch (error) {
-        CasaConnect.NotificationManager.error(error.message);
+        PM.NotificationManager.error(error.message);
     }
 }
 
@@ -503,7 +493,7 @@ async function activateAccount(tenantId) {
 function autoRefreshData() {
     setInterval(async () => {
         try {
-            const response = await CasaConnect.APIClient.get(
+            const response = await PM.APIClient.get(
                 `/api/tenant/${currentTenantId}/payment-status`
             );
             if (response.success) {

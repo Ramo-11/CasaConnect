@@ -1,6 +1,6 @@
 // Manager Application Review JavaScript
 
-CasaConnect.ready(() => {
+PM.ready(() => {
     ApplicationReview.init();
 });
 
@@ -38,18 +38,16 @@ const ApplicationReview = {
 
     async handleApprove(e) {
         const form = e.target;
-        const formData = CasaConnect.FormUtils.serializeForm(form);
+        const formData = PM.FormUtils.serializeForm(form);
 
         try {
-            const response = await CasaConnect.APIClient.post(
+            const response = await PM.APIClient.post(
                 `/api/manager/application/${this.applicationId}/approve`,
                 formData
             );
 
             if (response.success) {
-                CasaConnect.NotificationManager.success(
-                    'Application approved and tenant account created!'
-                );
+                PM.NotificationManager.success('Application approved and tenant account created!');
                 this.closeApproveModal();
 
                 // Redirect to new tenant details
@@ -60,22 +58,22 @@ const ApplicationReview = {
                 throw new Error(response.error || 'Failed to approve application');
             }
         } catch (error) {
-            CasaConnect.NotificationManager.error(error.message);
+            PM.NotificationManager.error(error.message);
         }
     },
 
     async handleDecline(e) {
         const form = e.target;
-        const formData = CasaConnect.FormUtils.serializeForm(form);
+        const formData = PM.FormUtils.serializeForm(form);
 
         try {
-            const response = await CasaConnect.APIClient.post(
+            const response = await PM.APIClient.post(
                 `/api/manager/application/${this.applicationId}/decline`,
                 formData
             );
 
             if (response.success) {
-                CasaConnect.NotificationManager.success('Application declined');
+                PM.NotificationManager.success('Application declined');
                 this.closeDeclineModal();
 
                 // Redirect back to applications list
@@ -86,18 +84,18 @@ const ApplicationReview = {
                 throw new Error(response.error || 'Failed to decline application');
             }
         } catch (error) {
-            CasaConnect.NotificationManager.error(error.message);
+            PM.NotificationManager.error(error.message);
         }
     },
 
     closeApproveModal() {
-        CasaConnect.ModalManager.closeModal('approveModal');
+        PM.ModalManager.closeModal('approveModal');
         const form = document.getElementById('approveForm');
         if (form) form.reset();
     },
 
     closeDeclineModal() {
-        CasaConnect.ModalManager.closeModal('declineModal');
+        PM.ModalManager.closeModal('declineModal');
         const form = document.getElementById('declineForm');
         if (form) form.reset();
     },
@@ -105,48 +103,48 @@ const ApplicationReview = {
 
 // Global functions
 window.approveApplication = (applicationId) => {
-    CasaConnect.ModalManager.openModal('approveModal');
+    PM.ModalManager.openModal('approveModal');
 };
 
 window.unapproveApplication = async (applicationId) => {
     if (!confirm('Are you sure you want to unapprove this application?')) return;
 
     try {
-        const response = await CasaConnect.APIClient.post(
+        const response = await PM.APIClient.post(
             `/api/manager/application/${applicationId}/unapprove`
         );
 
         if (response.success) {
-            CasaConnect.NotificationManager.success('Application unapproved');
+            PM.NotificationManager.success('Application unapproved');
             setTimeout(() => location.reload(), 1500);
         } else {
             throw new Error(response.message);
         }
     } catch (err) {
-        CasaConnect.NotificationManager.error(err.message);
+        PM.NotificationManager.error(err.message);
     }
 };
 
 window.declineApplication = (applicationId) => {
-    CasaConnect.ModalManager.openModal('declineModal');
+    PM.ModalManager.openModal('declineModal');
 };
 
 window.undeclineApplication = async (applicationId) => {
     if (!confirm('Are you sure you want to undecline this application?')) return;
 
     try {
-        const response = await CasaConnect.APIClient.post(
+        const response = await PM.APIClient.post(
             `/api/manager/application/${applicationId}/undecline`
         );
 
         if (response.success) {
-            CasaConnect.NotificationManager.success('Application undeclined');
+            PM.NotificationManager.success('Application undeclined');
             setTimeout(() => location.reload(), 1500);
         } else {
             throw new Error(response.message);
         }
     } catch (err) {
-        CasaConnect.NotificationManager.error(err.message);
+        PM.NotificationManager.error(err.message);
     }
 };
 
