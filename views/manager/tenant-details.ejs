@@ -1,38 +1,22 @@
 <!-- Add this hidden data container right after the page header -->
-<div id="tenantData" style="display:none;" 
-     data-tenant-id="<%= tenant._id %>"
-     data-tenant-name="<%= tenant.firstName %> <%= tenant.lastName %>"
-     data-tenant-email="<%= tenant.email %>"
-     data-unit-number="<%= activeLease && activeLease.unit ? activeLease.unit.unitNumber : '' %>">
-</div>
+<div
+    id="tenantData"
+    style="display: none"
+    data-tenant-id="<%= tenant._id %>"
+    data-tenant-name="<%= tenant.firstName %> <%= tenant.lastName %>"
+    data-tenant-email="<%= tenant.email %>"
+    data-unit-number="<%= activeLease && activeLease.unit ? activeLease.unit.unitNumber : '' %>"
+></div>
 
 <!-- Tenant Details Page -->
 <div class="tenant-details-container" data-tenant-id="<%= tenant._id %>">
-    <!-- Page Header -->
-    <%- include('../partials/page-header', {
-        headerTitle: 'Tenant Details',
-        headerSubtitle: `${tenant.firstName} ${tenant.lastName}`,
-        backUrl: '/manager/dashboard',
-        backText: 'Back to Dashboard',
-        headerActions: [
-            {
-                text: 'Edit Tenant',
-                icon: 'fas fa-edit',
-                onclick: `editTenant('${tenant._id}')`,
-                btnClass: 'btn-primary'
-            }
-        ]
-    }) %>
-
     <!-- Main Content Grid -->
     <div class="details-grid">
         <!-- Personal Information Card -->
         <div class="card">
             <div class="card-header">
                 <h3>Personal Information</h3>
-                <span
-                    class="badge <%= tenant.isActive ? 'badge-success' : 'badge-danger' %>"
-                >
+                <span class="badge <%= tenant.isActive ? 'badge-success' : 'badge-danger' %>">
                     <%= tenant.isActive ? 'Active' : 'Inactive' %>
                 </span>
             </div>
@@ -40,42 +24,28 @@
                 <div class="info-grid">
                     <div class="info-item">
                         <label>Full Name</label>
-                        <span
-                            ><%= tenant.firstName %> <%= tenant.lastName
-                            %></span
-                        >
+                        <span><%= tenant.firstName %> <%= tenant.lastName %></span>
                     </div>
                     <div class="info-item">
                         <label>Email</label>
-                        <span
-                            ><a href="mailto:<%= tenant.email %>"
-                                ><%= tenant.email %></a
-                            ></span
-                        >
+                        <span><a href="mailto:<%= tenant.email %>"><%= tenant.email %></a></span>
                     </div>
                     <div class="info-item">
                         <label>Phone</label>
-                        <span
-                            ><a href="tel:<%= tenant.phone %>"
-                                ><%= tenant.phone %></a
-                            ></span
-                        >
+                        <span><a href="tel:<%= tenant.phone %>"><%= tenant.phone %></a></span>
                     </div>
                     <div class="info-item">
                         <label>Member Since</label>
                         <span
-                            ><%= new
-                            Date(tenant.createdAt).toLocaleDateString('en-US', {
-                            month: 'long', day: 'numeric', year: 'numeric' })
-                            %></span
+                            ><%= new Date(tenant.createdAt).toLocaleDateString('en-US', { month:
+                            'long', day: 'numeric', year: 'numeric' }) %></span
                         >
                     </div>
                     <div class="info-item">
                         <label>Last Login</label>
                         <span
-                            ><%= tenant.lastLogin ? new
-                            Date(tenant.lastLogin).toLocaleString() : 'Never'
-                            %></span
+                            ><%= tenant.lastLogin ? new Date(tenant.lastLogin).toLocaleString() :
+                            'Never' %></span
                         >
                     </div>
                 </div>
@@ -87,10 +57,7 @@
                     >
                         <i class="fas fa-envelope"></i> Send Login Credentials
                     </button>
-                    <button
-                        class="btn btn-secondary"
-                        onclick="resetPassword('<%= tenant._id %>')"
-                    >
+                    <button class="btn btn-secondary" onclick="resetPassword('<%= tenant._id %>')">
                         <i class="fas fa-key"></i> Reset Password
                     </button>
                 </div>
@@ -102,9 +69,7 @@
             <div class="card-header">
                 <h3>Lease Information</h3>
                 <% if (activeLease) { %>
-                <a href="/manager/lease/<%= activeLease._id %>" class="btn-link"
-                    >View Lease</a
-                >
+                <a href="/manager/lease/<%= activeLease._id %>" class="btn-link">View Lease</a>
                 <% } %>
             </div>
             <div class="card-body">
@@ -119,25 +84,15 @@
                     <div class="info-grid">
                         <div class="info-item">
                             <label>Lease Start</label>
-                            <span
-                                ><%= new
-                                Date(activeLease.startDate).toLocaleDateString()
-                                %></span
-                            >
+                            <span><%= new Date(activeLease.startDate).toLocaleDateString() %></span>
                         </div>
                         <div class="info-item">
                             <label>Lease End</label>
-                            <span
-                                ><%= new
-                                Date(activeLease.endDate).toLocaleDateString()
-                                %></span
-                            >
+                            <span><%= new Date(activeLease.endDate).toLocaleDateString() %></span>
                         </div>
                         <div class="info-item">
                             <label>Monthly Rent</label>
-                            <span class="rent-amount"
-                                >$<%= activeLease.monthlyRent %></span
-                            >
+                            <span class="rent-amount">$<%= activeLease.monthlyRent %></span>
                         </div>
                         <div class="info-item">
                             <label>Security Deposit</label>
@@ -145,10 +100,7 @@
                         </div>
                         <div class="info-item">
                             <label>Rent Due Day</label>
-                            <span
-                                >Day <%= activeLease.rentDueDay %> of
-                                month</span
-                            >
+                            <span>Day <%= activeLease.rentDueDay %> of month</span>
                         </div>
                         <div class="info-item">
                             <label>Days Remaining</label>
@@ -161,9 +113,7 @@
                         <div class="info-grid">
                             <div class="info-item">
                                 <label>Type</label>
-                                <span
-                                    ><%= activeLease.unit.propertyType %></span
-                                >
+                                <span><%= activeLease.unit.propertyType %></span>
                             </div>
                             <div class="info-item">
                                 <label>Bedrooms</label>
@@ -175,21 +125,16 @@
                             </div>
                             <div class="info-item">
                                 <label>Square Feet</label>
-                                <span
-                                    ><%= activeLease.unit.squareFeet %> sq
-                                    ft</span
-                                >
+                                <span><%= activeLease.unit.squareFeet %> sq ft</span>
                             </div>
                         </div>
                     </div>
 
-                    <% if (activeLease.unit.amenities &&
-                    activeLease.unit.amenities.length > 0) { %>
+                    <% if (activeLease.unit.amenities && activeLease.unit.amenities.length > 0) { %>
                     <div class="amenities-section">
                         <label>Amenities</label>
                         <div class="amenities-list">
-                            <% activeLease.unit.amenities.forEach(amenity => {
-                            %>
+                            <% activeLease.unit.amenities.forEach(amenity => { %>
                             <span class="amenity-tag"><%= amenity %></span>
                             <% }) %>
                         </div>
@@ -216,47 +161,49 @@
             <div class="card-header">
                 <h3>Payment Management</h3>
                 <div class="header-actions">
-                    <button class="btn btn-primary btn-small" onclick="openRecordPaymentModal('<%= tenant._id %>')">
+                    <button
+                        class="btn btn-primary btn-small"
+                        onclick="openRecordPaymentModal('<%= tenant._id %>')"
+                    >
                         <i class="fas fa-plus-circle"></i> Record Payment
                     </button>
                 </div>
                 <div class="header-stats">
                     <div class="mini-stat">
                         <span class="label">Total Paid</span>
-                        <span class="value">$<%= payments.reduce((sum, p) => p.status === 'completed' ? sum + p.amount : sum, 0).toFixed(2) %></span>
+                        <span class="value"
+                            >$<%= payments.reduce((sum, p) => p.status === 'completed' ? sum +
+                            p.amount : sum, 0).toFixed(2) %></span
+                        >
                     </div>
                     <% if (activeLease) { %>
                     <div class="mini-stat">
                         <span class="label">Monthly Rent</span>
                         <span class="value">$<%= activeLease.monthlyRent %></span>
                     </div>
-                    <% 
-                        // Calculate current month's rent status
-                        const currentMonth = new Date().getMonth() + 1;
-                        const currentYear = new Date().getFullYear();
-                        const currentMonthPayments = payments.filter(p => 
-                            p.type === 'rent' && 
-                            p.month === currentMonth && 
-                            p.year === currentYear && 
-                            p.status === 'completed'
-                        );
-                        const totalPaidThisMonth = currentMonthPayments.reduce((sum, p) => sum + p.amount, 0);
-                        const rentRemaining = Math.max(0, activeLease.monthlyRent - totalPaidThisMonth);
+                    <% // Calculate current month's rent status const currentMonth = new
+                    Date().getMonth() + 1; const currentYear = new Date().getFullYear(); const
+                    currentMonthPayments = payments.filter(p => p.type === 'rent' && p.month ===
+                    currentMonth && p.year === currentYear && p.status === 'completed' ); const
+                    totalPaidThisMonth = currentMonthPayments.reduce((sum, p) => sum + p.amount, 0);
+                    const rentRemaining = Math.max(0, activeLease.monthlyRent - totalPaidThisMonth);
                     %>
                     <div class="mini-stat">
                         <span class="label">Current Month</span>
-                        <span class="value <%= rentRemaining > 0 ? 'text-warning' : 'text-success' %>">
-                            <% if (rentRemaining > 0) { %>
-                                $<%= rentRemaining.toFixed(2) %> due
-                            <% } else { %>
-                                Paid
-                            <% } %>
+                        <span
+                            class="value <%= rentRemaining > 0 ? 'text-warning' : 'text-success' %>"
+                        >
+                            <% if (rentRemaining > 0) { %> $<%= rentRemaining.toFixed(2) %> due <% }
+                            else { %> Paid <% } %>
                         </span>
                     </div>
                     <% } %>
                     <div class="mini-stat">
                         <span class="label">Last Payment</span>
-                        <span class="value"><%= payments.length > 0 ? new Date(payments[0].createdAt).toLocaleDateString() : 'N/A' %></span>
+                        <span class="value"
+                            ><%= payments.length > 0 ? new
+                            Date(payments[0].createdAt).toLocaleDateString() : 'N/A' %></span
+                        >
                     </div>
                 </div>
             </div>
@@ -278,13 +225,15 @@
                         <tbody>
                             <% payments.forEach(payment => { %>
                             <tr>
-                                <td><%= new Date(payment.paidDate || payment.createdAt).toLocaleDateString() %></td>
+                                <td>
+                                    <%= new Date(payment.paidDate ||
+                                    payment.createdAt).toLocaleDateString() %>
+                                </td>
                                 <td>
                                     <span class="type-badge type-<%= payment.type %>">
-                                        <%= payment.type.replace('_', ' ') %>
-                                        <% if (payment.type === 'rent' && payment.month && payment.year) { %>
-                                            (<%= payment.month %>/<%= payment.year %>)
-                                        <% } %>
+                                        <%= payment.type.replace('_', ' ') %> <% if (payment.type
+                                        === 'rent' && payment.month && payment.year) { %> (<%=
+                                        payment.month %>/<%= payment.year %>) <% } %>
                                     </span>
                                 </td>
                                 <td class="amount">$<%= payment.amount.toFixed(2) %></td>
@@ -322,8 +271,7 @@
                     <div class="mini-stat">
                         <span class="label">Pending</span>
                         <span class="value"
-                            ><%= serviceRequests.filter(r => r.status ===
-                            'pending').length %></span
+                            ><%= serviceRequests.filter(r => r.status === 'pending').length %></span
                         >
                     </div>
                 </div>
@@ -333,35 +281,28 @@
                 <div class="requests-list">
                     <% serviceRequests.forEach(request => { %>
                     <div class="request-item-detailed">
-                        <div
-                            class="request-priority priority-<%= request.priority %>"
-                        ></div>
+                        <div class="request-priority priority-<%= request.priority %>"></div>
                         <div class="request-content">
                             <div class="request-header">
                                 <h4><%= request.title %></h4>
                                 <span class="badge status-<%= request.status %>"
-                                    ><%= request.status.replace('_', ' ')
-                                    %></span
+                                    ><%= request.status.replace('_', ' ') %></span
                                 >
                             </div>
                             <div class="request-meta">
                                 <span
                                     ><i class="fas fa-calendar"></i> <%= new
-                                    Date(request.createdAt).toLocaleDateString()
-                                    %></span
+                                    Date(request.createdAt).toLocaleDateString() %></span
                                 >
                                 <span
-                                    ><i class="fas fa-tag"></i> <%=
-                                    request.category.replace('_', ' ') %></span
+                                    ><i class="fas fa-tag"></i> <%= request.category.replace('_', '
+                                    ') %></span
                                 >
                                 <span class="priority-<%= request.priority %>">
-                                    <i class="fas fa-flag"></i> <%=
-                                    request.priority %>
+                                    <i class="fas fa-flag"></i> <%= request.priority %>
                                 </span>
                             </div>
-                            <p class="request-description">
-                                <%= request.description %>
-                            </p>
+                            <p class="request-description"><%= request.description %></p>
                         </div>
                         <div class="request-actions">
                             <a href="/manager/service-requests" class="btn btn-primary btn-small">
@@ -420,8 +361,7 @@
                         <i class="fas fa-file-contract"></i>
                         <span>Create Lease</span>
                     </button>
-                    <% } %>
-                    <% if (tenant.isActive) { %>
+                    <% } %> <% if (tenant.isActive) { %>
                     <button
                         class="action-button warning"
                         onclick="suspendAccount('<%= tenant._id %>')"

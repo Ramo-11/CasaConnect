@@ -1,21 +1,5 @@
 <!-- Expense Management -->
 <div class="expenses-container">
-    <!-- Page Header -->
-    <%- include('../partials/page-header', {
-        headerTitle: 'Expense Management',
-        headerSubtitle: 'Track property expenses',
-        backUrl: '/manager/dashboard',
-        backText: 'Back to Dashboard',
-        headerActions: [
-            {
-                text: 'Add Expense',
-                icon: 'fas fa-plus',
-                onclick: 'openAddExpenseModal()',
-                btnClass: 'btn-primary'
-            }
-        ]
-    }) %>
-
     <!-- Stats Cards -->
     <div class="expense-stats">
         <div class="stat-card">
@@ -59,47 +43,55 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <% if (expenses && expenses.length > 0) { %>
-                            <% expenses.forEach(expense => { %>
-                                <tr data-expense-id="<%= expense._id %>">
-                                    <td><%= new Date(expense.date).toLocaleDateString() %></td>
-                                    <td class="expense-amount">$<%= expense.amount.toFixed(2) %></td>
-                                    <td><%= expense.description || '-' %></td>
-                                    <td>
-                                        <% if (expense.unit) { %>
-                                            <span class="unit-badge"><%= expense.unit.unitNumber %></span>
-                                        <% } else { %>
-                                            <span class="text-muted">General</span>
-                                        <% } %>
-                                    </td>
-                                    <td><span class="category-badge category-<%= expense.category %>"><%= expense.category %></span></td>
-                                    <td>
-                                        <% if (expense.receipt) { %>
-                                            <button class="btn-icon" onclick="viewReceipt('<%= expense.receipt %>')" title="View Receipt">
-                                                <i class="fas fa-file-invoice"></i>
-                                            </button>
-                                        <% } else { %>
-                                            <span class="text-muted">-</span>
-                                        <% } %>
-                                    </td>
-                                    <td class="text-muted">
-                                        <% if (expense.addedBy) { %>
-                                            <%= expense.addedBy.firstName %> <%= expense.addedBy.lastName %>
-                                        <% } else { %>
-                                            -
-                                        <% } %>
-                                    </td>
-                                    <td>
-                                        <button class="btn-icon text-danger" onclick="deleteExpense('<%= expense._id %>')" title="Delete">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                            <% }) %>
-                        <% } else { %>
-                            <tr>
-                                <td colspan="8" class="text-center">No expenses recorded</td>
-                            </tr>
+                        <% if (expenses && expenses.length > 0) { %> <% expenses.forEach(expense =>
+                        { %>
+                        <tr data-expense-id="<%= expense._id %>">
+                            <td><%= new Date(expense.date).toLocaleDateString() %></td>
+                            <td class="expense-amount">$<%= expense.amount.toFixed(2) %></td>
+                            <td><%= expense.description || '-' %></td>
+                            <td>
+                                <% if (expense.unit) { %>
+                                <span class="unit-badge"><%= expense.unit.unitNumber %></span>
+                                <% } else { %>
+                                <span class="text-muted">General</span>
+                                <% } %>
+                            </td>
+                            <td>
+                                <span class="category-badge category-<%= expense.category %>"
+                                    ><%= expense.category %></span
+                                >
+                            </td>
+                            <td>
+                                <% if (expense.receipt) { %>
+                                <button
+                                    class="btn-icon"
+                                    onclick="viewReceipt('<%= expense.receipt %>')"
+                                    title="View Receipt"
+                                >
+                                    <i class="fas fa-file-invoice"></i>
+                                </button>
+                                <% } else { %>
+                                <span class="text-muted">-</span>
+                                <% } %>
+                            </td>
+                            <td class="text-muted">
+                                <% if (expense.addedBy) { %> <%= expense.addedBy.firstName %> <%=
+                                expense.addedBy.lastName %> <% } else { %> - <% } %>
+                            </td>
+                            <td>
+                                <button
+                                    class="btn-icon text-danger"
+                                    onclick="deleteExpense('<%= expense._id %>')"
+                                    title="Delete"
+                                >
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <% }) %> <% } else { %>
+                        <tr>
+                            <td colspan="8" class="text-center">No expenses recorded</td>
+                        </tr>
                         <% } %>
                     </tbody>
                 </table>
@@ -120,17 +112,35 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="expenseAmount">Amount ($) *</label>
-                        <input type="number" id="expenseAmount" name="amount" required min="0" step="0.01">
+                        <input
+                            type="number"
+                            id="expenseAmount"
+                            name="amount"
+                            required
+                            min="0"
+                            step="0.01"
+                        />
                     </div>
                     <div class="form-group">
                         <label for="expenseDate">Date *</label>
-                        <input type="date" id="expenseDate" name="date" required value="<%= new Date().toISOString().split('T')[0] %>">
+                        <input
+                            type="date"
+                            id="expenseDate"
+                            name="date"
+                            required
+                            value="<%= new Date().toISOString().split('T')[0] %>"
+                        />
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label for="expenseDescription">Description</label>
-                    <input type="text" id="expenseDescription" name="description" placeholder="Brief description of expense">
+                    <input
+                        type="text"
+                        id="expenseDescription"
+                        name="description"
+                        placeholder="Brief description of expense"
+                    />
                 </div>
 
                 <div class="form-row">
@@ -139,7 +149,7 @@
                         <select id="expenseUnit" name="unit">
                             <option value="none">General Expense (No Unit)</option>
                             <% units.forEach(unit => { %>
-                                <option value="<%= unit._id %>">Unit <%= unit.unitNumber %></option>
+                            <option value="<%= unit._id %>">Unit <%= unit.unitNumber %></option>
                             <% }) %>
                         </select>
                     </div>
@@ -157,15 +167,17 @@
 
                 <div class="form-group">
                     <label for="expenseReceipt">Receipt (Optional)</label>
-                    <input type="file" id="expenseReceipt" name="receipt" accept="image/*,.pdf">
+                    <input type="file" id="expenseReceipt" name="receipt" accept="image/*,.pdf" />
                     <small class="form-help">Upload receipt image or PDF (Max 10MB)</small>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeAddExpenseModal()">Cancel</button>
+                <button type="button" class="btn btn-secondary" onclick="closeAddExpenseModal()">
+                    Cancel
+                </button>
                 <button type="submit" class="btn btn-primary">
                     <span class="btn-text">Add Expense</span>
-                    <span class="btn-loading" style="display: none;">
+                    <span class="btn-loading" style="display: none">
                         <span class="spinner"></span> Adding...
                     </span>
                 </button>

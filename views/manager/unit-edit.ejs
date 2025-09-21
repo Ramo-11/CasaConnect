@@ -1,21 +1,5 @@
 <!-- Edit Unit Page -->
 <div class="unit-edit-container">
-    <!-- Page Header -->
-    <%- include('../partials/page-header', {
-        headerTitle: `Edit Unit ${unit.unitNumber}`,
-        headerSubtitle: 'Update unit information',
-        backUrl: '/manager/dashboard',
-        backText: 'Back to Dashboard',
-        headerActions: [
-            {
-                text: 'Back to Details',
-                icon: 'fas fa-arrow-left',
-                href: `/manager/units/${unit._id}`,
-                btnClass: 'btn-secondary'
-            }
-        ]
-    }) %>
-
     <!-- Edit Form -->
     <div class="edit-form-container">
         <form id="editUnitForm" data-unit-id="<%= unit._id %>">

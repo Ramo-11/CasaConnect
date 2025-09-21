@@ -2,22 +2,6 @@
 
 <!-- Lease Details Page -->
 <div class="lease-details-container">
-    <!-- Page Header -->
-     <%- include('../partials/page-header', {
-        headerTitle: 'Lease Agreement Details',
-        headerSubtitle: `Unit ${lease.unit.unitNumber} - ${lease.tenant.firstName} ${lease.tenant.lastName}`,
-        backUrl: '/manager/dashboard',
-        backText: 'Back to Dashboard',
-        headerActions: [
-            {
-                href: `/manager/tenant/${lease.tenant._id}`,
-                btnClass: 'btn-secondary',
-                icon: 'fas fa-home',
-                text: 'Tenant Details',
-            }
-        ]
-    }) %>
-
     <!-- Main Content Grid -->
     <div class="details-grid">
         <!-- Lease Status Card -->

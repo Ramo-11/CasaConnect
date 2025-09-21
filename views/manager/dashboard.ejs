@@ -2,8 +2,8 @@
 <div class="manager-container">
   <!-- Dashboard Header -->
   <%- include('../partials/page-header', {
-      headerTitle: 'Manager Dashboard',
-      headerSubtitle: `Welcome${user && user.firstName ? ', ' + user.firstName : ''}`,
+      headerTitle: 'Dashboard Overview',
+      headerSubtitle: `Welcome back, ${user && user.firstName ? user.firstName : ''}!`,
       backButton: false
   }) %> 
 

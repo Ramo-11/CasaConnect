@@ -6,22 +6,6 @@
 </div>
 
 <div class="tenant-edit-container">
-  <!-- Page Header -->
-  <%- include('../partials/page-header', {
-      headerTitle: 'Edit Tenant',
-      headerSubtitle: `${tenant.firstName} ${tenant.lastName}`,
-      backUrl: `/manager/dashboard`,
-      backText: 'Back to Dashboard',
-      headerActions: [
-          {
-              text: 'Back to Details',
-              icon: 'fas fa-home',
-              href: `/manager/tenant/${tenant._id}`,
-              btnClass: 'btn-secondary'
-          }
-      ]
-  }) %>
-
   <!-- Edit Form -->
   <div class="edit-form-container">
     <form id="editTenantForm" data-tenant-id="<%= tenant._id %>">

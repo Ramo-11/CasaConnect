@@ -1,0 +1,49 @@
+<!-- Footer -->
+<footer class="app-footer">
+    <div class="footer-content">
+        <div class="footer-main">
+            <div class="footer-brand">
+                <h3>Sahab Property Management</h3>
+                <p>
+                    Professional property management solutions for landlords and tenants. Streamline
+                    your rental operations with our comprehensive platform.
+                </p>
+            </div>
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <div class="footer-links">
+                    <% if (typeof user !== 'undefined' && user) { %> <% if (user.role === 'manager')
+                    { %>
+                    <a href="/manager/dashboard">Dashboard</a>
+                    <a href="/manager/tenants">Tenants</a>
+                    <a href="/manager/units">Units</a>
+                    <a href="/manager/service-requests">Maintenance</a>
+                    <% } else if (user.role === 'tenant') { %>
+                    <a href="/tenant/dashboard">Dashboard</a>
+                    <a href="/tenant/settings">Settings</a>
+                    <% } %> <% } %>
+                </div>
+            </div>
+            <div class="footer-section">
+                <h4>Contact</h4>
+                <div class="footer-contact">
+                    <p><i class="fas fa-envelope"></i> support@sahab-pm.com</p>
+                    <p><i class="fas fa-phone"></i> (555) 123-4567</p>
+                    <p><i class="fas fa-clock"></i> Mon-Fri 9AM-5PM EST</p>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="footer-copyright">
+                &copy; <%= new Date().getFullYear() %> Sahab Property Management. All rights
+                reserved.
+            </div>
+            <div class="footer-credit">
+                Powered by
+                <a href="https://sahab-solutions.com" target="_blank" rel="noopener"
+                    >Sahab Solutions</a
+                >
+            </div>
+        </div>
+    </div>
+</footer>

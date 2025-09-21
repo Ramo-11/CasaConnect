@@ -1,27 +1,5 @@
 <!-- Unit Details Page -->
 <div class="unit-details-container" data-unit-id="<%= unit._id %>">
-    <!-- Page Header -->
-    <%- include('../partials/page-header', {
-        headerTitle: `Unit ${unit.unitNumber}`,
-        headerSubtitle: `${unit.propertyType} - ${unit.fullAddress}`,
-        backUrl: '/manager/dashboard',
-        backText: 'Back to Dashboard',
-        headerActions: [
-            {
-                text: 'Back to Units',
-                icon: 'fas fa-arrow-left',
-                href: '/manager/units',
-                btnClass: 'btn-secondary'
-            },
-            {
-                text: 'Edit Unit',
-                icon: 'fas fa-edit',
-                onclick: `editUnitPage('${unit._id}')`,
-                btnClass: 'btn-primary'
-            }
-        ]
-    }) %>
-
     <!-- Main Content Grid -->
     <div class="details-grid">
         <!-- Unit Status Card -->

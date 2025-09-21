@@ -1,0 +1,162 @@
+<!-- Navigation Header -->
+<nav class="main-navbar">
+    <div class="navbar-container">
+        <div class="navbar-brand">
+            <a
+                href="/<%= user.role === 'manager' ? 'manager' : (user.role === 'tenant' ? 'tenant' : 'boarding') %>/dashboard"
+                class="brand-link"
+            >
+                <i class="fas fa-building"></i>
+                <div class="brand-text">
+                    <span class="brand-name">Sahab PM</span>
+                    <span class="brand-tagline">Property Management</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="navbar-menu">
+            <% if (user.role === 'manager') { %>
+            <a
+                href="/manager/dashboard"
+                class="nav-item <%= typeof path !== 'undefined' && path === '/manager/dashboard' ? 'active' : '' %>"
+            >
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+            </a>
+            <a
+                href="/manager/tenants"
+                class="nav-item <%= typeof path !== 'undefined' && path.includes('/tenant') ? 'active' : '' %>"
+            >
+                <i class="fas fa-users"></i>
+                <span>Tenants</span>
+            </a>
+            <a
+                href="/manager/units"
+                class="nav-item <%= typeof path !== 'undefined' && path.includes('/unit') ? 'active' : '' %>"
+            >
+                <i class="fas fa-home"></i>
+                <span>Units</span>
+            </a>
+            <a
+                href="/manager/service-requests"
+                class="nav-item <%= typeof path !== 'undefined' && path.includes('/service-request') ? 'active' : '' %>"
+            >
+                <i class="fas fa-tools"></i>
+                <span>Maintenance</span>
+            </a>
+            <a
+                href="/manager/expenses"
+                class="nav-item <%= typeof path !== 'undefined' && path.includes('/expense') ? 'active' : '' %>"
+            >
+                <i class="fas fa-receipt"></i>
+                <span>Expenses</span>
+            </a>
+            <a
+                href="/manager/applications-review"
+                class="nav-item <%= typeof path !== 'undefined' && path.includes('/application') ? 'active' : '' %>"
+            >
+                <i class="fas fa-clipboard-check"></i>
+                <span>Applications</span>
+            </a>
+            <% } else if (user.role === 'tenant') { %>
+            <a
+                href="/tenant/dashboard"
+                class="nav-item <%= typeof path !== 'undefined' && path === '/tenant/dashboard' ? 'active' : '' %>"
+            >
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+            </a>
+            <a
+                href="/tenant/settings"
+                class="nav-item <%= typeof path !== 'undefined' && path.includes('/settings') ? 'active' : '' %>"
+            >
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+            </a>
+            <% } else if (user.role === 'boarding_manager') { %>
+            <a
+                href="/boarding/dashboard"
+                class="nav-item <%= typeof path !== 'undefined' && path === '/boarding/dashboard' ? 'active' : '' %>"
+            >
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+            </a>
+            <a
+                href="/boarding/applications"
+                class="nav-item <%= typeof path !== 'undefined' && path.includes('/applications') ? 'active' : '' %>"
+            >
+                <i class="fas fa-clipboard-list"></i>
+                <span>Applications</span>
+            </a>
+            <% } %>
+        </div>
+
+        <div class="navbar-end">
+            <div class="user-dropdown">
+                <button class="user-dropdown-toggle" id="userDropdownToggle">
+                    <div class="user-avatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="user-details">
+                        <span class="user-name"><%= user.firstName %> <%= user.lastName %></span>
+                        <span class="user-role"
+                            ><%= user.role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
+                            %></span
+                        >
+                    </div>
+                    <i class="fas fa-chevron-down dropdown-arrow"></i>
+                </button>
+                <div class="dropdown-menu" id="userDropdownMenu">
+                    <div class="dropdown-header">
+                        <strong><%= user.firstName %> <%= user.lastName %></strong>
+                        <span><%= user.email %></span>
+                    </div>
+                    <div class="dropdown-divider"></div>
+                    <a href="/logout" class="dropdown-item logout-item">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile menu button -->
+        <button class="mobile-menu-toggle" id="mobileMenuToggle">
+            <i class="fas fa-bars"></i>
+        </button>
+    </div>
+
+    <!-- Mobile menu -->
+    <div class="mobile-menu" id="mobileMenu">
+        <div class="mobile-menu-header">
+            <span>Menu</span>
+            <button class="mobile-menu-close" id="mobileMenuClose">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="mobile-menu-items">
+            <% if (user.role === 'manager') { %>
+            <a href="/manager/dashboard" class="mobile-nav-item">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+            <a href="/manager/tenants" class="mobile-nav-item">
+                <i class="fas fa-users"></i> Tenants
+            </a>
+            <a href="/manager/units" class="mobile-nav-item"> <i class="fas fa-home"></i> Units </a>
+            <a href="/manager/service-requests" class="mobile-nav-item">
+                <i class="fas fa-tools"></i> Maintenance
+            </a>
+            <a href="/manager/expenses" class="mobile-nav-item">
+                <i class="fas fa-receipt"></i> Expenses
+            </a>
+            <a href="/manager/applications-review" class="mobile-nav-item">
+                <i class="fas fa-clipboard-check"></i> Applications
+            </a>
+            <% } %>
+            <div class="mobile-menu-divider"></div>
+            <a href="/logout" class="mobile-nav-item logout-item">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </div>
+    </div>
+</nav>
