@@ -64,6 +64,8 @@ managerAPI.use(isAuthenticated, isManager);
 // Manager: Dashboard
 managerWeb.get(['/', '/dashboard'], dashboardController.getDashboard);
 managerAPI.get('/dashboard-stats', dashboardController.getDashboardStats);
+managerAPI.get('/payment-records', dashboardController.getPaymentRecords);
+managerAPI.get('/payment-records/export', dashboardController.exportPaymentRecords);
 
 // Manager: Tenant Management
 managerWeb.get('/tenants', tenantManagement.getTenants);
@@ -88,7 +90,6 @@ managerAPI.delete('/documents/:documentId', documentManagement.deleteDocument);
 // Manager: Lease Management
 managerWeb.get('/lease/:leaseId', leaseManagement.getLeaseDetails);
 managerWeb.get('/lease/:leaseId/renew', leaseManagement.getLeaseRenewal);
-
 managerAPI.post('/lease/create', upload.single('document'), leaseManagement.createLease);
 managerAPI.get('/lease/:leaseId', leaseManagement.getLease);
 managerAPI.get('/leases', leaseManagement.getLeases);
@@ -121,6 +122,7 @@ managerAPI.get('/service-requests/updates', serviceRequestManagement.checkReques
 managerAPI.put('/service-requests/:requestId/cancel', serviceRequestManagement.cancelRequest);
 managerAPI.delete('/service-requests/:requestId', serviceRequestManagement.deleteRequest);
 
+// Manager: Expense Management
 managerWeb.get('/expenses', expenseManagement.getExpenses);
 managerAPI.post('/expense', upload.single('receipt'), expenseManagement.createExpense);
 managerAPI.delete('/expense/:expenseId', expenseManagement.deleteExpense);

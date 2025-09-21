@@ -181,8 +181,9 @@ exports.getDashboard = async (req, res) => {
             approvedApplications,
             rejectedApplications,
             recentRequests: formattedRequests,
-            expiringLeases: formattedExpiringLeases, // New data
+            expiringLeases: formattedExpiringLeases,
             portalUrl: process.env.PORTAL_URL || 'http://localhost:3000',
+            path: req.path,
         });
     } catch (error) {
         logger.error(`Dashboard error: ${error}`);
@@ -219,6 +220,244 @@ exports.getDashboardStats = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Failed to get dashboard stats',
+        });
+    }
+};
+
+// Get Payment Records Grid
+exports.getPaymentRecords = async (req, res) => {
+    try {
+        const year = parseInt(req.query.year) || new Date().getFullYear();
+
+        // Get all units with active leases
+        const activeLeases = await Lease.find({
+            status: 'active',
+            startDate: { $lte: new Date(year, 11, 31) },
+            endDate: { $gte: new Date(year, 0, 1) },
+        })
+            .populate('unit')
+            .populate('tenant')
+            .sort('unit.unitNumber');
+
+        // Get all payments for the year
+        const payments = await Payment.find({
+            year: year,
+            type: 'rent',
+            status: 'completed',
+        });
+
+        // Create payment map for quick lookup
+        const paymentMap = {};
+        payments.forEach((payment) => {
+            const key = `${payment.tenant}_${payment.month}_${year}`;
+            if (!paymentMap[key]) {
+                paymentMap[key] = [];
+            }
+            paymentMap[key].push(payment);
+        });
+
+        // Build records grid
+        const records = activeLeases.map((lease) => {
+            const monthlyData = {};
+
+            for (let month = 1; month <= 12; month++) {
+                const monthPayments = paymentMap[`${lease.tenant._id}_${month}_${year}`] || [];
+                const totalPaid = monthPayments.reduce((sum, p) => sum + p.amount, 0);
+                const rentAmount = lease.monthlyRent;
+
+                // Determine status
+                let status = 'not-due'; // Future months
+                let remaining = 0;
+
+                const monthDate = new Date(year, month - 1, 1);
+                const leaseStart = new Date(lease.startDate);
+                const leaseEnd = new Date(lease.endDate);
+                const currentDate = new Date();
+
+                if (monthDate < leaseStart || monthDate > leaseEnd) {
+                    status = 'inactive';
+                } else if (monthDate <= currentDate) {
+                    if (totalPaid >= rentAmount) {
+                        status = 'paid';
+                    } else if (totalPaid > 0) {
+                        status = 'partial';
+                        remaining = rentAmount - totalPaid;
+                    } else {
+                        status = 'due';
+                    }
+                }
+
+                monthlyData[month] = {
+                    status,
+                    paid: totalPaid,
+                    remaining,
+                };
+            }
+
+            return {
+                unitNumber: lease.unit.unitNumber,
+                tenantName: `${lease.tenant.firstName} ${lease.tenant.lastName}`,
+                phone: lease.tenant.phone || '',
+                email: lease.tenant.email,
+                rentAmount: lease.monthlyRent,
+                months: monthlyData,
+            };
+        });
+
+        res.json({
+            success: true,
+            data: {
+                year,
+                records,
+            },
+        });
+    } catch (error) {
+        logger.error(`Payment records error: ${error}`);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to get payment records',
+        });
+    }
+};
+
+// Export Payment Records as CSV
+// Export Payment Records as CSV
+exports.exportPaymentRecords = async (req, res) => {
+    try {
+        const year = parseInt(req.query.year) || new Date().getFullYear();
+
+        // Get all units with active leases
+        const activeLeases = await Lease.find({
+            status: 'active',
+            startDate: { $lte: new Date(year, 11, 31) },
+            endDate: { $gte: new Date(year, 0, 1) },
+        })
+            .populate('unit')
+            .populate('tenant')
+            .sort('unit.unitNumber');
+
+        // Get all payments for the year
+        const payments = await Payment.find({
+            year: year,
+            type: 'rent',
+            status: 'completed',
+        });
+
+        // Create payment map for quick lookup
+        const paymentMap = {};
+        payments.forEach((payment) => {
+            const key = `${payment.tenant}_${payment.month}_${year}`;
+            if (!paymentMap[key]) {
+                paymentMap[key] = [];
+            }
+            paymentMap[key].push(payment);
+        });
+
+        // Build records grid
+        const records = activeLeases.map((lease) => {
+            const monthlyData = {};
+
+            for (let month = 1; month <= 12; month++) {
+                const monthPayments = paymentMap[`${lease.tenant._id}_${month}_${year}`] || [];
+                const totalPaid = monthPayments.reduce((sum, p) => sum + p.amount, 0);
+                const rentAmount = lease.monthlyRent;
+
+                // Determine status
+                let status = 'not-due'; // Future months
+                let remaining = 0;
+
+                const monthDate = new Date(year, month - 1, 1);
+                const leaseStart = new Date(lease.startDate);
+                const leaseEnd = new Date(lease.endDate);
+                const currentDate = new Date();
+
+                if (monthDate < leaseStart || monthDate > leaseEnd) {
+                    status = 'inactive';
+                } else if (monthDate <= currentDate) {
+                    if (totalPaid >= rentAmount) {
+                        status = 'paid';
+                    } else if (totalPaid > 0) {
+                        status = 'partial';
+                        remaining = rentAmount - totalPaid;
+                    } else {
+                        status = 'due';
+                    }
+                }
+
+                monthlyData[month] = {
+                    status,
+                    paid: totalPaid,
+                    remaining,
+                };
+            }
+
+            return {
+                unitNumber: lease.unit.unitNumber,
+                tenantName: `${lease.tenant.firstName} ${lease.tenant.lastName}`,
+                phone: lease.tenant.phone || '',
+                email: lease.tenant.email,
+                rentAmount: lease.monthlyRent,
+                months: monthlyData,
+            };
+        });
+
+        // Build CSV
+        const monthNames = [
+            'Jan',
+            'Feb',
+            'Mar',
+            'Apr',
+            'May',
+            'Jun',
+            'Jul',
+            'Aug',
+            'Sep',
+            'Oct',
+            'Nov',
+            'Dec',
+        ];
+
+        let csv = 'Unit,Tenant,Phone,Email,Rent Amount,' + monthNames.join(',') + '\n';
+
+        records.forEach((record) => {
+            const row = [
+                record.unitNumber,
+                record.tenantName,
+                record.phone,
+                record.email,
+                record.rentAmount,
+            ];
+
+            for (let month = 1; month <= 12; month++) {
+                const monthData = record.months[month];
+                let cellValue = '';
+
+                if (monthData.status === 'paid') {
+                    cellValue = 'PAID';
+                } else if (monthData.status === 'partial') {
+                    cellValue = `PARTIAL ($${monthData.remaining} due)`;
+                } else if (monthData.status === 'due') {
+                    cellValue = 'DUE';
+                } else if (monthData.status === 'inactive') {
+                    cellValue = 'N/A';
+                } else {
+                    cellValue = '-';
+                }
+
+                row.push(cellValue);
+            }
+
+            csv += row.map((val) => `"${val}"`).join(',') + '\n';
+        });
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="payment-records-${year}.csv"`);
+        res.send(csv);
+    } catch (error) {
+        logger.error(`Export payment records error: ${error}`);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to export payment records',
         });
     }
 };

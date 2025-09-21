@@ -104,3 +104,86 @@ document.addEventListener('keydown', (e) => {
         }
     }
 });
+
+// Payment Records Functions
+function openPaymentRecordsModal() {
+    const currentYear = new Date().getFullYear();
+    document.getElementById('recordsYear').textContent = currentYear;
+    loadPaymentRecords(currentYear);
+    CasaConnect.ModalManager.openModal('paymentRecordsModal');
+}
+
+function closePaymentRecordsModal() {
+    CasaConnect.ModalManager.closeModal('paymentRecordsModal');
+}
+
+async function loadPaymentRecords(year) {
+    document.getElementById('recordsYear').textContent = year;
+    const tbody = document.getElementById('paymentRecordsBody');
+    tbody.innerHTML = '<tr><td colspan="17" class="text-center">Loading...</td></tr>';
+
+    try {
+        const response = await CasaConnect.APIClient.get(
+            `/api/manager/payment-records?year=${year}`
+        );
+
+        if (response.success) {
+            renderPaymentRecords(response.data.data.records);
+        } else {
+            tbody.innerHTML =
+                '<tr><td colspan="17" class="text-center">Failed to load records</td></tr>';
+        }
+    } catch (error) {
+        console.error('Failed to load payment records:', error);
+        tbody.innerHTML =
+            '<tr><td colspan="17" class="text-center">Error loading records</td></tr>';
+    }
+}
+
+function renderPaymentRecords(records) {
+    const tbody = document.getElementById('paymentRecordsBody');
+
+    console.log('Rendering payment records:', records);
+    if (!records || records.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="17" class="text-center">No records found</td></tr>';
+        return;
+    }
+
+    let html = '';
+    records.forEach((record) => {
+        html += '<tr>';
+        html += `<td>${record.unitNumber}</td>`;
+        html += `<td>${record.tenantName}</td>`;
+        html += `<td>${record.phone || '-'}</td>`;
+        html += `<td>${record.email}</td>`;
+        html += `<td>$${record.rentAmount}</td>`;
+
+        for (let month = 1; month <= 12; month++) {
+            const monthData = record.months[month];
+            let cellContent = '';
+
+            if (monthData.status === 'paid') {
+                cellContent = '<span class="payment-box paid">PAID</span>';
+            } else if (monthData.status === 'partial') {
+                cellContent = `<span class="payment-box partial">$${monthData.remaining}</span>`;
+            } else if (monthData.status === 'due') {
+                cellContent = '<span class="payment-box due">DUE</span>';
+            } else if (monthData.status === 'inactive') {
+                cellContent = '<span class="payment-box inactive">N/A</span>';
+            } else {
+                cellContent = '<span>-</span>';
+            }
+
+            html += `<td>${cellContent}</td>`;
+        }
+
+        html += '</tr>';
+    });
+
+    tbody.innerHTML = html;
+}
+
+function exportPaymentRecords() {
+    const year = document.getElementById('yearSelector').value;
+    window.open(`/api/manager/payment-records/export?year=${year}`, '_blank');
+}

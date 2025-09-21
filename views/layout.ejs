@@ -118,6 +118,10 @@
             <% if (includeLeaseModals) { %>
                 <%- include('partials/modals/manager/lease-management-modals') %>
             <% } %>
+
+            <% if (currentPath.includes('dashboard')) { %>
+                <%- include('partials/modals/manager/payment-records-modal') %>
+            <% } %>
         <% } %>
         
         <% if (typeof additionalJS !== 'undefined') { %> <%

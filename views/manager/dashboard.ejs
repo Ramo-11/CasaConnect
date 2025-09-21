@@ -47,6 +47,7 @@
     </div>
   </div>
 
+  <!-- Quick Actions -->
   <div class="quick-actions-row">
     <div class="card">
         <div class="card-header">
@@ -70,6 +71,10 @@
                     <i class="fas fa-tools"></i>
                     <span>Service Requests</span>
                 </a>
+                <a href="#" onclick="openPaymentRecordsModal(); return false;" class="action-tile">
+                  <i class="fas fa-file-invoice-dollar"></i>
+                  <span>Payment Records</span>
+              </a>
             </div>
         </div>
     </div>
@@ -92,7 +97,6 @@
                 <th>Unit</th>
                 <th>Email</th>
                 <th>Phone</th>
-                <th>Status</th>
                 <th>Quick Actions</th>
               </tr>
             </thead>
@@ -114,11 +118,6 @@
                     <td><span class="unit-badge"><%= tenant.unitNumber %></span></td>
                     <td><%= tenant.email %></td>
                     <td><%= tenant.phone %></td>
-                    <td>
-                      <span class="badge <%= tenant.paymentStatus === 'current' ? 'badge-success' : 'badge-warning' %>">
-                        <%= tenant.paymentStatus %>
-                      </span>
-                    </td>
                     <td>
                       <div class="action-buttons">
                         <button class="btn-icon" onclick="viewTenant('<%= tenant.id %>')" title="View">
