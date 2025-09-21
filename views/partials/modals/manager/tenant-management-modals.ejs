@@ -175,6 +175,105 @@
     </div>
 </div>
 
+<!-- Record Payment Modal -->
+<div id="recordPaymentModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Record Manual Payment</h2>
+            <button class="modal-close" onclick="closeRecordPaymentModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="recordPaymentForm">
+                <input type="hidden" id="paymentTenantId" name="tenantId"/>
+                
+                <div class="tenant-info-card">
+                    <h4 id="paymentTenantName">-</h4>
+                    <p id="paymentTenantEmail">-</p>
+                    <p id="paymentUnitInfo">-</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="paymentType">Payment Type *</label>
+                    <select id="paymentType" name="type" required onchange="handlePaymentTypeChange()">
+                        <option value="">Select Type...</option>
+                        <option value="rent">Rent</option>
+                        <option value="service_fee">Service Fee</option>
+                        <option value="deposit">Deposit</option>
+                        <option value="late_fee">Late Fee</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+
+                <div id="rentDetailsSection" style="display: none;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="paymentMonth">Month *</label>
+                            <select id="paymentMonth" name="month">
+                                <% 
+                                const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                                               'July', 'August', 'September', 'October', 'November', 'December'];
+                                const currentMonth = new Date().getMonth();
+                                months.forEach((month, index) => { %>
+                                    <option value="<%= index + 1 %>" <%= index === currentMonth ? 'selected' : '' %>>
+                                        <%= month %>
+                                    </option>
+                                <% }) %>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="paymentYear">Year *</label>
+                            <select id="paymentYear" name="year">
+                                <% 
+                                const currentYear = new Date().getFullYear();
+                                for(let year = currentYear - 1; year <= currentYear + 1; year++) { %>
+                                    <option value="<%= year %>" <%= year === currentYear ? 'selected' : '' %>>
+                                        <%= year %>
+                                    </option>
+                                <% } %>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="alert alert-info" id="rentAmountInfo" style="display: none;">
+                        <i class="fas fa-info-circle"></i>
+                        <span id="rentAmountMessage"></span>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="paymentAmount">Amount ($) *</label>
+                        <input type="number" id="paymentAmount" name="amount" required min="0.01" step="0.01" onchange="checkRentAmount()"/>
+                    </div>
+                    <div class="form-group">
+                        <label for="paymentMethod">Payment Method *</label>
+                        <select id="paymentMethod" name="paymentMethod" required>
+                            <option value="cash" selected>Cash</option>
+                            <option value="check">Check</option>
+                            <option value="ach">Bank Transfer</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="paymentNotes">Notes / Description</label>
+                    <textarea id="paymentNotes" name="notes" rows="3" placeholder="Add any notes about this payment..."></textarea>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeRecordPaymentModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <span class="btn-text">Record Payment</span>
+                        <span class="btn-loading" style="display: none;">
+                            <span class="spinner"></span> Recording...
+                        </span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Generic Success Modal -->
 <div id="successModal" class="modal">
     <div class="modal-content">
@@ -195,3 +294,4 @@
         </div>
     </div>
 </div>
+

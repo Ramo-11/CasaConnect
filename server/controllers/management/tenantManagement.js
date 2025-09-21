@@ -560,3 +560,75 @@ exports.exportTenantData = async (req, res) => {
         });
     }
 };
+
+// Record Manual Payment
+exports.recordManualPayment = async (req, res) => {
+    try {
+        const { tenantId } = req.params;
+        const { type, amount, paymentMethod, month, year, notes, serviceRequestId } = req.body;
+
+        const tenant = await User.findById(tenantId);
+        if (!tenant || tenant.role !== 'tenant') {
+            return res.status(404).json({
+                success: false,
+                message: 'Tenant not found',
+            });
+        }
+
+        // Get active lease if payment type is rent
+        let activeLease = null;
+        if (type === 'rent') {
+            activeLease = await Lease.findOne({
+                tenant: tenantId,
+                status: 'active',
+            }).populate('unit');
+
+            if (!activeLease) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'No active lease found for this tenant',
+                });
+            }
+        }
+
+        // Create payment record
+        const payment = new Payment({
+            tenant: tenantId,
+            unit: activeLease ? activeLease.unit._id : null,
+            type,
+            amount: parseFloat(amount),
+            paymentMethod: paymentMethod || 'cash',
+            status: 'completed',
+            month: type === 'rent' ? parseInt(month) : null,
+            year: type === 'rent' ? parseInt(year) : null,
+            serviceRequest: type === 'service_fee' ? serviceRequestId : null,
+            notes: notes || `Manual payment recorded by manager`,
+            paidDate: new Date(),
+            transactionId: `MANUAL-${Date.now()}`,
+        });
+
+        await payment.save();
+
+        // Create notification for tenant
+        await Notification.create({
+            recipient: tenantId,
+            type: 'payment_received',
+            title: 'Payment Recorded',
+            message: `A ${type.replace('_', ' ')} payment of $${amount} has been recorded`,
+        });
+
+        logger.info(`Manual payment recorded: ${type} - $${amount} for tenant ${tenant.email}`);
+
+        res.json({
+            success: true,
+            message: 'Payment recorded successfully',
+            payment,
+        });
+    } catch (error) {
+        logger.error(`Record manual payment error: ${error}`);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to record payment',
+        });
+    }
+};

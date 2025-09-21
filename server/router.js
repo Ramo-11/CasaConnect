@@ -78,6 +78,7 @@ managerAPI.post('/tenant/reset-password', tenantManagement.resetPassword);
 managerAPI.put('/tenant/:tenantId/suspend', tenantManagement.suspendAccount);
 managerAPI.put('/tenant/:tenantId/activate', tenantManagement.activateAccount);
 managerAPI.get('/tenant/:tenantId/export', tenantManagement.exportTenantData);
+managerAPI.post('/tenant/:tenantId/payment', tenantManagement.recordManualPayment);
 
 // Manager: Document Management
 managerAPI.post('/documents', upload.single('file'), documentManagement.uploadDocument);

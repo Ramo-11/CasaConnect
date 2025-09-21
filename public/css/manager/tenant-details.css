@@ -239,6 +239,38 @@
     color: var(--text-dark);
 }
 
+/* Payment Recording Styles */
+.header-stats .text-warning {
+    color: #f59e0b;
+}
+
+.header-stats .text-success {
+    color: #10b981;
+}
+
+#recordPaymentModal .alert strong {
+    font-weight: var(--font-weight-semibold);
+}
+
+#recordPaymentModal .tenant-info-card {
+    background: #f9fafb;
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius-lg);
+    margin-bottom: var(--spacing-lg);
+}
+
+#recordPaymentModal .tenant-info-card h4 {
+    margin: 0 0 var(--spacing-xs) 0;
+    font-size: var(--font-size-base);
+    color: var(--text-dark);
+}
+
+#recordPaymentModal .tenant-info-card p {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    color: #6b7280;
+}
+
 /* Data Table */
 .data-table {
     width: 100%;

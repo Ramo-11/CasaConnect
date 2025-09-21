@@ -3,9 +3,9 @@ let currentTenantId = null;
 
 // Initialize tenant details page
 CasaConnect.ready(() => {
-    const tenantElement = document.querySelector("[data-tenant-id]");
+    const tenantElement = document.querySelector('[data-tenant-id]');
     if (tenantElement) {
-        currentTenantId = tenantElement.getAttribute("data-tenant-id");
+        currentTenantId = tenantElement.getAttribute('data-tenant-id');
     }
 
     // Initialize document upload form with reload callback
@@ -26,7 +26,7 @@ CasaConnect.ready(() => {
 // Initialize Actions
 function initializeActions() {
     // Initialize tooltips if needed
-    document.querySelectorAll("[title]").forEach((el) => {
+    document.querySelectorAll('[title]').forEach((el) => {
         // Could add tooltip library here
     });
 }
@@ -37,19 +37,25 @@ function editTenant(tenantId) {
 }
 
 async function resetPassword(tenantId) {
-    if (!confirm("Reset password for this tenant? They will receive a new temporary password via email.")) {
+    if (
+        !confirm(
+            'Reset password for this tenant? They will receive a new temporary password via email.'
+        )
+    ) {
         return;
     }
 
     try {
-        const response = await CasaConnect.APIClient.post("/api/manager/tenant/reset-password", {
+        const response = await CasaConnect.APIClient.post('/api/manager/tenant/reset-password', {
             tenantId: tenantId,
         });
 
         if (response.success) {
-            CasaConnect.NotificationManager.success("Password reset successfully. Email sent to tenant.");
+            CasaConnect.NotificationManager.success(
+                'Password reset successfully. Email sent to tenant.'
+            );
         } else {
-            throw new Error(response.error || "Failed to reset password");
+            throw new Error(response.error || 'Failed to reset password');
         }
     } catch (error) {
         CasaConnect.NotificationManager.error(error.message);
@@ -63,23 +69,23 @@ function viewRequest(requestId) {
 
 // Send Notification
 function sendNotification(tenantId) {
-    CasaConnect.NotificationManager.info("Notification feature coming soon");
+    CasaConnect.NotificationManager.info('Notification feature coming soon');
 }
 
 // Generate Lease Document
 async function generateLeaseDocument(tenantId) {
     try {
-        CasaConnect.NotificationManager.info("Generating lease document...");
+        CasaConnect.NotificationManager.info('Generating lease document...');
         const response = await CasaConnect.APIClient.get(`/manager/tenant/${tenantId}/lease`);
 
         if (response.success) {
-            window.open(response.data.downloadUrl, "_blank");
-            CasaConnect.NotificationManager.success("Lease document generated successfully");
+            window.open(response.data.downloadUrl, '_blank');
+            CasaConnect.NotificationManager.success('Lease document generated successfully');
         } else {
-            throw new Error(response.error || "Failed to generate lease");
+            throw new Error(response.error || 'Failed to generate lease');
         }
     } catch (error) {
-        CasaConnect.NotificationManager.error("Lease generation feature coming soon");
+        CasaConnect.NotificationManager.error('Lease generation feature coming soon');
     }
 }
 
@@ -91,23 +97,23 @@ function viewDocuments(tenantId) {
 // Export Tenant Data
 async function exportTenantData(tenantId) {
     try {
-        CasaConnect.NotificationManager.info("Exporting tenant data...");
+        CasaConnect.NotificationManager.info('Exporting tenant data...');
         const response = await CasaConnect.APIClient.get(`/api/manager/tenant/${tenantId}/export`);
 
         if (response.success) {
             const blob = new Blob([JSON.stringify(response.data, null, 2)], {
-                type: "application/json",
+                type: 'application/json',
             });
             const url = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
+            const a = document.createElement('a');
             a.href = url;
-            a.download = `tenant-${tenantId}-data-${new Date().toISOString().split("T")[0]}.json`;
+            a.download = `tenant-${tenantId}-data-${new Date().toISOString().split('T')[0]}.json`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
 
-            CasaConnect.NotificationManager.success("Data exported successfully");
+            CasaConnect.NotificationManager.success('Data exported successfully');
         }
     } catch (error) {
         CasaConnect.NotificationManager.error(error.message);
@@ -119,13 +125,13 @@ let currentStatusFilter = 'all';
 
 function filterByStatus(status) {
     currentStatusFilter = status;
-    
+
     // Update active tab
-    document.querySelectorAll('.filter-tab').forEach(tab => {
+    document.querySelectorAll('.filter-tab').forEach((tab) => {
         tab.classList.remove('active');
     });
     event.target.classList.add('active');
-    
+
     applyFilters();
 }
 
@@ -134,23 +140,25 @@ function applyFilters() {
     const priorityFilter = document.getElementById('priorityFilter')?.value || 'all';
     const categoryFilter = document.getElementById('categoryFilter')?.value || 'all';
     const searchTerm = document.getElementById('requestSearch')?.value?.toLowerCase() || '';
-    
+
     const allRequests = document.querySelectorAll('.request-card-full');
-    
-    allRequests.forEach(request => {
+
+    allRequests.forEach((request) => {
         const status = request.dataset.status;
         const priority = request.dataset.priority;
         const category = request.dataset.category;
         const title = request.querySelector('h3')?.textContent?.toLowerCase() || '';
-        const description = request.querySelector('.request-description')?.textContent?.toLowerCase() || '';
-        
+        const description =
+            request.querySelector('.request-description')?.textContent?.toLowerCase() || '';
+
         let show = true;
-        
+
         if (statusFilter !== 'all' && status !== statusFilter) show = false;
         if (priorityFilter !== 'all' && priority !== priorityFilter) show = false;
         if (categoryFilter !== 'all' && category !== categoryFilter) show = false;
-        if (searchTerm && !title.includes(searchTerm) && !description.includes(searchTerm)) show = false;
-        
+        if (searchTerm && !title.includes(searchTerm) && !description.includes(searchTerm))
+            show = false;
+
         request.style.display = show ? 'flex' : 'none';
     });
 }
@@ -164,13 +172,13 @@ function toggleRequestNotes(requestId) {
 
 async function updateStatus(requestId, newStatus) {
     if (!confirm(`Update status to ${newStatus.replace('_', ' ')}?`)) return;
-    
+
     try {
         const response = await CasaConnect.APIClient.put(
             `/api/manager/service-requests/${requestId}/status`,
             { status: newStatus }
         );
-        
+
         if (response.success) {
             CasaConnect.NotificationManager.success('Status updated successfully');
             setTimeout(() => location.reload(), 1500);
@@ -184,13 +192,13 @@ async function updateStatus(requestId, newStatus) {
 
 async function cancelRequest(requestId) {
     if (!confirm('Are you sure you want to cancel this service request?')) return;
-    
+
     try {
         const response = await CasaConnect.APIClient.put(
             `/api/manager/service-requests/${requestId}/status`,
             { status: 'cancelled' }
         );
-        
+
         if (response.success) {
             CasaConnect.NotificationManager.success('Request cancelled successfully');
             setTimeout(() => location.reload(), 1500);
@@ -203,15 +211,19 @@ async function cancelRequest(requestId) {
 }
 
 async function deleteServiceRequest(requestId) {
-    if (!confirm('Are you sure you want to permanently delete this service request? This action cannot be undone.')) {
+    if (
+        !confirm(
+            'Are you sure you want to permanently delete this service request? This action cannot be undone.'
+        )
+    ) {
         return;
     }
-    
+
     try {
         const response = await CasaConnect.APIClient.delete(
             `/api/manager/service-requests/${requestId}`
         );
-        
+
         if (response.success) {
             CasaConnect.NotificationManager.success('Service request deleted successfully');
             setTimeout(() => location.reload(), 1500);
@@ -251,6 +263,141 @@ function viewDetails(requestId) {
         card.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 }
+// Payment Recording Functions
+let currentMonthlyRent = 0;
+
+function openRecordPaymentModal(tenantId) {
+    // Get tenant data
+    const dataContainer = document.getElementById('tenantData');
+    if (dataContainer) {
+        const tenantName = dataContainer.dataset.tenantName;
+        const tenantEmail = dataContainer.dataset.tenantEmail;
+        const unitNumber = dataContainer.dataset.unitNumber;
+
+        // Get monthly rent from the page
+        const rentElement = document.querySelector('.rent-amount');
+        if (rentElement) {
+            const rentText = rentElement.textContent.replace('$', '').replace(',', '');
+            currentMonthlyRent = parseFloat(rentText) || 0;
+        }
+
+        // Populate modal
+        document.getElementById('paymentTenantId').value = tenantId;
+        document.getElementById('paymentTenantName').textContent = tenantName || 'Unknown Tenant';
+        document.getElementById('paymentTenantEmail').textContent = tenantEmail || 'No email';
+        document.getElementById('paymentUnitInfo').textContent = unitNumber
+            ? `Unit ${unitNumber}`
+            : 'No unit assigned';
+    }
+
+    // Reset form
+    const form = document.getElementById('recordPaymentForm');
+    if (form) form.reset();
+
+    // Hide rent details initially
+    document.getElementById('rentDetailsSection').style.display = 'none';
+    document.getElementById('rentAmountInfo').style.display = 'none';
+
+    CasaConnect.ModalManager.openModal('recordPaymentModal');
+}
+
+function closeRecordPaymentModal() {
+    CasaConnect.ModalManager.closeModal('recordPaymentModal');
+}
+
+function handlePaymentTypeChange() {
+    const paymentType = document.getElementById('paymentType').value;
+    const rentDetailsSection = document.getElementById('rentDetailsSection');
+
+    if (paymentType === 'rent') {
+        rentDetailsSection.style.display = 'block';
+        checkRentAmount();
+    } else {
+        rentDetailsSection.style.display = 'none';
+        document.getElementById('rentAmountInfo').style.display = 'none';
+    }
+}
+
+function checkRentAmount() {
+    const paymentType = document.getElementById('paymentType').value;
+    const amountInput = document.getElementById('paymentAmount');
+    const rentInfo = document.getElementById('rentAmountInfo');
+    const rentMessage = document.getElementById('rentAmountMessage');
+
+    if (paymentType === 'rent' && currentMonthlyRent > 0) {
+        const amount = parseFloat(amountInput.value) || 0;
+
+        if (amount > 0) {
+            rentInfo.style.display = 'block';
+
+            if (amount < currentMonthlyRent) {
+                const remaining = currentMonthlyRent - amount;
+                rentMessage.innerHTML = `Monthly rent is <strong>$${currentMonthlyRent.toFixed(
+                    2
+                )}</strong>. After this payment, <strong>$${remaining.toFixed(
+                    2
+                )}</strong> will remain due.`;
+                rentInfo.className = 'alert alert-warning';
+            } else if (amount > currentMonthlyRent) {
+                const overpayment = amount - currentMonthlyRent;
+                rentMessage.innerHTML = `Monthly rent is <strong>$${currentMonthlyRent.toFixed(
+                    2
+                )}</strong>. This payment includes an overpayment of <strong>$${overpayment.toFixed(
+                    2
+                )}</strong>.`;
+                rentInfo.className = 'alert alert-info';
+            } else {
+                rentMessage.innerHTML = `This payment covers the full monthly rent of <strong>$${currentMonthlyRent.toFixed(
+                    2
+                )}</strong>.`;
+                rentInfo.className = 'alert alert-success';
+            }
+        } else {
+            rentInfo.style.display = 'none';
+        }
+    }
+}
+
+// Initialize payment form submission
+CasaConnect.ready(() => {
+    const recordPaymentForm = document.getElementById('recordPaymentForm');
+    if (recordPaymentForm) {
+        recordPaymentForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const btnText = submitBtn.querySelector('.btn-text');
+            const btnLoading = submitBtn.querySelector('.btn-loading');
+
+            btnText.style.display = 'none';
+            btnLoading.style.display = 'inline-flex';
+            submitBtn.disabled = true;
+
+            try {
+                const formData = CasaConnect.FormUtils.serializeForm(e.target);
+                const tenantId = formData.tenantId;
+
+                const response = await CasaConnect.APIClient.post(
+                    `/api/manager/tenant/${tenantId}/payment`,
+                    formData
+                );
+
+                if (response.success) {
+                    CasaConnect.NotificationManager.success('Payment recorded successfully!');
+                    closeRecordPaymentModal();
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    throw new Error(response.error || 'Failed to record payment');
+                }
+            } catch (error) {
+                CasaConnect.NotificationManager.error(error.message);
+                btnText.style.display = 'inline-flex';
+                btnLoading.style.display = 'none';
+                submitBtn.disabled = false;
+            }
+        });
+    }
+});
 
 // Initialize forms
 CasaConnect.ready(() => {
@@ -259,9 +406,12 @@ CasaConnect.ready(() => {
         assignForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = CasaConnect.FormUtils.serializeForm(assignForm);
-            
+
             try {
-                const response = await CasaConnect.APIClient.post('/api/manager/service-requests/assign', formData);
+                const response = await CasaConnect.APIClient.post(
+                    '/api/manager/service-requests/assign',
+                    formData
+                );
                 if (response.success) {
                     CasaConnect.NotificationManager.success('Technician assigned successfully');
                     closeAssignModal();
@@ -274,15 +424,18 @@ CasaConnect.ready(() => {
             }
         });
     }
-    
+
     const noteForm = document.getElementById('noteForm');
     if (noteForm) {
         noteForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = CasaConnect.FormUtils.serializeForm(noteForm);
-            
+
             try {
-                const response = await CasaConnect.APIClient.post('/api/manager/service-requests/note', formData);
+                const response = await CasaConnect.APIClient.post(
+                    '/api/manager/service-requests/note',
+                    formData
+                );
                 if (response.success) {
                     CasaConnect.NotificationManager.success('Note added successfully');
                     closeNoteModal();
@@ -299,18 +452,25 @@ CasaConnect.ready(() => {
 
 // Suspend Account
 async function suspendAccount(tenantId) {
-    if (!confirm("Are you sure you want to suspend this tenant account? They will not be able to log in.")) {
+    if (
+        !confirm(
+            'Are you sure you want to suspend this tenant account? They will not be able to log in.'
+        )
+    ) {
         return;
     }
 
     try {
-        const response = await CasaConnect.APIClient.put(`/api/manager/tenant/${tenantId}/suspend`, {});
+        const response = await CasaConnect.APIClient.put(
+            `/api/manager/tenant/${tenantId}/suspend`,
+            {}
+        );
 
         if (response.success) {
-            CasaConnect.NotificationManager.success("Account suspended successfully");
+            CasaConnect.NotificationManager.success('Account suspended successfully');
             setTimeout(() => location.reload(), 1500);
         } else {
-            throw new Error(response.error || "Failed to suspend account");
+            throw new Error(response.error || 'Failed to suspend account');
         }
     } catch (error) {
         CasaConnect.NotificationManager.error(error.message);
@@ -318,18 +478,21 @@ async function suspendAccount(tenantId) {
 }
 
 async function activateAccount(tenantId) {
-    if (!confirm("Are you sure you want to activate this tenant account?")) {
+    if (!confirm('Are you sure you want to activate this tenant account?')) {
         return;
     }
 
     try {
-        const response = await CasaConnect.APIClient.put(`/api/manager/tenant/${tenantId}/activate`, {});
+        const response = await CasaConnect.APIClient.put(
+            `/api/manager/tenant/${tenantId}/activate`,
+            {}
+        );
 
         if (response.success) {
-            CasaConnect.NotificationManager.success("Account activated successfully");
+            CasaConnect.NotificationManager.success('Account activated successfully');
             setTimeout(() => location.reload(), 1500);
         } else {
-            throw new Error(response.error || "Failed to activate account");
+            throw new Error(response.error || 'Failed to activate account');
         }
     } catch (error) {
         CasaConnect.NotificationManager.error(error.message);
@@ -340,12 +503,14 @@ async function activateAccount(tenantId) {
 function autoRefreshData() {
     setInterval(async () => {
         try {
-            const response = await CasaConnect.APIClient.get(`/api/tenant/${currentTenantId}/payment-status`);
+            const response = await CasaConnect.APIClient.get(
+                `/api/tenant/${currentTenantId}/payment-status`
+            );
             if (response.success) {
-                console.log("Payment status refreshed");
+                console.log('Payment status refreshed');
             }
         } catch (error) {
-            console.error("Failed to refresh payment status:", error);
+            console.error('Failed to refresh payment status:', error);
         }
     }, 60000);
 }
@@ -384,18 +549,18 @@ const printStyles = `
 }
 `;
 
-const styleSheet = document.createElement("style");
+const styleSheet = document.createElement('style');
 styleSheet.textContent = printStyles;
 document.head.appendChild(styleSheet);
 
 // Keyboard shortcuts
-document.addEventListener("keydown", (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === "p") {
+document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
         e.preventDefault();
         printTenantDetails();
     }
 
-    if ((e.ctrlKey || e.metaKey) && e.key === "e") {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
         e.preventDefault();
         if (currentTenantId) {
             editTenant(currentTenantId);
@@ -413,7 +578,7 @@ window.deleteDocument = (documentId) => {
         }, 1500);
     });
 };
-window.attachDocument = (tenantId, relatedModel, hasActiveLease) => 
+window.attachDocument = (tenantId, relatedModel, hasActiveLease) =>
     DocumentManager.attachDocument(tenantId, relatedModel || 'User', hasActiveLease);
 window.closeUploadDocumentModal = () => DocumentManager.closeUploadDocumentModal();
 window.filterByStatus = filterByStatus;

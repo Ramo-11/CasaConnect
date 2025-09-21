@@ -211,26 +211,52 @@
             </div>
         </div>
 
-        <!-- Payment History Card -->
+        <!-- Payment Section Card -->
         <div class="card full-width">
             <div class="card-header">
-                <h3>Payment History</h3>
+                <h3>Payment Management</h3>
+                <div class="header-actions">
+                    <button class="btn btn-primary btn-small" onclick="openRecordPaymentModal('<%= tenant._id %>')">
+                        <i class="fas fa-plus-circle"></i> Record Payment
+                    </button>
+                </div>
                 <div class="header-stats">
                     <div class="mini-stat">
                         <span class="label">Total Paid</span>
-                        <span class="value"
-                            >$<%= payments.reduce((sum, p) => p.status ===
-                            'completed' ? sum + p.amount : sum, 0).toFixed(2)
-                            %></span
-                        >
+                        <span class="value">$<%= payments.reduce((sum, p) => p.status === 'completed' ? sum + p.amount : sum, 0).toFixed(2) %></span>
                     </div>
+                    <% if (activeLease) { %>
+                    <div class="mini-stat">
+                        <span class="label">Monthly Rent</span>
+                        <span class="value">$<%= activeLease.monthlyRent %></span>
+                    </div>
+                    <% 
+                        // Calculate current month's rent status
+                        const currentMonth = new Date().getMonth() + 1;
+                        const currentYear = new Date().getFullYear();
+                        const currentMonthPayments = payments.filter(p => 
+                            p.type === 'rent' && 
+                            p.month === currentMonth && 
+                            p.year === currentYear && 
+                            p.status === 'completed'
+                        );
+                        const totalPaidThisMonth = currentMonthPayments.reduce((sum, p) => sum + p.amount, 0);
+                        const rentRemaining = Math.max(0, activeLease.monthlyRent - totalPaidThisMonth);
+                    %>
+                    <div class="mini-stat">
+                        <span class="label">Current Month</span>
+                        <span class="value <%= rentRemaining > 0 ? 'text-warning' : 'text-success' %>">
+                            <% if (rentRemaining > 0) { %>
+                                $<%= rentRemaining.toFixed(2) %> due
+                            <% } else { %>
+                                Paid
+                            <% } %>
+                        </span>
+                    </div>
+                    <% } %>
                     <div class="mini-stat">
                         <span class="label">Last Payment</span>
-                        <span class="value"
-                            ><%= payments.length > 0 ? new
-                            Date(payments[0].createdAt).toLocaleDateString() :
-                            'N/A' %></span
-                        >
+                        <span class="value"><%= payments.length > 0 ? new Date(payments[0].createdAt).toLocaleDateString() : 'N/A' %></span>
                     </div>
                 </div>
             </div>
@@ -246,40 +272,30 @@
                                 <th>Method</th>
                                 <th>Status</th>
                                 <th>Transaction ID</th>
+                                <th>Notes</th>
                             </tr>
                         </thead>
                         <tbody>
                             <% payments.forEach(payment => { %>
                             <tr>
+                                <td><%= new Date(payment.paidDate || payment.createdAt).toLocaleDateString() %></td>
                                 <td>
-                                    <%= new
-                                    Date(payment.createdAt).toLocaleDateString()
-                                    %>
-                                </td>
-                                <td>
-                                    <span
-                                        class="type-badge type-<%= payment.type %>"
-                                    >
+                                    <span class="type-badge type-<%= payment.type %>">
                                         <%= payment.type.replace('_', ' ') %>
+                                        <% if (payment.type === 'rent' && payment.month && payment.year) { %>
+                                            (<%= payment.month %>/<%= payment.year %>)
+                                        <% } %>
                                     </span>
                                 </td>
-                                <td class="amount">
-                                    $<%= payment.amount.toFixed(2) %>
-                                </td>
+                                <td class="amount">$<%= payment.amount.toFixed(2) %></td>
+                                <td><%= payment.paymentMethod.replace('_', ' ') %></td>
                                 <td>
-                                    <%= payment.paymentMethod.replace('_', ' ')
-                                    %>
-                                </td>
-                                <td>
-                                    <span
-                                        class="badge status-<%= payment.status %>"
-                                    >
+                                    <span class="badge status-<%= payment.status %>">
                                         <%= payment.status %>
                                     </span>
                                 </td>
-                                <td class="transaction-id">
-                                    <%= payment.transactionId || '-' %>
-                                </td>
+                                <td class="transaction-id"><%= payment.transactionId || '-' %></td>
+                                <td><%= payment.notes || '-' %></td>
                             </tr>
                             <% }) %>
                         </tbody>
