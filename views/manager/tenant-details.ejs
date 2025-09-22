@@ -181,13 +181,23 @@
                         <span class="label">Monthly Rent</span>
                         <span class="value">$<%= activeLease.monthlyRent %></span>
                     </div>
-                    <% // Calculate current month's rent status const currentMonth = new
-                    Date().getMonth() + 1; const currentYear = new Date().getFullYear(); const
-                    currentMonthPayments = payments.filter(p => p.type === 'rent' && p.month ===
-                    currentMonth && p.year === currentYear && p.status === 'completed' ); const
-                    totalPaidThisMonth = currentMonthPayments.reduce((sum, p) => sum + p.amount, 0);
+                    <%
+                    // Calculate current month's rent status
+                    const currentMonth = new Date().getMonth() + 1;
+                    const currentYear = new Date().getFullYear();
+
+                    const currentMonthPayments = payments.filter(p =>
+                        p.type === 'rent' &&
+                        p.month === currentMonth &&
+                        p.year === currentYear &&
+                        p.status === 'completed'
+                    );
+
+                    const totalPaidThisMonth = currentMonthPayments.reduce((sum, p) => sum + p.amount, 0);
+
                     const rentRemaining = Math.max(0, activeLease.monthlyRent - totalPaidThisMonth);
                     %>
+
                     <div class="mini-stat">
                         <span class="label">Current Month</span>
                         <span
@@ -294,10 +304,7 @@
                                     ><i class="fas fa-calendar"></i> <%= new
                                     Date(request.createdAt).toLocaleDateString() %></span
                                 >
-                                <span
-                                    ><i class="fas fa-tag"></i> <%= request.category.replace('_', '
-                                    ') %></span
-                                >
+                                <span><i class="fas fa-tag"></i> <%= request.category.replace('_', ' ') %></span>
                                 <span class="priority-<%= request.priority %>">
                                     <i class="fas fa-flag"></i> <%= request.priority %>
                                 </span>
