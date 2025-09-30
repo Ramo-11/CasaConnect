@@ -2,6 +2,10 @@ const ServiceRequest = require('../../../models/ServiceRequest');
 const Notification = require('../../../models/Notification');
 const { getManagerAccessibleUnits } = require('../../utils/accessControl');
 const storageService = require('../../services/storageService');
+const User = require('../../../models/User');
+const Unit = require('../../../models/Unit');
+const Lease = require('../../../models/Lease');
+const { canAccessUnit } = require('../../utils/accessControl');
 const { logger } = require('../../logger');
 
 // Get Service Requests
@@ -61,18 +65,188 @@ exports.getServiceRequests = async (req, res) => {
             })
         );
 
+        // Get active leases with tenant and unit info for the create modal
+        let leasesFilter = { status: 'active' };
+
+        // For restricted managers, only show leases on accessible units
+        if (accessibleUnits !== null) {
+            leasesFilter.unit = { $in: accessibleUnits };
+        }
+
+        // Get all active leases with populated tenant and unit
+        const activeLeases = await Lease.find(leasesFilter)
+            .populate('tenant', 'firstName lastName email')
+            .populate('unit', 'unitNumber streetAddress')
+            .lean();
+
+        // Create tenant-unit mapping for frontend
+        const tenantUnitMap = {};
+        const unitTenantMap = {};
+
+        activeLeases.forEach((lease) => {
+            if (lease.tenant && lease.unit) {
+                tenantUnitMap[lease.tenant._id.toString()] = lease.unit._id.toString();
+                unitTenantMap[lease.unit._id.toString()] = lease.tenant._id.toString();
+            }
+        });
+
+        // Extract unique tenants and units from active leases
+        const tenants = activeLeases
+            .map((lease) => lease.tenant)
+            .filter(
+                (tenant, index, self) =>
+                    tenant &&
+                    self.findIndex((t) => t._id.toString() === tenant._id.toString()) === index
+            )
+            .sort((a, b) => a.firstName.localeCompare(b.firstName));
+
+        const units = activeLeases
+            .map((lease) => lease.unit)
+            .filter(
+                (unit, index, self) =>
+                    unit &&
+                    self.findIndex((u) => u._id.toString() === unit._id.toString()) === index
+            )
+            .sort((a, b) => a.unitNumber.localeCompare(b.unitNumber, undefined, { numeric: true }));
+
         res.render('manager/service-requests', {
             title: 'Service Requests',
             additionalCSS: ['manager/service-requests.css'],
             additionalJS: ['manager/service-requests.js'],
             layout: 'layout',
             requests,
+            tenants,
+            units,
+            tenantUnitMap: JSON.stringify(tenantUnitMap),
+            unitTenantMap: JSON.stringify(unitTenantMap),
         });
     } catch (error) {
         logger.error(`Get service requests error: ${error}`);
         res.status(500).render('error', {
             title: 'Error',
             message: 'Failed to load service requests',
+        });
+    }
+};
+
+// Create Service Request (Manager creating on behalf of tenant)
+exports.createServiceRequest = async (req, res) => {
+    try {
+        const {
+            tenant,
+            unit,
+            category,
+            priority,
+            title,
+            description,
+            location,
+            preferredDate,
+            preferredTime,
+        } = req.body;
+
+        const managerId = req.session.userId;
+        const userRole = req.session.userRole;
+
+        // Verify tenant exists and is a tenant
+        const tenantUser = await User.findById(tenant);
+        if (!tenantUser || tenantUser.role !== 'tenant') {
+            return res.status(404).json({
+                success: false,
+                message: 'Tenant not found',
+            });
+        }
+
+        // Verify unit exists
+        const unitDoc = await Unit.findById(unit);
+        if (!unitDoc) {
+            return res.status(404).json({
+                success: false,
+                message: 'Unit not found',
+            });
+        }
+
+        // Check access for restricted managers
+        if (userRole === 'restricted_manager') {
+            if (!(await canAccessUnit(managerId, userRole, unit))) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'You do not have access to this unit',
+                });
+            }
+        }
+
+        // Handle photo uploads if provided
+        const photos = [];
+        if (req.files && req.files.length > 0) {
+            const storageService = require('../../services/storageService');
+            for (const file of req.files) {
+                try {
+                    const uploadResult = await storageService.uploadServicePhoto(file);
+                    photos.push({
+                        url: uploadResult.url,
+                        fileName: uploadResult.fileName,
+                        originalName: file.originalname,
+                        size: file.size,
+                        mimeType: file.mimetype,
+                        uploadedAt: new Date(),
+                    });
+                } catch (uploadError) {
+                    logger.warn(`Failed to upload photo: ${uploadError.message}`);
+                }
+            }
+        }
+
+        // Create service request
+        const serviceRequest = new ServiceRequest({
+            tenant,
+            unit,
+            category,
+            priority: priority || 'medium',
+            title,
+            description,
+            location,
+            preferredDate: preferredDate ? new Date(preferredDate) : null,
+            preferredTime,
+            photos,
+            status: 'pending',
+            fee: 10, // Default fee
+        });
+
+        await serviceRequest.save();
+
+        // Add note indicating manager created it
+        serviceRequest.notes.push({
+            author: managerId,
+            content: 'Service request created by manager on behalf of tenant',
+            createdAt: new Date(),
+        });
+        await serviceRequest.save();
+
+        // Notify tenant
+        await Notification.create({
+            recipient: tenant,
+            type: 'service_request_new',
+            title: 'Service Request Created',
+            message: `A service request has been created for your unit: ${title}`,
+            relatedModel: 'ServiceRequest',
+            relatedId: serviceRequest._id,
+            priority: priority === 'emergency' ? 'high' : 'normal',
+        });
+
+        logger.info(
+            `Service request created by manager ${managerId} for tenant ${tenant}, unit ${unit}`
+        );
+
+        res.json({
+            success: true,
+            message: 'Service request created successfully',
+            data: serviceRequest,
+        });
+    } catch (error) {
+        logger.error(`Create service request error: ${error}`);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to create service request',
         });
     }
 };

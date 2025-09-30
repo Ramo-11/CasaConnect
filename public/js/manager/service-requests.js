@@ -473,3 +473,138 @@ function autoRefreshRequests() {
 
 // Initialize auto-refresh
 autoRefreshRequests();
+
+// Open Create Service Request Modal
+function openCreateServiceRequestModal() {
+    PM.ModalManager.openModal('createServiceRequestModal');
+}
+
+function closeCreateServiceRequestModal() {
+    PM.ModalManager.closeModal('createServiceRequestModal');
+    document.getElementById('createServiceRequestForm').reset();
+
+    // Clear photo preview
+    const photoPreview = document.getElementById('photoPreview');
+    if (photoPreview) {
+        photoPreview.innerHTML = '';
+        photoPreview.style.display = 'none';
+    }
+}
+
+// Handle photo selection preview
+function handlePhotoSelection(input) {
+    const photoPreview = document.getElementById('photoPreview');
+    photoPreview.innerHTML = '';
+
+    if (input.files && input.files.length > 0) {
+        photoPreview.style.display = 'grid';
+
+        Array.from(input.files).forEach((file, index) => {
+            if (index < 3) {
+                // Limit to 3 photos
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const preview = document.createElement('div');
+                    preview.className = 'photo-preview-item';
+                    preview.innerHTML = `
+                        <img src="${e.target.result}" alt="Photo ${index + 1}">
+                        <span class="photo-name">${file.name}</span>
+                    `;
+                    photoPreview.appendChild(preview);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    } else {
+        photoPreview.style.display = 'none';
+    }
+}
+
+// Initialize Create Service Request Form
+PM.ready(() => {
+    const createForm = document.getElementById('createServiceRequestForm');
+    if (createForm) {
+        // Get mapping data
+        const tenantUnitMap = JSON.parse(createForm.dataset.tenantUnitMap || '{}');
+        const unitTenantMap = JSON.parse(createForm.dataset.unitTenantMap || '{}');
+
+        const tenantSelect = document.getElementById('requestTenant');
+        const unitSelect = document.getElementById('requestUnit');
+
+        // Handle tenant selection - auto-select corresponding unit
+        if (tenantSelect && unitSelect) {
+            tenantSelect.addEventListener('change', function () {
+                const selectedTenant = this.value;
+                if (selectedTenant && tenantUnitMap[selectedTenant]) {
+                    unitSelect.value = tenantUnitMap[selectedTenant];
+
+                    // Visual feedback
+                    unitSelect.style.backgroundColor = '#f0fdf4';
+                    setTimeout(() => {
+                        unitSelect.style.backgroundColor = '';
+                    }, 500);
+                } else if (!selectedTenant) {
+                    unitSelect.value = '';
+                }
+            });
+
+            // Handle unit selection - auto-select corresponding tenant
+            unitSelect.addEventListener('change', function () {
+                const selectedUnit = this.value;
+                if (selectedUnit && unitTenantMap[selectedUnit]) {
+                    tenantSelect.value = unitTenantMap[selectedUnit];
+
+                    // Visual feedback
+                    tenantSelect.style.backgroundColor = '#f0fdf4';
+                    setTimeout(() => {
+                        tenantSelect.style.backgroundColor = '';
+                    }, 500);
+                } else if (!selectedUnit) {
+                    tenantSelect.value = '';
+                }
+            });
+        }
+
+        createForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const submitBtn = createForm.querySelector('button[type="submit"]');
+            const btnText = submitBtn.querySelector('.btn-text');
+            const btnLoading = submitBtn.querySelector('.btn-loading');
+
+            btnText.style.display = 'none';
+            btnLoading.style.display = 'inline-flex';
+            submitBtn.disabled = true;
+
+            try {
+                const formData = new FormData(createForm);
+
+                const response = await PM.APIClient.post(
+                    '/api/manager/service-request/create',
+                    formData
+                );
+
+                if (response.success) {
+                    PM.NotificationManager.success('Service request created successfully!');
+                    closeCreateServiceRequestModal();
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    throw new Error(response.error || 'Failed to create service request');
+                }
+            } catch (error) {
+                PM.NotificationManager.error(error.message);
+                btnText.style.display = 'inline-flex';
+                btnLoading.style.display = 'none';
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Photo input change handler
+        const photoInput = document.getElementById('requestPhotos');
+        if (photoInput) {
+            photoInput.addEventListener('change', function () {
+                handlePhotoSelection(this);
+            });
+        }
+    }
+});

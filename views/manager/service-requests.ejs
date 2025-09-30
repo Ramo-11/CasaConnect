@@ -34,33 +34,39 @@
         </div>
 
         <div class="filter-controls">
-            <select id="priorityFilter" onchange="applyFilters()">
-                <option value="all">All Priorities</option>
-                <option value="emergency">Emergency</option>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
-            </select>
+            <div class="left-filters">
+                <select id="priorityFilter" onchange="applyFilters()">
+                    <option value="all">All Priorities</option>
+                    <option value="emergency">Emergency</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                </select>
 
-            <select id="categoryFilter" onchange="applyFilters()">
-                <option value="all">All Categories</option>
-                <option value="electrical">Electrical</option>
-                <option value="plumbing">Plumbing</option>
-                <option value="hvac">HVAC</option>
-                <option value="appliance">Appliance</option>
-                <option value="general_repair">General Repair</option>
-                <option value="other">Other</option>
-            </select>
+                <select id="categoryFilter" onchange="applyFilters()">
+                    <option value="all">All Categories</option>
+                    <option value="electrical">Electrical</option>
+                    <option value="plumbing">Plumbing</option>
+                    <option value="hvac">HVAC</option>
+                    <option value="appliance">Appliance</option>
+                    <option value="general_repair">General Repair</option>
+                    <option value="other">Other</option>
+                </select>
 
-            <div class="search-box filter-select">
-                <input
-                    type="text"
-                    id="requestSearch"
-                    placeholder="Search requests..."
-                    onkeyup="applyFilters()"
-                />
-                <i class="fas fa-search"></i>
+                <div class="search-box filter-select">
+                    <input
+                        type="text"
+                        id="requestSearch"
+                        placeholder="Search requests..."
+                        onkeyup="applyFilters()"
+                    />
+                    <i class="fas fa-search"></i>
+                </div>
             </div>
+
+            <button class="btn btn-primary" onclick="openCreateServiceRequestModal()">
+                <i class="fas fa-plus"></i> Create Service Request
+            </button>
         </div>
     </div>
 
@@ -307,5 +313,155 @@
                 </div>
             </form>
         </div>
+    </div>
+</div>
+
+<!-- Create Service Request Modal -->
+<div id="createServiceRequestModal" class="modal">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h2>Create Service Request</h2>
+            <button class="modal-close" onclick="closeCreateServiceRequestModal()">&times;</button>
+        </div>
+        <form
+            id="createServiceRequestForm"
+            enctype="multipart/form-data"
+            data-tenant-unit-map="<%= tenantUnitMap %>"
+            data-unit-tenant-map="<%= unitTenantMap %>"
+        >
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <span
+                        >Creating a service request on behalf of a tenant. The tenant will be
+                        notified.</span
+                    >
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="requestTenant">Tenant *</label>
+                        <select id="requestTenant" name="tenant" required>
+                            <option value="">Select Tenant...</option>
+                            <% if (typeof tenants !== 'undefined' && tenants.length > 0) { %> <%
+                            tenants.forEach(tenant => { %>
+                            <option value="<%= tenant._id %>">
+                                <%= tenant.firstName %> <%= tenant.lastName %> (<%= tenant.email %>)
+                            </option>
+                            <% }) %> <% } %>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="requestUnit">Unit *</label>
+                        <select id="requestUnit" name="unit" required>
+                            <option value="">Select Unit...</option>
+                            <% if (typeof units !== 'undefined' && units.length > 0) { %> <%
+                            units.forEach(unit => { %>
+                            <option value="<%= unit._id %>">
+                                Unit <%= unit.unitNumber %><% if (unit.streetAddress) { %> - <%=
+                                unit.streetAddress %><% } %>
+                            </option>
+                            <% }) %> <% } %>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="requestTitle">Title *</label>
+                    <input
+                        type="text"
+                        id="requestTitle"
+                        name="title"
+                        required
+                        placeholder="Brief description of the issue"
+                    />
+                </div>
+
+                <div class="form-group">
+                    <label for="requestDescription">Description *</label>
+                    <textarea
+                        id="requestDescription"
+                        name="description"
+                        rows="4"
+                        required
+                        placeholder="Detailed description of the maintenance issue..."
+                    ></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="requestCategory">Category *</label>
+                        <select id="requestCategory" name="category" required>
+                            <option value="">Select Category...</option>
+                            <option value="electrical">Electrical</option>
+                            <option value="plumbing">Plumbing</option>
+                            <option value="hvac">HVAC</option>
+                            <option value="appliance">Appliance</option>
+                            <option value="general_repair">General Repair</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="requestPriority">Priority *</label>
+                        <select id="requestPriority" name="priority" required>
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                            <option value="emergency">Emergency</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="requestLocation">Location</label>
+                        <select id="requestLocation" name="location">
+                            <option value="">Select Location...</option>
+                            <option value="kitchen">Kitchen</option>
+                            <option value="living_room">Living Room</option>
+                            <option value="bedroom_master">Master Bedroom</option>
+                            <option value="bedroom_other">Other Bedroom</option>
+                            <option value="bathroom_master">Master Bathroom</option>
+                            <option value="bathroom_other">Other Bathroom</option>
+                            <option value="laundry">Laundry</option>
+                            <option value="garage">Garage</option>
+                            <option value="exterior">Exterior</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="requestPreferredDate">Preferred Date</label>
+                        <input type="date" id="requestPreferredDate" name="preferredDate" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="requestPhotos">Photos (Optional)</label>
+                    <input type="file" id="requestPhotos" name="photos" accept="image/*" multiple />
+                    <small class="form-help">Upload up to 3 photos (Max 10MB each)</small>
+                </div>
+
+                <div id="photoPreview" class="photo-preview-grid" style="display: none"></div>
+            </div>
+
+            <div class="modal-footer">
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    onclick="closeCreateServiceRequestModal()"
+                >
+                    Cancel
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <span class="btn-text"> <i class="fas fa-plus"></i> Create Request </span>
+                    <span class="btn-loading" style="display: none">
+                        <span class="spinner"></span> Creating...
+                    </span>
+                </button>
+            </div>
+        </form>
     </div>
 </div>

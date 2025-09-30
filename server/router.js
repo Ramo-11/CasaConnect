@@ -119,6 +119,12 @@ managerAPI.delete('/units/:unitId', unitManagement.deleteUnit);
 
 // Manager: Service Requests
 managerWeb.get('/service-requests', serviceRequestManagement.getServiceRequests);
+managerAPI.post(
+    '/service-request/create',
+    upload.array('photos', 3),
+    handleMulterError,
+    serviceRequestManagement.createServiceRequest
+);
 managerAPI.post('/service-requests/assign', serviceRequestManagement.assignTechnician);
 managerAPI.post('/service-requests/note', serviceRequestManagement.addRequestNote);
 managerAPI.put('/service-requests/:requestId/status', serviceRequestManagement.updateRequestStatus);
