@@ -662,15 +662,6 @@ exports.getLeaseDetails = async (req, res) => {
         const managerId = req.session.userId;
         const userRole = req.session.userRole;
 
-        if (userRole === 'restricted_manager') {
-            if (!(await canAccessUnit(managerId, userRole, unitId))) {
-                return res.status(403).json({
-                    success: false,
-                    message: 'You do not have access to this unit',
-                });
-            }
-        }
-
         const lease = await Lease.findById(leaseId)
             .populate('tenant', 'firstName lastName email phone')
             .populate('unit')
@@ -682,6 +673,15 @@ exports.getLeaseDetails = async (req, res) => {
                 title: 'Lease Not Found',
                 message: 'The requested lease could not be found',
             });
+        }
+
+        if (userRole === 'restricted_manager') {
+            if (!(await canAccessUnit(managerId, userRole, lease.unit._id))) {
+                return res.status(403).render('error', {
+                    title: 'Access Denied',
+                    message: 'You do not have access to this unit',
+                });
+            }
         }
 
         res.render('manager/lease-details', {

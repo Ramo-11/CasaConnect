@@ -88,7 +88,7 @@
         <script src="/js/nav-footer.js"></script>
 
         <!-- Modal Scripts - Load based on user role and page context -->
-        <% if (typeof user !== 'undefined' && user && user.role === 'manager') { %>
+        <% if (typeof user !== 'undefined' && user && (user.role === 'manager' || user.role === 'restricted_manager')) { %>
             <script src="/js/manager/modals/tenant-modal.js"></script>
             <script src="/js/manager/modals/unit-modal.js"></script>
             <script src="/js/manager/modals/lease-modal.js"></script>
@@ -113,7 +113,7 @@
         <% } %>
 
         <!-- Modal Partials - Include based on page needs -->
-        <% if (typeof user !== 'undefined' && user && user.role === 'manager') { %>
+        <% if (typeof user !== 'undefined' && user && (user.role === 'manager' || user.role === 'restricted_manager')) { %>
             <% 
             // Determine which modals to include based on the current page
             const currentPath = typeof path !== 'undefined' ? path : '';
