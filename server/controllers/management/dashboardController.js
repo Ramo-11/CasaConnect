@@ -5,15 +5,16 @@ const ServiceRequest = require('../../../models/ServiceRequest');
 const Payment = require('../../../models/Payment');
 const TenantApplication = require('../../../models/TenantApplication');
 const Notification = require('../../../models/Notification');
+const { getManagerAccessibleUnits, applyUnitFilter } = require('../../utils/accessControl');
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
 const { logger } = require('../../logger');
 
-// Get Manager Dashboard
 exports.getDashboard = async (req, res) => {
     try {
         const managerId = req.session.userId;
-        // Should be updated during production
+        const userRole = req.session.userRole;
+
         const manager = (await User.findById(managerId)) || {
             firstName: 'Dev',
             lastName: 'Manager',
@@ -27,12 +28,25 @@ exports.getDashboard = async (req, res) => {
             });
         }
 
-        // Get all units
-        const units = await Unit.find();
+        // Get accessible units for this manager
+        const accessibleUnits = await getManagerAccessibleUnits(managerId, userRole);
+
+        // Build unit filter
+        const unitFilter = {};
+        if (accessibleUnits !== null) {
+            unitFilter._id = { $in: accessibleUnits };
+        }
+
+        // Get all units (filtered for restricted managers)
+        const units = await Unit.find(unitFilter);
         const totalUnits = units.length;
 
-        // Get active leases to determine occupied units
-        const activeLeases = await Lease.find({ status: 'active' }).populate('unit');
+        // Get active leases (filtered by accessible units)
+        const leaseFilter = { status: 'active' };
+        if (accessibleUnits !== null) {
+            leaseFilter.unit = { $in: accessibleUnits };
+        }
+        const activeLeases = await Lease.find(leaseFilter).populate('unit');
         const occupiedUnitIds = activeLeases.map((lease) => lease.unit._id.toString());
 
         const occupiedUnits = occupiedUnitIds.length;
@@ -49,23 +63,36 @@ exports.getDashboard = async (req, res) => {
             squareFeet: u.squareFeet,
             monthlyRent: u.monthlyRent,
             occupied: occupiedUnitIds.includes(u._id.toString()),
-            user: req.session.user || { role: 'manager' },
+            user: req.session.user || { role: userRole },
         }));
 
-        // Get active service requests count
-        const activeRequests = await ServiceRequest.countDocuments({
+        // Get active service requests count (filtered)
+        const serviceFilter = {
             status: { $in: ['pending', 'assigned', 'in_progress'] },
-        });
+        };
+        if (accessibleUnits !== null) {
+            serviceFilter.unit = { $in: accessibleUnits };
+        }
+        const activeRequests = await ServiceRequest.countDocuments(serviceFilter);
 
-        // Get tenants with their active leases
-        const tenants = await User.find({ role: 'tenant' }).sort('-createdAt').lean();
+        // Get tenants with their active leases (filtered)
+        const tenantIds = activeLeases.map((l) => l.tenant);
+        const tenantFilter = { role: 'tenant' };
+        if (accessibleUnits !== null) {
+            tenantFilter._id = { $in: tenantIds };
+        }
+        const tenants = await User.find(tenantFilter).sort('-createdAt').lean();
 
         // Get all active leases in one query for efficiency
-        const tenantIds = tenants.map((t) => t._id);
-        const tenantLeases = await Lease.find({
-            tenant: { $in: tenantIds },
+        const allTenantIds = tenants.map((t) => t._id);
+        const tenantLeasesFilter = {
+            tenant: { $in: allTenantIds },
             status: 'active',
-        }).populate('unit');
+        };
+        if (accessibleUnits !== null) {
+            tenantLeasesFilter.unit = { $in: accessibleUnits };
+        }
+        const tenantLeases = await Lease.find(tenantLeasesFilter).populate('unit');
 
         // Create a map for quick lease lookup
         const leaseMap = {};
@@ -123,8 +150,12 @@ exports.getDashboard = async (req, res) => {
             })
         );
 
-        // Get recent service requests
-        const recentRequests = await ServiceRequest.find()
+        // Get recent service requests (filtered)
+        const recentRequestsFilter = {};
+        if (accessibleUnits !== null) {
+            recentRequestsFilter.unit = { $in: accessibleUnits };
+        }
+        const recentRequests = await ServiceRequest.find(recentRequestsFilter)
             .populate('unit', 'unitNumber')
             .populate('tenant', 'firstName lastName')
             .sort('-createdAt')
@@ -141,17 +172,22 @@ exports.getDashboard = async (req, res) => {
             date: formatDate(req.createdAt),
         }));
 
-        // Get upcoming lease expirations (next 60 days)
+        // Get upcoming lease expirations (next 60 days) - filtered
         const sixtyDaysFromNow = new Date();
         sixtyDaysFromNow.setDate(sixtyDaysFromNow.getDate() + 60);
 
-        const expiringLeases = await Lease.find({
+        const expiringLeasesFilter = {
             status: 'active',
             endDate: {
                 $gte: new Date(),
                 $lte: sixtyDaysFromNow,
             },
-        })
+        };
+        if (accessibleUnits !== null) {
+            expiringLeasesFilter.unit = { $in: accessibleUnits };
+        }
+
+        const expiringLeases = await Lease.find(expiringLeasesFilter)
             .populate('tenant', 'firstName lastName')
             .populate('unit', 'unitNumber')
             .sort('endDate')

@@ -213,7 +213,6 @@ exports.hasRole = (...roles) => {
 
 // Middleware: Check if manager or supervisor
 exports.isManager = (req, res, next) => {
-    // First check authentication
     if (!req.session || !req.session.userId) {
         if (req.path.startsWith('/api/')) {
             return res.status(401).json({
@@ -224,8 +223,7 @@ exports.isManager = (req, res, next) => {
         return res.redirect('/login');
     }
 
-    // Check role
-    if (!['manager', 'supervisor'].includes(req.session.userRole)) {
+    if (!['manager', 'supervisor', 'restricted_manager'].includes(req.session.userRole)) {
         logger.warn(
             `Unauthorized access attempt to manager area by user ${req.session.userId} with role ${req.session.userRole}`
         );
@@ -237,7 +235,6 @@ exports.isManager = (req, res, next) => {
             });
         }
 
-        // Redirect to appropriate dashboard based on their actual role
         if (req.session.userRole === 'tenant') {
             return res.redirect('/tenant/dashboard');
         }
@@ -279,7 +276,7 @@ exports.isTenant = (req, res, next) => {
         }
 
         // Redirect to appropriate dashboard based on their actual role
-        if (['manager', 'supervisor'].includes(req.session.userRole)) {
+        if (['manager', 'supervisor', 'restricted_manager'].includes(req.session.userRole)) {
             return res.redirect('/manager/dashboard');
         }
 
@@ -318,7 +315,7 @@ exports.isBoardingManager = (req, res, next) => {
             });
         }
         // Redirect to appropriate dashboard based on their actual role
-        if (['manager', 'supervisor'].includes(req.session.userRole)) {
+        if (['manager', 'supervisor', 'restricted_manager'].includes(req.session.userRole)) {
             return res.redirect('/manager/dashboard');
         }
         if (req.session.userRole === 'tenant') {
@@ -338,6 +335,7 @@ function redirectToDashboard(role, res) {
     switch (role) {
         case 'manager':
         case 'supervisor':
+        case 'restricted_manager':
             return res.redirect('/manager/dashboard');
         case 'tenant':
             return res.redirect('/tenant/dashboard');
@@ -348,6 +346,7 @@ function redirectToDashboard(role, res) {
         case 'general_repair':
             return res.redirect('/technician/dashboard');
         default:
+            console.log(`role: ${role}`);
             return res.redirect('/dashboard');
     }
 }

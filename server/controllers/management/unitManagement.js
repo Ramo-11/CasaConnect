@@ -1,11 +1,24 @@
 const Unit = require('../../../models/Unit');
 const User = require('../../../models/User');
 const Lease = require('../../../models/Lease');
+const { getManagerAccessibleUnits, canAccessUnit } = require('../../utils/accessControl');
 const { logger } = require('../../logger');
 
 // Get Units List
 exports.getUnits = async (req, res) => {
     try {
+        const managerId = req.session.userId;
+        const userRole = req.session.userRole;
+
+        // Get accessible units
+        const accessibleUnits = await getManagerAccessibleUnits(managerId, userRole);
+
+        // Build unit filter
+        const unitFilter = {};
+        if (accessibleUnits !== null) {
+            unitFilter._id = { $in: accessibleUnits };
+        }
+
         // Get tenants without active leases for lease creation
         const availableTenantsForLease = await User.aggregate([
             { $match: { role: 'tenant' } },
@@ -22,7 +35,7 @@ exports.getUnits = async (req, res) => {
             { $project: { firstName: 1, lastName: 1, email: 1 } },
         ]);
 
-        const units = await Unit.find().sort('unitNumber');
+        const units = await Unit.find(unitFilter).sort('unitNumber');
 
         // For each unit, find if it has an active lease
         const unitsWithTenants = await Promise.all(
@@ -55,7 +68,7 @@ exports.getUnits = async (req, res) => {
             layout: 'layout',
             additionalCSS: ['manager/units.css'],
             additionalJS: ['manager/units.js'],
-            user: req.session.user || { role: 'manager' },
+            user: req.session.user || { role: userRole },
             googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
             units: unitsWithTenants,
             availableTenants: availableTenantsForLease,
@@ -92,6 +105,8 @@ exports.getAvailableUnits = async (req, res) => {
 exports.createUnit = async (req, res) => {
     try {
         const unitData = req.body;
+        const managerId = req.session.userId;
+        const userRole = req.session.userRole;
 
         // Check if unit number already exists
         const existingUnit = await Unit.findOne({
@@ -112,15 +127,22 @@ exports.createUnit = async (req, res) => {
             delete unitData.floor;
         }
 
-        // Remove status field - it will be determined by lease existence
+        // Remove status field
         delete unitData.status;
         delete unitData.currentTenant;
 
         const unit = new Unit(unitData);
         await unit.save();
 
+        // Auto-assign to restricted manager
+        if (userRole === 'restricted_manager') {
+            await User.findByIdAndUpdate(managerId, {
+                $addToSet: { assignedUnits: unit._id },
+            });
+        }
+
         res.json({
-            success: true,
+            success: false,
             message: 'Unit created successfully',
             data: unit,
         });
@@ -176,12 +198,23 @@ exports.viewUnit = async (req, res) => {
     try {
         const { unitId } = req.params;
         const unit = await Unit.findById(unitId);
+        const managerId = req.session.userId;
+        const userRole = req.session.userRole;
 
         if (!unit) {
             return res.status(404).render('error', {
                 title: 'Unit Not Found',
                 message: 'Unit not found',
             });
+        }
+
+        if (userRole === 'restricted_manager') {
+            if (!(await canAccessUnit(managerId, userRole, unitId))) {
+                return res.status(403).render('error', {
+                    title: 'Access Denied',
+                    message: 'You do not have access to this unit',
+                });
+            }
         }
 
         // Get active lease with tenant info
@@ -250,6 +283,8 @@ exports.updateUnit = async (req, res) => {
     try {
         const { unitId } = req.params;
         const updates = req.body;
+        const managerId = req.session.userId;
+        const userRole = req.session.userRole;
 
         delete updates.status;
         delete updates.currentTenant;
@@ -265,6 +300,15 @@ exports.updateUnit = async (req, res) => {
                 success: false,
                 message: 'Unit not found',
             });
+        }
+
+        if (userRole === 'restricted_manager') {
+            if (!(await canAccessUnit(managerId, userRole, unitId))) {
+                return res.status(403).render('error', {
+                    title: 'Access Denied',
+                    message: 'You do not have access to this unit',
+                });
+            }
         }
 
         res.json({
@@ -285,6 +329,9 @@ exports.updateUnit = async (req, res) => {
 exports.editUnit = async (req, res) => {
     try {
         const { unitId } = req.params;
+        const managerId = req.session.userId;
+        const userRole = req.session.userRole;
+
         const unit = await Unit.findById(unitId);
 
         if (!unit) {
@@ -292,6 +339,15 @@ exports.editUnit = async (req, res) => {
                 title: 'Unit Not Found',
                 message: 'Unit not found',
             });
+        }
+
+        if (userRole === 'restricted_manager') {
+            if (!(await canAccessUnit(managerId, userRole, unitId))) {
+                return res.status(403).render('error', {
+                    title: 'Access Denied',
+                    message: 'You do not have access to this unit',
+                });
+            }
         }
 
         const activeLease = await Lease.findOne({
@@ -323,6 +379,8 @@ exports.editUnit = async (req, res) => {
 exports.deleteUnit = async (req, res) => {
     try {
         const { unitId } = req.params;
+        const managerId = req.session.userId;
+        const userRole = req.session.userRole;
 
         const unit = await Unit.findById(unitId);
         if (!unit) {
@@ -331,6 +389,15 @@ exports.deleteUnit = async (req, res) => {
                 success: false,
                 message: 'Unit not found',
             });
+        }
+
+        if (userRole === 'restricted_manager') {
+            if (!(await canAccessUnit(managerId, userRole, unitId))) {
+                return res.status(403).render('error', {
+                    title: 'Access Denied',
+                    message: 'You do not have access to this unit',
+                });
+            }
         }
 
         // Check for active leases

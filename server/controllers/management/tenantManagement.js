@@ -6,6 +6,7 @@ const Payment = require('../../../models/Payment');
 const ServiceRequest = require('../../../models/ServiceRequest');
 const Notification = require('../../../models/Notification');
 const emailService = require('../../services/emailService');
+const { getManagerAccessibleUnits, canAccessUnit } = require('../../utils/accessControl');
 const nodemailer = require('nodemailer');
 const { logger } = require('../../logger');
 require('dotenv').config();
@@ -123,6 +124,8 @@ exports.sendCredentials = async (req, res) => {
 exports.viewTenant = async (req, res) => {
     try {
         const { tenantId } = req.params;
+        const managerId = req.session.userId;
+        const userRole = req.session.userRole;
 
         const tenant = await User.findById(tenantId);
         if (!tenant || tenant.role !== 'tenant') {
@@ -137,13 +140,31 @@ exports.viewTenant = async (req, res) => {
             status: 'active',
         }).populate('unit');
 
+        // Check access for restricted managers
+        if (userRole === 'restricted_manager') {
+            if (!activeLease || !(await canAccessUnit(managerId, userRole, activeLease.unit._id))) {
+                return res.status(403).render('error', {
+                    title: 'Access Denied',
+                    message: 'You do not have access to this tenant',
+                });
+            }
+        }
+
         const payments = await Payment.find({ tenant: tenantId }).sort('-createdAt').limit(12);
 
         const serviceRequests = await ServiceRequest.find({ tenant: tenantId })
             .sort('-createdAt')
             .limit(10);
 
+        // Get accessible units for lease creation
+        const accessibleUnits = await getManagerAccessibleUnits(managerId, userRole);
+        const unitFilter = {};
+        if (accessibleUnits !== null) {
+            unitFilter._id = { $in: accessibleUnits };
+        }
+
         const availableUnitsForLease = await Unit.aggregate([
+            { $match: unitFilter },
             {
                 $lookup: {
                     from: 'leases',
@@ -178,7 +199,7 @@ exports.viewTenant = async (req, res) => {
             layout: 'layout',
             additionalCSS: ['manager/tenant-details.css'],
             additionalJS: ['manager/tenant-details.js'],
-            user: req.session.user || { role: 'manager' },
+            user: req.session.user || { role: userRole },
             tenant,
             activeLease,
             payments,
@@ -201,6 +222,8 @@ exports.viewTenant = async (req, res) => {
 exports.editTenant = async (req, res) => {
     try {
         const { tenantId } = req.params;
+        const managerId = req.session.userId;
+        const userRole = req.session.userRole;
 
         const tenant = await User.findById(tenantId);
         if (!tenant || tenant.role !== 'tenant') {
@@ -214,6 +237,16 @@ exports.editTenant = async (req, res) => {
             tenant: tenantId,
             status: 'active',
         }).populate('unit');
+
+        // Check access for restricted managers
+        if (userRole === 'restricted_manager') {
+            if (!activeLease || !(await canAccessUnit(managerId, userRole, activeLease.unit._id))) {
+                return res.status(403).render('error', {
+                    title: 'Access Denied',
+                    message: 'You do not have access to this tenant',
+                });
+            }
+        }
 
         // Get available units for lease creation (units without active leases)
         const availableUnitsForLease = await Unit.aggregate([
@@ -272,6 +305,8 @@ exports.updateTenant = async (req, res) => {
     try {
         const { tenantId } = req.params;
         const updates = req.body;
+        const managerId = req.session.userId;
+        const userRole = req.session.userRole;
 
         const tenant = await User.findById(tenantId);
         if (!tenant || tenant.role !== 'tenant') {
@@ -279,6 +314,15 @@ exports.updateTenant = async (req, res) => {
                 success: false,
                 message: 'Tenant not found',
             });
+        }
+
+        if (userRole === 'restricted_manager') {
+            if (!activeLease || !(await canAccessUnit(managerId, userRole, activeLease.unit._id))) {
+                return res.status(403).render('error', {
+                    title: 'Access Denied',
+                    message: 'You do not have access to this tenant',
+                });
+            }
         }
 
         // Update tenant fields
@@ -306,13 +350,28 @@ exports.updateTenant = async (req, res) => {
 // Get Tenants List
 exports.getTenants = async (req, res) => {
     try {
-        const tenants = await User.find({ role: 'tenant' }).sort('-createdAt');
+        const managerId = req.session.userId;
+        const userRole = req.session.userRole;
 
-        // Get active leases for all tenants
-        const activeLeases = await Lease.find({
-            tenant: { $in: tenants.map((t) => t._id) },
-            status: 'active',
-        }).populate('unit');
+        // Get accessible units
+        const accessibleUnits = await getManagerAccessibleUnits(managerId, userRole);
+
+        // Get active leases for filtering tenants
+        const leaseFilter = { status: 'active' };
+        if (accessibleUnits !== null) {
+            leaseFilter.unit = { $in: accessibleUnits };
+        }
+        const activeLeases = await Lease.find(leaseFilter).populate('unit');
+
+        // Build tenant filter
+        const tenantFilter = { role: 'tenant' };
+        if (accessibleUnits !== null) {
+            // Only show tenants with active leases on accessible units
+            const tenantIds = activeLeases.map((l) => l.tenant);
+            tenantFilter._id = { $in: tenantIds };
+        }
+
+        const tenants = await User.find(tenantFilter).sort('-createdAt');
 
         // Create lease map
         const leaseMap = {};
@@ -322,9 +381,13 @@ exports.getTenants = async (req, res) => {
 
         // Get available units for new leases
         const occupiedUnitIds = activeLeases.map((l) => l.unit._id.toString());
-        const availableUnits = await Unit.find({
+        const unitFilter = {
             _id: { $nin: occupiedUnitIds },
-        });
+        };
+        if (accessibleUnits !== null) {
+            unitFilter._id.$in = accessibleUnits;
+        }
+        const availableUnits = await Unit.find(unitFilter);
 
         // Check payment status for each tenant
         const tenantsWithFullInfo = await Promise.all(
@@ -359,7 +422,7 @@ exports.getTenants = async (req, res) => {
             layout: 'layout',
             additionalCSS: ['manager/tenants.css'],
             additionalJS: ['manager/tenants.js'],
-            user: req.session.user || { role: 'manager' },
+            user: req.session.user || { role: userRole },
             tenants: tenantsWithFullInfo,
             availableUnits,
             availableUnitsForLease: availableUnits,

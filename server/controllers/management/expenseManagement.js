@@ -2,13 +2,32 @@ const Expense = require('../../../models/Expense');
 const Unit = require('../../../models/Unit');
 const Document = require('../../../models/Document');
 const { logger } = require('../../logger');
+const { getManagerAccessibleUnits } = require('../../utils/accessControl');
 const { uploadToCloudinary, deleteFromCloudinary } = require('../../services/storageService');
 
 // Get Expenses Page
 exports.getExpenses = async (req, res) => {
     try {
-        const units = await Unit.find().sort('unitNumber');
-        const expenses = await Expense.find()
+        const managerId = req.session.userId;
+        const userRole = req.session.userRole;
+
+        // Get accessible units
+        const accessibleUnits = await getManagerAccessibleUnits(managerId, userRole);
+
+        // Build filter for units
+        const unitFilter = {};
+        if (accessibleUnits !== null) {
+            unitFilter._id = { $in: accessibleUnits };
+        }
+        const units = await Unit.find(unitFilter).sort('unitNumber');
+
+        // Build filter for expenses
+        const expenseFilter = {};
+        if (accessibleUnits !== null) {
+            // Show expenses for accessible units OR general expenses (no unit)
+            expenseFilter.$or = [{ unit: { $in: accessibleUnits } }, { unit: null }];
+        }
+        const expenses = await Expense.find(expenseFilter)
             .populate('unit', 'unitNumber')
             .populate('addedBy', 'firstName lastName')
             .sort('-date');
@@ -31,7 +50,7 @@ exports.getExpenses = async (req, res) => {
             layout: 'layout',
             additionalCSS: ['manager/expenses.css'],
             additionalJS: ['manager/expenses.js'],
-            user: req.session.user || { role: 'manager' },
+            user: req.session.user || { role: userRole },
             units,
             expenses,
             totalExpenses,

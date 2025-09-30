@@ -39,18 +39,22 @@
 
     <!-- View Toggle -->
     <div class="view-toggle">
-        <button class="toggle-btn active" onclick="setView('grid')">
-            <i class="fas fa-th"></i> Grid View
-        </button>
-        <button class="toggle-btn" onclick="setView('list')">
-            <i class="fas fa-list"></i> List View
+        <div class="left-buttons">
+            <button class="toggle-btn active" onclick="setView('grid')">
+                <i class="fas fa-th"></i> Grid View
+            </button>
+            <button class="toggle-btn" onclick="setView('list')">
+                <i class="fas fa-list"></i> List View
+            </button>
+        </div>
+        <button class="btn btn-primary" onclick="openAddTenantModal()">
+            <i class="fas fa-plus"></i> Add New Tenant
         </button>
     </div>
 
     <!-- Tenants Display -->
     <div id="tenantsDisplay" class="tenants-grid-view">
-        <% if (tenants && tenants.length > 0) { %> <% tenants.forEach(tenant =>
-        { %>
+        <% if (tenants && tenants.length > 0) { %> <% tenants.forEach(tenant => { %>
         <div
             class="tenant-card-full"
             data-tenant-id="<%= tenant._id %>"
@@ -68,9 +72,7 @@
                     <h3><%= tenant.firstName %> <%= tenant.lastName %></h3>
                     <span class="email-text"><%= tenant.email %></span>
                 </div>
-                <span
-                    class="status-indicator <%= tenant.isActive ? 'active' : 'inactive' %>"
-                >
+                <span class="status-indicator <%= tenant.isActive ? 'active' : 'inactive' %>">
                     <%= tenant.isActive ? 'Active' : 'Inactive' %>
                 </span>
             </div>
@@ -83,18 +85,12 @@
                     </div>
                     <div class="info-item">
                         <i class="fas fa-calendar"></i>
-                        <span
-                            >Since <%= new
-                            Date(tenant.createdAt).toLocaleDateString() %></span
-                        >
+                        <span>Since <%= new Date(tenant.createdAt).toLocaleDateString() %></span>
                     </div>
                     <% if (tenant.activeLease && tenant.activeLease.unit) { %>
                     <div class="info-item">
                         <i class="fas fa-home"></i>
-                        <span
-                            >Unit <%= tenant.activeLease.unit.unitNumber
-                            %></span
-                        >
+                        <span>Unit <%= tenant.activeLease.unit.unitNumber %></span>
                     </div>
                     <div class="info-item">
                         <i class="fas fa-dollar-sign"></i>
@@ -111,10 +107,7 @@
                 <% if (tenant.activeLease && tenant.activeLease.unit) { %>
                 <div class="unit-info-box">
                     <div class="unit-details">
-                        <strong
-                            >Unit <%= tenant.activeLease.unit.unitNumber
-                            %></strong
-                        >
+                        <strong>Unit <%= tenant.activeLease.unit.unitNumber %></strong>
                         <span
                             ><%= tenant.activeLease.unit.propertyType %> - <%=
                             tenant.activeLease.unit.bedrooms %> bed, <%=
@@ -122,13 +115,12 @@
                         >
                         <span
                             ><%= tenant.activeLease.unit.streetAddress %>, <%=
-                            tenant.activeLease.unit.city %>, <%=
-                            tenant.activeLease.unit.state %></span
+                            tenant.activeLease.unit.city %>, <%= tenant.activeLease.unit.state
+                            %></span
                         >
                         <span
                             >Lease ends: <%= new
-                            Date(tenant.activeLease.endDate).toLocaleDateString()
-                            %></span
+                            Date(tenant.activeLease.endDate).toLocaleDateString() %></span
                         >
                     </div>
                     <div class="payment-status">
@@ -142,8 +134,7 @@
                 <% } %> <% if (tenant.lastLogin) { %>
                 <div class="last-login">
                     <i class="fas fa-clock"></i>
-                    Last login: <%= new Date(tenant.lastLogin).toLocaleString()
-                    %>
+                    Last login: <%= new Date(tenant.lastLogin).toLocaleString() %>
                 </div>
                 <% } %>
             </div>
@@ -156,11 +147,7 @@
                 >
                     <i class="fas fa-eye"></i>
                 </button>
-                <button
-                    class="btn-icon"
-                    onclick="editTenant('<%= tenant._id %>')"
-                    title="Edit"
-                >
+                <button class="btn-icon" onclick="editTenant('<%= tenant._id %>')" title="Edit">
                     <i class="fas fa-edit"></i>
                 </button>
                 <button
@@ -192,9 +179,7 @@
             <i class="fas fa-users"></i>
             <h3>No Tenants Found</h3>
             <p>Start by adding your first tenant</p>
-            <button class="btn btn-primary" onclick="openAddTenantModal()">
-                Add First Tenant
-            </button>
+            <button class="btn btn-primary" onclick="openAddTenantModal()">Add First Tenant</button>
         </div>
         <% } %>
     </div>

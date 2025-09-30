@@ -50,9 +50,16 @@ const userSchema = new mongoose.Schema({
             'general_repair',
             'tenant',
             'boarding_manager',
+            'restricted_manager',
         ],
         required: true,
     },
+    assignedUnits: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Unit',
+        },
+    ],
     isActive: {
         type: Boolean,
         default: true,

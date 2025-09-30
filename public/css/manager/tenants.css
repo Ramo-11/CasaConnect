@@ -22,6 +22,12 @@
     display: flex;
     gap: var(--spacing-sm);
     margin-bottom: var(--spacing-lg);
+    justify-content: space-between;
+}
+
+.view-toggle .left-buttons {
+    display: flex;
+    gap: var(--spacing-sm);
 }
 
 .toggle-btn {

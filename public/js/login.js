@@ -50,6 +50,7 @@ PM.ready(() => {
                     switch (data.role) {
                         case 'manager':
                         case 'supervisor':
+                        case 'restricted_manager':
                             window.location.href = '/manager/dashboard';
                             break;
                         case 'boarding_manager':

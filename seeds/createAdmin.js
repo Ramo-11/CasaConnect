@@ -17,8 +17,8 @@ mongoose.connect(process.env.MONGODB_URI);
 
 async function createAdmin() {
     const admin = await User.create({
-        firstName: 'Admin',
-        lastName: 'Manager',
+        firstName: 'Main',
+        lastName: 'Supervisor',
         email: 'omarh5877@gmail.com',
         password: 'Admin123!',
         phone: '(555) 000-0000',

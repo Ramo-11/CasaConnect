@@ -55,17 +55,18 @@ exports.enforceRole = (req, res, next) => {
         return next();
     }
 
-    // For protected routes, ensure the session role matches what's expected
     const path = req.path;
     const sessionRole = req.session.userRole;
 
-    // Manager area - accessible by manager and supervisor
-    if (path.startsWith('/manager') && !['manager', 'supervisor'].includes(sessionRole)) {
+    // Manager area - accessible by manager, supervisor, and restricted_manager
+    if (
+        path.startsWith('/manager') &&
+        !['manager', 'supervisor', 'restricted_manager'].includes(sessionRole)
+    ) {
         logger.warn(
             `Role mismatch: User ${req.session.userId} with role ${sessionRole} trying to access manager area, path: ${path}`
         );
 
-        // Redirect based on their actual role
         if (sessionRole === 'tenant') {
             return res.redirect('/tenant/dashboard');
         } else if (sessionRole === 'boarding_manager') {
@@ -74,14 +75,13 @@ exports.enforceRole = (req, res, next) => {
         return res.redirect('/login');
     }
 
-    // Tenant area - only for tenants
+    // Rest of the function remains the same...
     if (path.startsWith('/tenant') && sessionRole !== 'tenant') {
         logger.warn(
             `Role mismatch: User ${req.session.userId} with role ${sessionRole} trying to access tenant area, path: ${path}`
         );
 
-        // Redirect based on their actual role
-        if (['manager', 'supervisor'].includes(sessionRole)) {
+        if (['manager', 'supervisor', 'restricted_manager'].includes(sessionRole)) {
             return res.redirect('/manager/dashboard');
         } else if (sessionRole === 'boarding_manager') {
             return res.redirect('/boarding/dashboard');
@@ -89,14 +89,12 @@ exports.enforceRole = (req, res, next) => {
         return res.redirect('/login');
     }
 
-    // Boarding Manager area - only for boarding managers
     if (path.startsWith('/boarding') && sessionRole !== 'boarding_manager') {
         logger.warn(
             `Role mismatch: User ${req.session.userId} with role ${sessionRole} trying to access boarding manager area, path: ${path}`
         );
 
-        // Redirect based on their actual role
-        if (['manager', 'supervisor'].includes(sessionRole)) {
+        if (['manager', 'supervisor', 'restricted_manager'].includes(sessionRole)) {
             return res.redirect('/manager/dashboard');
         } else if (sessionRole === 'tenant') {
             return res.redirect('/tenant/dashboard');
