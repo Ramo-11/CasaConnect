@@ -15,7 +15,7 @@
         </div>
 
         <div class="navbar-menu">
-            <% if (user.role === 'manager') { %>
+            <% if (user.role === 'manager' || user.role === 'restricted_manager') { %>
             <a
                 href="/manager/dashboard"
                 class="nav-item <%= typeof path !== 'undefined' && path === '/manager/dashboard' ? 'active' : '' %>"
